@@ -6,7 +6,7 @@
 #define EVENTUTILS_H_
 
 #include "TLorentzVector.h"
-#include "initOniaTree.C"
+#include "initTree.C"
 
 namespace HI {
   enum TRIGGERBIT {

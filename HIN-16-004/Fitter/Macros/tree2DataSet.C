@@ -12,7 +12,7 @@
 //
 //
 
-#include "Utilities/initOniaTree.C"
+#include "Utilities/initTree.C"
 #include "Utilities/EVENTUTILS.h"
 #include "Utilities/initClasses.h"
 
@@ -22,8 +22,10 @@ map<int, double>   fCentMap; // map for centrality-Ncoll mapping
 double             fCentBinning[200];
 int                fCentBins;
 TObjArray*         fcorrArray = NULL; // Array with the 2D correction for weighting
+double drmin = 1000;
 
 string  findMyTree(string FileName);
+string  findJetTree(string FileName);
 bool    getTChain(TChain* fChain, vector<string> FileNames);
 void    iniBranch(TChain* fChain,bool isMC=false);
 bool    checkDS(RooDataSet* DS, string DSName);
@@ -102,13 +104,16 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
   if (createDS) {
     cout << "[INFO] Creating " << (isPureSDataset ? "pure signal " : "") << "RooDataSet for " << DSName << endl;
     TreeName = findMyTree(InputFileNames[0]); if(TreeName==""){return false;}
-    
+    jetTreeName = findJetTree(InputFileNames[0]); if(jetTreeName==""){return false;}
+    htr->AddFriend(jtr);
     TChain* theTree = new TChain(TreeName.c_str(),"");
     if(!getTChain(theTree, InputFileNames)){ return false; }     // Import files to TChain
-    initOniaTree(theTree);                                       // Initialize the Onia Tree
-    iniBranch(theTree,isMC);                                     // Initialize the Branches
+    //initTree(theTree);                         // Initialize the Tree
+    initTree(htr);                     //Initialize the Tree
+    iniBranch(theTree,isMC);                   // Initialize the Branches
     
     RooRealVar* mass    = new RooRealVar("invMass","#mu#mu mass", 1.0, 6.0, "GeV/c^{2}");
+    RooRealVar* zed     = new RooRealVar("z", "z_{J/#psi}", 0, 1);
     RooRealVar* ctau    = new RooRealVar("ctau","c_{#tau}", -100000.0, 100000.0, "mm");
     RooRealVar* ctauN    = new RooRealVar("ctauN","c_{#tau}", -100000.0, 100000.0, "");
     RooRealVar* ctauTrue = new RooRealVar("ctauTrue","c_{#tau}", -100000.0, 100000.0, "mm");
@@ -117,6 +122,8 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
     RooRealVar* ctauErr = new RooRealVar("ctauErr","#sigma_{c#tau}", -100000.0, 100000.0, "mm");
     RooRealVar* ptQQ    = new RooRealVar("pt","#mu#mu p_{T}", -1.0, 10000.0, "GeV/c");
     RooRealVar* rapQQ   = new RooRealVar("rap","#mu#mu y", -2.5, 2.5, "");
+    RooRealVar* ptJet    = new RooRealVar("jetpt","Jet p_{T}", -1.0, 10000.0, "GeV/c");
+    RooRealVar* rapJet   = new RooRealVar("jetrap","Jet y", -2.5, 2.5, "");
     RooRealVar* cent    = new RooRealVar("cent","centrality", -1.0, 1000.0, "");
     RooRealVar* weight  = new RooRealVar("weight","MC weight", 0.0, 10000000.0, "");
     RooRealVar* weightCorr   = new RooRealVar("weightCorr","Data correction weight", 0.0, 10000000.0, "");
@@ -126,12 +133,16 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
     {
       setCentralityMap(Form("%s/Input/CentralityMap_PbPb2015.txt",gSystem->ExpandPathName(gSystem->pwd())));
       if (isMC) {
-        cols = new RooArgSet(*mass, *ctau, *ctauErr, *ctauTrue, *ptQQ, *rapQQ, *cent, *weight);
+        cols = new RooArgSet(*mass, *zed, *ctau, *ctauErr, *ctauTrue, *ptQQ, *rapQQ,/* *ptJet, *rapJet,*/ *cent, *weight);
         cols->add(*ctauNRes);
         cols->add(*ctauRes);
+	cols->add(*ptJet);
+	cols->add(*rapJet);
       } else {
-        cols = new RooArgSet(*mass, *ctau, *ctauErr, *ptQQ, *rapQQ, *cent, *weight);
+        cols = new RooArgSet(*mass, *zed, *ctau, *ctauErr, *ptQQ, *rapQQ,/* *ptJet, *rapJet,*/ *cent, *weight);
         cols->add(*ctauN);
+	cols->add(*ptJet);
+	cols->add(*rapJet);
       }
       dataOS = new RooDataSet(Form("dOS_%s", DSName.c_str()), "dOS", *cols, WeightVar(*weight), StoreAsymError(*mass));
       dataSS = new RooDataSet(Form("dSS_%s", DSName.c_str()), "dSS", *cols, WeightVar(*weight), StoreAsymError(*mass));
@@ -140,12 +151,16 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
     else if (applyWeight_Corr)
     {
       if (isMC) {
-        cols = new RooArgSet(*mass, *ctau, *ctauErr, *ctauTrue, *ptQQ, *rapQQ, *cent, *weightCorr);
+        cols = new RooArgSet(*mass, *zed, *ctau, *ctauErr, *ctauTrue, *ptQQ, *rapQQ,/* *ptJet, *rapJet,*/ *cent, *weightCorr);
         cols->add(*ctauNRes);
         cols->add(*ctauRes);
+	cols->add(*ptJet);
+	cols->add(*rapJet);
       } else {
-        cols = new RooArgSet(*mass, *ctau, *ctauErr, *ptQQ, *rapQQ, *cent, *weightCorr);
+        cols = new RooArgSet(*mass, *zed, *ctau, *ctauErr,/* *ptQQ, *rapQQ, *ptJet, *rapJet,*/ *cent, *weightCorr);
         cols->add(*ctauN);
+	cols->add(*ptJet);
+	cols->add(*rapJet);
       }
       if (!readCorrection(Form("%s/Input/%s",gSystem->ExpandPathName(gSystem->pwd()),corrFileName.Data()))){ return false; }
       dataOS = new RooDataSet(Form("dOS_%s_%s", DSName.c_str(),corrName.Data()), "dOS", *cols, WeightVar(*weightCorr), StoreAsymError(*mass));
@@ -155,12 +170,16 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
     else
     {
       if (isMC) {
-        cols = new RooArgSet(*mass, *ctau, *ctauErr, *ctauTrue, *ptQQ, *rapQQ, *cent);
+        cols = new RooArgSet(*mass, *zed, *ctau, *ctauErr, *ctauTrue, *ptQQ,/* *rapQQ, *ptJet,*/ *rapJet, *cent);
         cols->add(*ctauNRes);
         cols->add(*ctauRes);
+	cols->add(*ptJet);
+	cols->add(*rapJet);
       } else {
-        cols = new RooArgSet(*mass, *ctau, *ctauErr, *ptQQ, *rapQQ, *cent);
+        cols = new RooArgSet(*mass, *zed, *ctau, *ctauErr, *ptQQ, *rapQQ,/* *ptJet, *rapJet,*/ *cent);
         cols->add(*ctauN);
+	cols->add(*ptJet);
+	cols->add(*rapJet);
       }  
       dataOS = new RooDataSet(Form("dOS_%s", DSName.c_str()), "dOS", *cols, StoreAsymError(*mass));
       dataSS = new RooDataSet(Form("dSS_%s", DSName.c_str()), "dSS", *cols, StoreAsymError(*mass));
@@ -206,6 +225,7 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
       Reco_QQ_4mom->Clear();
       Reco_QQ_mumi_4mom->Clear();
       Reco_QQ_mupl_4mom->Clear();
+      drmin= 1000;
       if (isMC) {
         Gen_QQ_mumi_4mom->Clear();
         Gen_QQ_mupl_4mom->Clear();
@@ -223,10 +243,22 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
         else { cout << "[ERROR] No ctauErr information found in the Onia Tree" << endl; }
         
         ctauN->setVal(ctau->getVal()/ctauErr->getVal());
-        
         ptQQ->setVal(RecoQQ4mom->Pt());
         rapQQ->setVal(RecoQQ4mom->Rapidity());
         cent->setVal(Centrality*CentFactor);
+	for (Long64_t ijet=0; ijet<nref; ijet++)
+	  {
+	    TLorentzVector v_jet;
+	    v_jet.SetPtEtaPhiM(jtpt[ijet], jteta[ijet], jtphi[ijet], jtm[ijet]);
+	    if (RecoQQ4mom->DeltaR (v_jet)<=drmin)
+	      {
+		drmin = RecoQQ4mom->DeltaR (v_jet);
+		zed->setVal(RecoQQ4mom->Pt()/jtpt[ijet]);
+		ptJet->setVal(jtpt[ijet]);
+		rapJet->setVal(jty[ijet]);
+	      }
+	  }
+
         if (isMC) {
           if (theTree->GetBranch("Reco_QQ_ctauTrue3D")) { ctauTrue->setVal(Reco_QQ_ctauTrue3D[iQQ]); }
           else if (theTree->GetBranch("Reco_QQ_ctauTrue")) { ctauTrue->setVal(Reco_QQ_ctauTrue[iQQ]); }
@@ -315,7 +347,20 @@ string findMyTree(string FileName)
   string name = "";
   if(f->GetListOfKeys()->Contains("hionia")){ name = "hionia/myTree"; }
   else if(f->GetListOfKeys()->Contains("myTree")){ name = "myTree"; }
-  else { cout << "[ERROR] myTree was not found in: " << FileName << endl; }
+  else { cout << "[ERROR] myTree was not found in: " << FileName << endl;}
+  htr = (TTree*)f->Get(name.c_str());
+  f->Close(); delete f;
+  return name;
+};
+
+string  findJetTree(string FileName)
+{
+  TFile *f = TFile::Open(FileName.c_str(), "READ");
+  string name = "";
+  if(f->GetListOfKeys()->Contains("ak4PFJetAnalyzer")){ name = "ak4PFJetAnalyzer/t"; }
+  else if(f->GetListOfKeys()->Contains("t")){ name = "t"; }
+  else { cout << "[ERROR] t was not found in: " << FileName << endl; }
+  jtr = (TTree*)f->Get(name.c_str());
   f->Close(); delete f;
   return name;
 };
@@ -337,10 +382,11 @@ void iniBranch(TChain* fChain, bool isMC)
   if (fChain->GetBranch("Reco_QQ_4mom"))      { fChain->GetBranch("Reco_QQ_4mom")->SetAutoDelete(false);      }
   if (fChain->GetBranch("Reco_QQ_mupl_4mom")) { fChain->GetBranch("Reco_QQ_mupl_4mom")->SetAutoDelete(false); }
   if (fChain->GetBranch("Reco_QQ_mumi_4mom")) { fChain->GetBranch("Reco_QQ_mumi_4mom")->SetAutoDelete(false); }
-  if (isMC) {
-    if (fChain->GetBranch("Gen_QQ_mupl_4mom")) { fChain->GetBranch("Gen_QQ_mupl_4mom")->SetAutoDelete(false); }
-    if (fChain->GetBranch("Gen_QQ_mumi_4mom")) { fChain->GetBranch("Gen_QQ_mumi_4mom")->SetAutoDelete(false); }
-  }
+  if (isMC) 
+    {
+      if (fChain->GetBranch("Gen_QQ_mupl_4mom")) { fChain->GetBranch("Gen_QQ_mupl_4mom")->SetAutoDelete(false); }
+      if (fChain->GetBranch("Gen_QQ_mumi_4mom")) { fChain->GetBranch("Gen_QQ_mumi_4mom")->SetAutoDelete(false); }
+    }
   fChain->SetBranchStatus("*",0);
   RecoQQ::iniBranches(fChain);
   if (fChain->GetBranch("Centrality"))        { fChain->SetBranchStatus("Centrality",1);        }
@@ -353,6 +399,12 @@ void iniBranch(TChain* fChain, bool isMC)
   if (fChain->GetBranch("Reco_QQ_ctauErr3D")) { fChain->SetBranchStatus("Reco_QQ_ctauErr3D",1); }
   if (fChain->GetBranch("Reco_QQ_ctau"))      { fChain->SetBranchStatus("Reco_QQ_ctau",1);      }
   if (fChain->GetBranch("Reco_QQ_ctauErr"))   { fChain->SetBranchStatus("Reco_QQ_ctauErr",1);   }
+  if (fChain->GetBranch("nref"))              { fChain->SetBranchStatus("nref",1);              }
+  if (fChain->GetBranch("jtpt"))              { fChain->SetBranchStatus("jtpt",1);              }
+  if (fChain->GetBranch("jteta"))             { fChain->SetBranchStatus("jteta",1);             }
+  if (fChain->GetBranch("jtphi"))             { fChain->SetBranchStatus("jtphi",1);             }
+  if (fChain->GetBranch("jtm"))               { fChain->SetBranchStatus("jtm",1);               }
+
   if (isMC)
   {
     if (fChain->GetBranch("Gen_QQ_size"))      { fChain->SetBranchStatus("Gen_QQ_size",1);      }
@@ -360,6 +412,11 @@ void iniBranch(TChain* fChain, bool isMC)
     if (fChain->GetBranch("Gen_QQ_mumi_4mom")) { fChain->SetBranchStatus("Gen_QQ_mumi_4mom",1); }
     if (fChain->GetBranch("Reco_QQ_ctauTrue3D")) { fChain->SetBranchStatus("Reco_QQ_ctauTrue3D",1); }
     if (fChain->GetBranch("Reco_QQ_ctauTrue")) { fChain->SetBranchStatus("Reco_QQ_ctauTrue",1); }
+    if (fChain->GetBranch("ngen"))             { fChain->SetBranchStatus("ngen",1);              }
+    if (fChain->GetBranch("genpt"))            { fChain->SetBranchStatus("genpt",1);              }
+    if (fChain->GetBranch("geneta"))           { fChain->SetBranchStatus("geneta",1);             }
+    if (fChain->GetBranch("genphi"))           { fChain->SetBranchStatus("genphi",1);             }
+    if (fChain->GetBranch("genm"))             { fChain->SetBranchStatus("genm",1);               }
   }
 };
 
