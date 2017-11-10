@@ -22,11 +22,9 @@ map<int, double>   fCentMap; // map for centrality-Ncoll mapping
 double             fCentBinning[200];
 int                fCentBins;
 TObjArray*         fcorrArray = NULL; // Array with the 2D correction for weighting
-double drmin = 1000;
 
 string  findMyTree(string FileName);
-string  findJetTree(string FileName);
-bool    getTChain(TChain* fChain, TChain* jChain, vector<string> FileNames);
+bool    getTChain(TChain* fChain, vector<string> FileNames);
 void    iniBranch(TChain* fChain,bool isMC=false);
 bool    checkDS(RooDataSet* DS, string DSName);
 double  deltaR(TLorentzVector* GenMuon, TLorentzVector* RecoMuon);
@@ -81,38 +79,36 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
   
   bool createDS = ( gSystem->AccessPathName(OutputFileName.c_str()) || UpdateDS );
   if ( !gSystem->AccessPathName(OutputFileName.c_str()) ) {
-  cout << "[INFO] Loading RooDataSet from " << OutputFileName << endl;
+    cout << "[INFO] Loading RooDataSet from " << OutputFileName << endl;
     
-  TFile *DBFile = TFile::Open(OutputFileName.c_str(),"READ");
-  if (isMC && isPureSDataset) {
-  dataOSNoBkg = (RooDataSet*)DBFile->Get(Form("dOS_%s_NoBkg", DSName.c_str()));
-  if (checkDS(dataOSNoBkg, DSName)==false) { createDS = true; }
-  } 
-  else if (applyWeight_Corr) {
-  dataOS = (RooDataSet*)DBFile->Get(Form("dOS_%s_%s", DSName.c_str(),corrName.Data()));
-  if (checkDS(dataOS, DSName)==false) { createDS = true; }
-  }
-  else {
-  dataOS = (RooDataSet*)DBFile->Get(Form("dOS_%s", DSName.c_str()));
-  if (checkDS(dataOS, DSName)==false) { createDS = true; }
-  dataSS = (RooDataSet*)DBFile->Get(Form("dSS_%s", DSName.c_str()));
-  if (checkDS(dataSS, DSName)==false) { createDS = true; }
-  }
-  DBFile->Close(); delete DBFile;
+    TFile *DBFile = TFile::Open(OutputFileName.c_str(),"READ");
+    if (isMC && isPureSDataset) {
+      dataOSNoBkg = (RooDataSet*)DBFile->Get(Form("dOS_%s_NoBkg", DSName.c_str()));
+      if (checkDS(dataOSNoBkg, DSName)==false) { createDS = true; }
+    } 
+    else if (applyWeight_Corr) {
+      dataOS = (RooDataSet*)DBFile->Get(Form("dOS_%s_%s", DSName.c_str(),corrName.Data()));
+      if (checkDS(dataOS, DSName)==false) { createDS = true; }
+    }
+    else {
+      dataOS = (RooDataSet*)DBFile->Get(Form("dOS_%s", DSName.c_str()));
+      if (checkDS(dataOS, DSName)==false) { createDS = true; }
+      dataSS = (RooDataSet*)DBFile->Get(Form("dSS_%s", DSName.c_str()));
+      if (checkDS(dataSS, DSName)==false) { createDS = true; }
+    }
+    DBFile->Close(); delete DBFile;
   }
 
   if (createDS) {
     cout << "[INFO] Creating " << (isPureSDataset ? "pure signal " : "") << "RooDataSet for " << DSName << endl;
     TreeName = findMyTree(InputFileNames[0]); if(TreeName==""){return false;}
-    jetTreeName = findJetTree(InputFileNames[0]); if(jetTreeName==""){return false;}
+    
     TChain* theTree = new TChain(TreeName.c_str(),"");
-    TChain* jetTree = new TChain(jetTreeName.c_str(),"");
-    if(!getTChain(theTree, jetTree, InputFileNames)){ return false; }     // Import files to TChain
-    initTree(theTree);                         // Initialize the Tree
-    iniBranch(theTree,isMC);                   // Initialize the Branches
+    if(!getTChain(theTree, InputFileNames)){ return false; }     // Import files to TChain
+    initTree(theTree);                                       // Initialize the Onia Tree
+    iniBranch(theTree,isMC);                                     // Initialize the Branches
     
     RooRealVar* mass    = new RooRealVar("invMass","#mu#mu mass", 1.0, 6.0, "GeV/c^{2}");
-    RooRealVar* zed     = new RooRealVar("zed", "z_{J/#psi}", 0, 1);
     RooRealVar* ctau    = new RooRealVar("ctau","c_{#tau}", -100000.0, 100000.0, "mm");
     RooRealVar* ctauN    = new RooRealVar("ctauN","c_{#tau}", -100000.0, 100000.0, "");
     RooRealVar* ctauTrue = new RooRealVar("ctauTrue","c_{#tau}", -100000.0, 100000.0, "mm");
@@ -121,8 +117,6 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
     RooRealVar* ctauErr = new RooRealVar("ctauErr","#sigma_{c#tau}", -100000.0, 100000.0, "mm");
     RooRealVar* ptQQ    = new RooRealVar("pt","#mu#mu p_{T}", -1.0, 10000.0, "GeV/c");
     RooRealVar* rapQQ   = new RooRealVar("rap","#mu#mu y", -2.5, 2.5, "");
-    RooRealVar* ptJet    = new RooRealVar("jetpt","Jet p_{T}", -1.0, 10000.0, "GeV/c");
-    RooRealVar* rapJet   = new RooRealVar("jetrap","Jet y", -2.5, 2.5, "");
     RooRealVar* cent    = new RooRealVar("cent","centrality", -1.0, 1000.0, "");
     RooRealVar* weight  = new RooRealVar("weight","MC weight", 0.0, 10000000.0, "");
     RooRealVar* weightCorr   = new RooRealVar("weightCorr","Data correction weight", 0.0, 10000000.0, "");
@@ -132,16 +126,12 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
     {
       setCentralityMap(Form("%s/Input/CentralityMap_PbPb2015.txt",gSystem->ExpandPathName(gSystem->pwd())));
       if (isMC) {
-        cols = new RooArgSet(*mass, *zed, *ctau, *ctauErr, *ctauTrue, *ptQQ, *rapQQ,/* *ptJet, *rapJet,*/ *cent, *weight);
+        cols = new RooArgSet(*mass, *ctau, *ctauErr, *ctauTrue, *ptQQ, *rapQQ, *cent, *weight);
         cols->add(*ctauNRes);
         cols->add(*ctauRes);
-	cols->add(*ptJet);
-	cols->add(*rapJet);
       } else {
-        cols = new RooArgSet(*mass, *zed, *ctau, *ctauErr, *ptQQ, *rapQQ,/* *ptJet, *rapJet,*/ *cent, *weight);
+        cols = new RooArgSet(*mass, *ctau, *ctauErr, *ptQQ, *rapQQ, *cent, *weight);
         cols->add(*ctauN);
-	cols->add(*ptJet);
-	cols->add(*rapJet);
       }
       dataOS = new RooDataSet(Form("dOS_%s", DSName.c_str()), "dOS", *cols, WeightVar(*weight), StoreAsymError(*mass));
       dataSS = new RooDataSet(Form("dSS_%s", DSName.c_str()), "dSS", *cols, WeightVar(*weight), StoreAsymError(*mass));
@@ -150,16 +140,12 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
     else if (applyWeight_Corr)
     {
       if (isMC) {
-        cols = new RooArgSet(*mass, *zed, *ctau, *ctauErr, *ctauTrue, *ptQQ, *rapQQ,/* *ptJet, *rapJet,*/ *cent, *weightCorr);
+        cols = new RooArgSet(*mass, *ctau, *ctauErr, *ctauTrue, *ptQQ, *rapQQ, *cent, *weightCorr);
         cols->add(*ctauNRes);
         cols->add(*ctauRes);
-	cols->add(*ptJet);
-	cols->add(*rapJet);
       } else {
-        cols = new RooArgSet(*mass, *zed, *ctau, *ctauErr,/* *ptQQ, *rapQQ, *ptJet, *rapJet,*/ *cent, *weightCorr);
+        cols = new RooArgSet(*mass, *ctau, *ctauErr, *ptQQ, *rapQQ, *cent, *weightCorr);
         cols->add(*ctauN);
-	cols->add(*ptJet);
-	cols->add(*rapJet);
       }
       if (!readCorrection(Form("%s/Input/%s",gSystem->ExpandPathName(gSystem->pwd()),corrFileName.Data()))){ return false; }
       dataOS = new RooDataSet(Form("dOS_%s_%s", DSName.c_str(),corrName.Data()), "dOS", *cols, WeightVar(*weightCorr), StoreAsymError(*mass));
@@ -169,16 +155,12 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
     else
     {
       if (isMC) {
-        cols = new RooArgSet(*mass, *zed, *ctau, *ctauErr, *ctauTrue, *ptQQ,/* *rapQQ, *ptJet,*/ *rapJet, *cent);
+        cols = new RooArgSet(*mass, *ctau, *ctauErr, *ctauTrue, *ptQQ, *rapQQ, *cent);
         cols->add(*ctauNRes);
         cols->add(*ctauRes);
-	cols->add(*ptJet);
-	cols->add(*rapJet);
       } else {
-        cols = new RooArgSet(*mass, *zed, *ctau, *ctauErr, *ptQQ, *rapQQ,/* *ptJet, *rapJet,*/ *cent);
+        cols = new RooArgSet(*mass, *ctau, *ctauErr, *ptQQ, *rapQQ, *cent);
         cols->add(*ctauN);
-	cols->add(*ptJet);
-	cols->add(*rapJet);
       }  
       dataOS = new RooDataSet(Form("dOS_%s", DSName.c_str()), "dOS", *cols, StoreAsymError(*mass));
       dataSS = new RooDataSet(Form("dSS_%s", DSName.c_str()), "dSS", *cols, StoreAsymError(*mass));
@@ -231,8 +213,6 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
       theTree->GetEntry(jentry);
       
       for (int iQQ=0; iQQ<Reco_QQ_size; iQQ++) {
-	drmin= 1000;
-	zed->setVal(-1);
         TLorentzVector *RecoQQ4mom = (TLorentzVector*) Reco_QQ_4mom->At(iQQ);
         mass->setVal(RecoQQ4mom->M());
         if (theTree->GetBranch("Reco_QQ_ctau3D")) { ctau->setVal(Reco_QQ_ctau3D[iQQ]); }
@@ -243,22 +223,10 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
         else { cout << "[ERROR] No ctauErr information found in the Onia Tree" << endl; }
         
         ctauN->setVal(ctau->getVal()/ctauErr->getVal());
+        
         ptQQ->setVal(RecoQQ4mom->Pt());
         rapQQ->setVal(RecoQQ4mom->Rapidity());
         cent->setVal(Centrality*CentFactor);
-	for (Long64_t ijet=0; ijet<nref; ijet++)
-	  {
-	    TLorentzVector v_jet;
-	    v_jet.SetPtEtaPhiM(jtpt[ijet], jteta[ijet], jtphi[ijet], jtm[ijet]);
-	    if (RecoQQ4mom->DeltaR (v_jet)<=drmin)
-	      {
-		drmin = RecoQQ4mom->DeltaR (v_jet);
-		zed->setVal(RecoQQ4mom->Pt()/jtpt[ijet]);
-		ptJet->setVal(jtpt[ijet]);
-		rapJet->setVal(jty[ijet]);
-	      }
-	  }
-
         if (isMC) {
           if (theTree->GetBranch("Reco_QQ_ctauTrue3D")) { ctauTrue->setVal(Reco_QQ_ctauTrue3D[iQQ]); }
           else if (theTree->GetBranch("Reco_QQ_ctauTrue")) { ctauTrue->setVal(Reco_QQ_ctauTrue[iQQ]); }
@@ -345,34 +313,19 @@ string findMyTree(string FileName)
 {
   TFile *f = TFile::Open(FileName.c_str(), "READ");
   string name = "";
-  if(f->GetListOfKeys()->Contains("hionia")){ name = "hionia/myTree"; cout<<"fount onia Tree";}
-  else if(f->GetListOfKeys()->Contains("myTree")){ name = "myTree"; cout<<"found onia Tree";}
-  else { cout << "[ERROR] myTree was not found in: " << FileName << endl;}
-  //htr = (TTree*)f->Get(name.c_str());
+  if(f->GetListOfKeys()->Contains("hionia")){ name = "hionia/myTree"; }
+  else if(f->GetListOfKeys()->Contains("myTree")){ name = "myTree"; }
+  else { cout << "[ERROR] myTree was not found in: " << FileName << endl; }
   f->Close(); delete f;
   return name;
 };
 
-string  findJetTree(string FileName)
-{
-  TFile *f = TFile::Open(FileName.c_str(), "READ");
-  string name = "";
-  if(f->GetListOfKeys()->Contains("ak4PFJetAnalyzer")){ name = "ak4PFJetAnalyzer/t"; cout<<"found jet tree";}
-  else if(f->GetListOfKeys()->Contains("t")){ name = "t"; cout<<"found jet tree";}
-  else { cout << "[ERROR] t was not found in: " << FileName << endl; }
-  //jtr = (TTree*)f->Get(name.c_str());
-  f->Close(); delete f;
-  return name;
-};
-
-bool getTChain(TChain *fChain, TChain *jChain, vector<string> FileNames)
+bool getTChain(TChain *fChain, vector<string> FileNames)
 {
   cout << "[INFO] Extrating TTree " << TreeName.c_str() << endl;
   for (vector<string>::iterator FileName = FileNames.begin() ; FileName != FileNames.end(); ++FileName){
     cout << "[INFO] Adding TFile " << FileName->c_str() << endl;
     fChain->Add(Form("%s/%s", FileName->c_str(),  TreeName.c_str()));
-    jChain->Add(Form("%s/%s", FileName->c_str(),  jetTreeName.c_str()));
-    fChain->AddFriend(jChain);
   }
   if (!fChain) { cout << "[ERROR] fChain was not created, some input files are missing" << endl; return false; }
   return true;
@@ -384,11 +337,10 @@ void iniBranch(TChain* fChain, bool isMC)
   if (fChain->GetBranch("Reco_QQ_4mom"))      { fChain->GetBranch("Reco_QQ_4mom")->SetAutoDelete(false);      }
   if (fChain->GetBranch("Reco_QQ_mupl_4mom")) { fChain->GetBranch("Reco_QQ_mupl_4mom")->SetAutoDelete(false); }
   if (fChain->GetBranch("Reco_QQ_mumi_4mom")) { fChain->GetBranch("Reco_QQ_mumi_4mom")->SetAutoDelete(false); }
-  if (isMC) 
-    {
-      if (fChain->GetBranch("Gen_QQ_mupl_4mom")) { fChain->GetBranch("Gen_QQ_mupl_4mom")->SetAutoDelete(false); }
-      if (fChain->GetBranch("Gen_QQ_mumi_4mom")) { fChain->GetBranch("Gen_QQ_mumi_4mom")->SetAutoDelete(false); }
-    }
+  if (isMC) {
+    if (fChain->GetBranch("Gen_QQ_mupl_4mom")) { fChain->GetBranch("Gen_QQ_mupl_4mom")->SetAutoDelete(false); }
+    if (fChain->GetBranch("Gen_QQ_mumi_4mom")) { fChain->GetBranch("Gen_QQ_mumi_4mom")->SetAutoDelete(false); }
+  }
   fChain->SetBranchStatus("*",0);
   RecoQQ::iniBranches(fChain);
   if (fChain->GetBranch("Centrality"))        { fChain->SetBranchStatus("Centrality",1);        }
@@ -401,12 +353,6 @@ void iniBranch(TChain* fChain, bool isMC)
   if (fChain->GetBranch("Reco_QQ_ctauErr3D")) { fChain->SetBranchStatus("Reco_QQ_ctauErr3D",1); }
   if (fChain->GetBranch("Reco_QQ_ctau"))      { fChain->SetBranchStatus("Reco_QQ_ctau",1);      }
   if (fChain->GetBranch("Reco_QQ_ctauErr"))   { fChain->SetBranchStatus("Reco_QQ_ctauErr",1);   }
-  if (fChain->GetBranch("nref"))              { fChain->SetBranchStatus("nref",1);              }
-  if (fChain->GetBranch("jtpt"))              { fChain->SetBranchStatus("jtpt",1);              }
-  if (fChain->GetBranch("jteta"))             { fChain->SetBranchStatus("jteta",1);             }
-  if (fChain->GetBranch("jtphi"))             { fChain->SetBranchStatus("jtphi",1);             }
-  if (fChain->GetBranch("jtm"))               { fChain->SetBranchStatus("jtm",1);               }
-
   if (isMC)
   {
     if (fChain->GetBranch("Gen_QQ_size"))      { fChain->SetBranchStatus("Gen_QQ_size",1);      }
@@ -414,11 +360,6 @@ void iniBranch(TChain* fChain, bool isMC)
     if (fChain->GetBranch("Gen_QQ_mumi_4mom")) { fChain->SetBranchStatus("Gen_QQ_mumi_4mom",1); }
     if (fChain->GetBranch("Reco_QQ_ctauTrue3D")) { fChain->SetBranchStatus("Reco_QQ_ctauTrue3D",1); }
     if (fChain->GetBranch("Reco_QQ_ctauTrue")) { fChain->SetBranchStatus("Reco_QQ_ctauTrue",1); }
-    if (fChain->GetBranch("ngen"))             { fChain->SetBranchStatus("ngen",1);              }
-    if (fChain->GetBranch("genpt"))            { fChain->SetBranchStatus("genpt",1);              }
-    if (fChain->GetBranch("geneta"))           { fChain->SetBranchStatus("geneta",1);             }
-    if (fChain->GetBranch("genphi"))           { fChain->SetBranchStatus("genphi",1);             }
-    if (fChain->GetBranch("genm"))             { fChain->SetBranchStatus("genm",1);               }
   }
 };
 
@@ -432,8 +373,6 @@ bool checkDS(RooDataSet* DS, string DSName)
       (row->find("pt")!=0)      &&
       (row->find("ctau")!=0)    &&
       (row->find("ctauErr")!=0) &&
-      (row->find("zed")!=0)     &&
-      (row->find("jetpt")!=0)   &&
       (incCent     ? row->find("cent")!=0     : true) &&
       (incCtauTrue ? row->find("ctauTrue")!=0 : true) &&
       (incCtauTrue ? row->find("ctauRes")!=0 : true) &&

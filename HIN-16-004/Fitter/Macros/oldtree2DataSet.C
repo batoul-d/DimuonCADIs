@@ -26,7 +26,7 @@ double drmin = 1000;
 
 string  findMyTree(string FileName);
 string  findJetTree(string FileName);
-bool    getTChain(TChain* fChain, TChain* jChain, vector<string> FileNames);
+bool    getTChain(TChain* fChain, vector<string> FileNames);
 void    iniBranch(TChain* fChain,bool isMC=false);
 bool    checkDS(RooDataSet* DS, string DSName);
 double  deltaR(TLorentzVector* GenMuon, TLorentzVector* RecoMuon);
@@ -105,14 +105,18 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
     cout << "[INFO] Creating " << (isPureSDataset ? "pure signal " : "") << "RooDataSet for " << DSName << endl;
     TreeName = findMyTree(InputFileNames[0]); if(TreeName==""){return false;}
     jetTreeName = findJetTree(InputFileNames[0]); if(jetTreeName==""){return false;}
+    //htr->AddFriend(jtr);
     TChain* theTree = new TChain(TreeName.c_str(),"");
-    TChain* jetTree = new TChain(jetTreeName.c_str(),"");
-    if(!getTChain(theTree, jetTree, InputFileNames)){ return false; }     // Import files to TChain
-    initTree(theTree);                         // Initialize the Tree
+    //if(!getTChain(theTree, InputFileNames)){ return false; }     // Import files to TChain
+    theTree = (TChain*) htr;
+    //initTree(theTree);                         // Initialize the Tree
+    initTree(htr, jtr);                          // Initialize the Tree
+    theTree = (TChain*) htr;                     
     iniBranch(theTree,isMC);                   // Initialize the Branches
+    //iniBranch(htr, isMC);
     
     RooRealVar* mass    = new RooRealVar("invMass","#mu#mu mass", 1.0, 6.0, "GeV/c^{2}");
-    RooRealVar* zed     = new RooRealVar("zed", "z_{J/#psi}", 0, 1);
+    RooRealVar* zed     = new RooRealVar("z", "z_{J/#psi}", 0, 1);
     RooRealVar* ctau    = new RooRealVar("ctau","c_{#tau}", -100000.0, 100000.0, "mm");
     RooRealVar* ctauN    = new RooRealVar("ctauN","c_{#tau}", -100000.0, 100000.0, "");
     RooRealVar* ctauTrue = new RooRealVar("ctauTrue","c_{#tau}", -100000.0, 100000.0, "mm");
@@ -224,6 +228,7 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
       Reco_QQ_4mom->Clear();
       Reco_QQ_mumi_4mom->Clear();
       Reco_QQ_mupl_4mom->Clear();
+      drmin= 1000;
       if (isMC) {
         Gen_QQ_mumi_4mom->Clear();
         Gen_QQ_mupl_4mom->Clear();
@@ -231,8 +236,6 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
       theTree->GetEntry(jentry);
       
       for (int iQQ=0; iQQ<Reco_QQ_size; iQQ++) {
-	drmin= 1000;
-	zed->setVal(-1);
         TLorentzVector *RecoQQ4mom = (TLorentzVector*) Reco_QQ_4mom->At(iQQ);
         mass->setVal(RecoQQ4mom->M());
         if (theTree->GetBranch("Reco_QQ_ctau3D")) { ctau->setVal(Reco_QQ_ctau3D[iQQ]); }
@@ -345,10 +348,10 @@ string findMyTree(string FileName)
 {
   TFile *f = TFile::Open(FileName.c_str(), "READ");
   string name = "";
-  if(f->GetListOfKeys()->Contains("hionia")){ name = "hionia/myTree"; cout<<"fount onia Tree";}
-  else if(f->GetListOfKeys()->Contains("myTree")){ name = "myTree"; cout<<"found onia Tree";}
+  if(f->GetListOfKeys()->Contains("hionia")){ name = "hionia/myTree"; }
+  else if(f->GetListOfKeys()->Contains("myTree")){ name = "myTree"; }
   else { cout << "[ERROR] myTree was not found in: " << FileName << endl;}
-  //htr = (TTree*)f->Get(name.c_str());
+  htr = (TTree*)f->Get(name.c_str());
   f->Close(); delete f;
   return name;
 };
@@ -357,22 +360,20 @@ string  findJetTree(string FileName)
 {
   TFile *f = TFile::Open(FileName.c_str(), "READ");
   string name = "";
-  if(f->GetListOfKeys()->Contains("ak4PFJetAnalyzer")){ name = "ak4PFJetAnalyzer/t"; cout<<"found jet tree";}
-  else if(f->GetListOfKeys()->Contains("t")){ name = "t"; cout<<"found jet tree";}
+  if(f->GetListOfKeys()->Contains("ak4PFJetAnalyzer")){ name = "ak4PFJetAnalyzer/t"; }
+  else if(f->GetListOfKeys()->Contains("t")){ name = "t"; }
   else { cout << "[ERROR] t was not found in: " << FileName << endl; }
-  //jtr = (TTree*)f->Get(name.c_str());
+  jtr = (TTree*)f->Get(name.c_str());
   f->Close(); delete f;
   return name;
 };
 
-bool getTChain(TChain *fChain, TChain *jChain, vector<string> FileNames)
+bool getTChain(TChain *fChain, vector<string> FileNames)
 {
   cout << "[INFO] Extrating TTree " << TreeName.c_str() << endl;
   for (vector<string>::iterator FileName = FileNames.begin() ; FileName != FileNames.end(); ++FileName){
     cout << "[INFO] Adding TFile " << FileName->c_str() << endl;
     fChain->Add(Form("%s/%s", FileName->c_str(),  TreeName.c_str()));
-    jChain->Add(Form("%s/%s", FileName->c_str(),  jetTreeName.c_str()));
-    fChain->AddFriend(jChain);
   }
   if (!fChain) { cout << "[ERROR] fChain was not created, some input files are missing" << endl; return false; }
   return true;
@@ -432,8 +433,6 @@ bool checkDS(RooDataSet* DS, string DSName)
       (row->find("pt")!=0)      &&
       (row->find("ctau")!=0)    &&
       (row->find("ctauErr")!=0) &&
-      (row->find("zed")!=0)     &&
-      (row->find("jetpt")!=0)   &&
       (incCent     ? row->find("cent")!=0     : true) &&
       (incCtauTrue ? row->find("ctauTrue")!=0 : true) &&
       (incCtauTrue ? row->find("ctauRes")!=0 : true) &&

@@ -534,7 +534,7 @@ string jetTreeName("ak4PFJetAnalyzer/t");
 TTree *htr;
 TTree *jtr;
 
-void initTree(TChain *tree)
+void initTree(TTree *tree)
 {
   std::cout << "[INFO] Initializing TTree " << TreeName.c_str() << std::endl;
   // The Init() function is called when the selector needs to initialize
@@ -543,12 +543,12 @@ void initTree(TChain *tree)
   // It is normally not necessary to make changes to the generated
   // code, but the routine can be extended by the user if needed.
   // Init() will be called many times when running on PROOF
-  // (once per file to be processed). 
+  // (once per file to be processed).
 
   TChain   *fChain;   //!pointer to the analyzed TTree or TChain
-
-  // Set object pointer
-  Reco_QQ_4mom = 0;
+  theTree->Add
+    // Set object pointer
+    Reco_QQ_4mom = 0;
   Reco_QQ_mupl_4mom = 0;
   Reco_QQ_mumi_4mom = 0;
   Reco_QQ_vtx = 0;
@@ -561,8 +561,8 @@ void initTree(TChain *tree)
 
   if (!tree) return;
   fChain = tree;
-  fCurrent = -1;
 
+  fCurrent = -1;
   if (fChain->GetBranch("eventNb")) fChain->SetBranchAddress("eventNb", &eventNb, &b_eventNb);
   if (fChain->GetBranch("runNb")) fChain->SetBranchAddress("runNb", &runNb, &b_runNb);
   if (fChain->GetBranch("LS")) fChain->SetBranchAddress("LS", &LS, &b_LS);
@@ -701,22 +701,22 @@ void initTree(TChain *tree)
   if (fChain->GetBranch("jtpu")) fChain->SetBranchAddress("jtpu", jtpu, &b_jtpu);
   if (fChain->GetBranch("jtm")) fChain->SetBranchAddress("jtm", jtm, &b_jtm);
   if (fChain->GetBranch("jtarea")) fChain->SetBranchAddress("jtarea", jtarea, &b_jtarea);
-  //if (fChain->GetBranch("jtPfCHF")) fChain->SetBranchAddress("jtPfCHF", jtPfCHF, &b_jtPfCHF);
-  //if (fChain->GetBranch("jtPfNHF")) fChain->SetBranchAddress("jtPfNHF", jtPfNHF, &b_jtPfNHF);
-  //if (fChain->GetBranch("jtPfCEF")) fChain->SetBranchAddress("jtPfCEF", jtPfCEF, &b_jtPfCEF);
-  //if (fChain->GetBranch("jtPfNEF")) fChain->SetBranchAddress("jtPfNEF", jtPfNEF, &b_jtPfNEF);
-  //if (fChain->GetBranch("jtPfMUF")) fChain->SetBranchAddress("jtPfMUF", jtPfMUF, &b_jtPfMUF);
-  //if (fChain->GetBranch("jtPfCHM")) fChain->SetBranchAddress("jtPfCHM", jtPfCHM, &b_jtPfCHM);
-  //if (fChain->GetBranch("jtPfNHM")) fChain->SetBranchAddress("jtPfNHM", jtPfNHM, &b_jtPfNHM);
-  //if (fChain->GetBranch("jtPfCEM")) fChain->SetBranchAddress("jtPfCEM", jtPfCEM, &b_jtPfCEM);
-  //if (fChain->GetBranch("jtPfNEM")) fChain->SetBranchAddress("jtPfNEM", jtPfNEM, &b_jtPfNEM);
-  //if (fChain->GetBranch("jtPfMUM")) fChain->SetBranchAddress("jtPfMUM", jtPfMUM, &b_jtPfMUM);
-  //if (fChain->GetBranch("jttau1")) fChain->SetBranchAddress("jttau1", jttau1, &b_jttau1);
+  if (fChain->GetBranch("jtPfCHF")) fChain->SetBranchAddress("jtPfCHF", jtPfCHF, &b_jtPfCHF);
+  if (fChain->GetBranch("jtPfNHF")) fChain->SetBranchAddress("jtPfNHF", jtPfNHF, &b_jtPfNHF);
+  if (fChain->GetBranch("jtPfCEF")) fChain->SetBranchAddress("jtPfCEF", jtPfCEF, &b_jtPfCEF);
+  if (fChain->GetBranch("jtPfNEF")) fChain->SetBranchAddress("jtPfNEF", jtPfNEF, &b_jtPfNEF);
+  if (fChain->GetBranch("jtPfMUF")) fChain->SetBranchAddress("jtPfMUF", jtPfMUF, &b_jtPfMUF);
+  if (fChain->GetBranch("jtPfCHM")) fChain->SetBranchAddress("jtPfCHM", jtPfCHM, &b_jtPfCHM);
+  if (fChain->GetBranch("jtPfNHM")) fChain->SetBranchAddress("jtPfNHM", jtPfNHM, &b_jtPfNHM);
+  if (fChain->GetBranch("jtPfCEM")) fChain->SetBranchAddress("jtPfCEM", jtPfCEM, &b_jtPfCEM);
+  if (fChain->GetBranch("jtPfNEM")) fChain->SetBranchAddress("jtPfNEM", jtPfNEM, &b_jtPfNEM);
+  if (fChain->GetBranch("jtPfMUM")) fChain->SetBranchAddress("jtPfMUM", jtPfMUM, &b_jtPfMUM);
+  if (fChain->GetBranch("jttau1")) fChain->SetBranchAddress("jttau1", jttau1, &b_jttau1);
   if (fChain->GetBranch("jttau2")) fChain->SetBranchAddress("jttau2", jttau2, &b_jttau2);
   if (fChain->GetBranch("jttau3")) fChain->SetBranchAddress("jttau3", jttau3, &b_jttau3);
-  //if (fChain->GetBranch("discr_jetID_cuts")) fChain->SetBranchAddress("discr_jetID_cuts", discr_jetID_cuts, &b_discr_jetID_cuts);
-  //if (fChain->GetBranch("discr_jetID_bdt")) fChain->SetBranchAddress("discr_jetID_bdt", discr_jetID_bdt, &b_discr_jetID_bdt);
-  //if (fChain->GetBranch("discr_fr01")) fChain->SetBranchAddress("discr_fr01", discr_fr01, &b_discr_fr01);
+  if (fChain->GetBranch("discr_jetID_cuts")) fChain->SetBranchAddress("discr_jetID_cuts", discr_jetID_cuts, &b_discr_jetID_cuts);
+  if (fChain->GetBranch("discr_jetID_bdt")) fChain->SetBranchAddress("discr_jetID_bdt", discr_jetID_bdt, &b_discr_jetID_bdt);
+  if (fChain->GetBranch("discr_fr01")) fChain->SetBranchAddress("discr_fr01", discr_fr01, &b_discr_fr01);
   if (fChain->GetBranch("trackMax")) fChain->SetBranchAddress("trackMax", trackMax, &b_trackMax);
   if (fChain->GetBranch("trackSum")) fChain->SetBranchAddress("trackSum", trackSum, &b_trackSum);
   if (fChain->GetBranch("trackN")) fChain->SetBranchAddress("trackN", trackN, &b_trackN);
@@ -743,36 +743,36 @@ void initTree(TChain *tree)
   if (fChain->GetBranch("muMax")) fChain->SetBranchAddress("muMax", muMax, &b_muMax);
   if (fChain->GetBranch("muSum")) fChain->SetBranchAddress("muSum", muSum, &b_muSum);
   if (fChain->GetBranch("muN")) fChain->SetBranchAddress("muN", muN, &b_muN);
-  //if (fChain->GetBranch("discr_ssvHighEff")) fChain->SetBranchAddress("discr_ssvHighEff", discr_ssvHighEff, &b_discr_ssvHighEff);
-  //if (fChain->GetBranch("discr_ssvHighPur")) fChain->SetBranchAddress("discr_ssvHighPur", discr_ssvHighPur, &b_discr_ssvHighPur);
-  //if (fChain->GetBranch("discr_csvV1")) fChain->SetBranchAddress("discr_csvV1", discr_csvV1, &b_discr_csvV1);
-  //if (fChain->GetBranch("discr_csvV2")) fChain->SetBranchAddress("discr_csvV2", discr_csvV2, &b_discr_csvV2);
-  //if (fChain->GetBranch("discr_muByIp3")) fChain->SetBranchAddress("discr_muByIp3", discr_muByIp3, &b_discr_muByIp3);
-  //if (fChain->GetBranch("discr_muByPt")) fChain->SetBranchAddress("discr_muByPt", discr_muByPt, &b_discr_muByPt);
-  //if (fChain->GetBranch("discr_prob")) fChain->SetBranchAddress("discr_prob", discr_prob, &b_discr_prob);
-  //if (fChain->GetBranch("discr_probb")) fChain->SetBranchAddress("discr_probb", discr_probb, &b_discr_probb);
-  //if (fChain->GetBranch("discr_tcHighEff")) fChain->SetBranchAddress("discr_tcHighEff", discr_tcHighEff, &b_discr_tcHighEff);
-  //if (fChain->GetBranch("discr_tcHighPur")) fChain->SetBranchAddress("discr_tcHighPur", discr_tcHighPur, &b_discr_tcHighPur);
-  //if (fChain->GetBranch("ndiscr_ssvHighEff")) fChain->SetBranchAddress("ndiscr_ssvHighEff", ndiscr_ssvHighEff, &b_ndiscr_ssvHighEff);
-  //if (fChain->GetBranch("ndiscr_ssvHighPur")) fChain->SetBranchAddress("ndiscr_ssvHighPur", ndiscr_ssvHighPur, &b_ndiscr_ssvHighPur);
-  //if (fChain->GetBranch("ndiscr_csvV1")) fChain->SetBranchAddress("ndiscr_csvV1", ndiscr_csvV1, &b_ndiscr_csvV1);
-  //if (fChain->GetBranch("ndiscr_csvV2")) fChain->SetBranchAddress("ndiscr_csvV2", ndiscr_csvV2, &b_ndiscr_csvV2);
-  //if (fChain->GetBranch("ndiscr_muByPt")) fChain->SetBranchAddress("ndiscr_muByPt", ndiscr_muByPt, &b_ndiscr_muByPt);
-  //if (fChain->GetBranch("pdiscr_csvV1")) fChain->SetBranchAddress("pdiscr_csvV1", pdiscr_csvV1, &b_pdiscr_csvV1);
-  //if (fChain->GetBranch("pdiscr_csvV2")) fChain->SetBranchAddress("pdiscr_csvV2", pdiscr_csvV2, &b_pdiscr_csvV2);
-  //if (fChain->GetBranch("nsvtx")) fChain->SetBranchAddress("nsvtx", nsvtx, &b_nsvtx);
-  //if (fChain->GetBranch("svtxntrk")) fChain->SetBranchAddress("svtxntrk", svtxntrk, &b_svtxntrk);
-  //if (fChain->GetBranch("svtxdl")) fChain->SetBranchAddress("svtxdl", svtxdl, &b_svtxdl);
-  //if (fChain->GetBranch("svtxdls")) fChain->SetBranchAddress("svtxdls", svtxdls, &b_svtxdls);
-  //if (fChain->GetBranch("svtxdl2d")) fChain->SetBranchAddress("svtxdl2d", svtxdl2d, &b_svtxdl2d);
-  //if (fChain->GetBranch("svtxdls2d")) fChain->SetBranchAddress("svtxdls2d", svtxdls2d, &b_svtxdls2d);
-  //if (fChain->GetBranch("svtxm")) fChain->SetBranchAddress("svtxm", svtxm, &b_svtxm);
-  //if (fChain->GetBranch("svtxpt")) fChain->SetBranchAddress("svtxpt", svtxpt, &b_svtxpt);
-  //if (fChain->GetBranch("svtxmcorr")) fChain->SetBranchAddress("svtxmcorr", svtxmcorr, &b_svtxmcorr);
-  //if (fChain->GetBranch("nIPtrk")) fChain->SetBranchAddress("nIPtrk", nIPtrk, &b_nIPtrk);
-  //if (fChain->GetBranch("nselIPtrk")) fChain->SetBranchAddress("nselIPtrk", nselIPtrk, &b_nselIPtrk);
-  //if (fChain->GetBranch("mue")) fChain->SetBranchAddress("mue", mue, &b_mue);
-  //if (fChain->GetBranch("mupt")) fChain->SetBranchAddress("mupt", mupt, &b_mupt);
+  if (fChain->GetBranch("discr_ssvHighEff")) fChain->SetBranchAddress("discr_ssvHighEff", discr_ssvHighEff, &b_discr_ssvHighEff);
+  if (fChain->GetBranch("discr_ssvHighPur")) fChain->SetBranchAddress("discr_ssvHighPur", discr_ssvHighPur, &b_discr_ssvHighPur);
+  if (fChain->GetBranch("discr_csvV1")) fChain->SetBranchAddress("discr_csvV1", discr_csvV1, &b_discr_csvV1);
+  if (fChain->GetBranch("discr_csvV2")) fChain->SetBranchAddress("discr_csvV2", discr_csvV2, &b_discr_csvV2);
+  if (fChain->GetBranch("discr_muByIp3")) fChain->SetBranchAddress("discr_muByIp3", discr_muByIp3, &b_discr_muByIp3);
+  if (fChain->GetBranch("discr_muByPt")) fChain->SetBranchAddress("discr_muByPt", discr_muByPt, &b_discr_muByPt);
+  if (fChain->GetBranch("discr_prob")) fChain->SetBranchAddress("discr_prob", discr_prob, &b_discr_prob);
+  if (fChain->GetBranch("discr_probb")) fChain->SetBranchAddress("discr_probb", discr_probb, &b_discr_probb);
+  if (fChain->GetBranch("discr_tcHighEff")) fChain->SetBranchAddress("discr_tcHighEff", discr_tcHighEff, &b_discr_tcHighEff);
+  if (fChain->GetBranch("discr_tcHighPur")) fChain->SetBranchAddress("discr_tcHighPur", discr_tcHighPur, &b_discr_tcHighPur);
+  if (fChain->GetBranch("ndiscr_ssvHighEff")) fChain->SetBranchAddress("ndiscr_ssvHighEff", ndiscr_ssvHighEff, &b_ndiscr_ssvHighEff);
+  if (fChain->GetBranch("ndiscr_ssvHighPur")) fChain->SetBranchAddress("ndiscr_ssvHighPur", ndiscr_ssvHighPur, &b_ndiscr_ssvHighPur);
+  if (fChain->GetBranch("ndiscr_csvV1")) fChain->SetBranchAddress("ndiscr_csvV1", ndiscr_csvV1, &b_ndiscr_csvV1);
+  if (fChain->GetBranch("ndiscr_csvV2")) fChain->SetBranchAddress("ndiscr_csvV2", ndiscr_csvV2, &b_ndiscr_csvV2);
+  if (fChain->GetBranch("ndiscr_muByPt")) fChain->SetBranchAddress("ndiscr_muByPt", ndiscr_muByPt, &b_ndiscr_muByPt);
+  if (fChain->GetBranch("pdiscr_csvV1")) fChain->SetBranchAddress("pdiscr_csvV1", pdiscr_csvV1, &b_pdiscr_csvV1);
+  if (fChain->GetBranch("pdiscr_csvV2")) fChain->SetBranchAddress("pdiscr_csvV2", pdiscr_csvV2, &b_pdiscr_csvV2);
+  if (fChain->GetBranch("nsvtx")) fChain->SetBranchAddress("nsvtx", nsvtx, &b_nsvtx);
+  if (fChain->GetBranch("svtxntrk")) fChain->SetBranchAddress("svtxntrk", svtxntrk, &b_svtxntrk);
+  if (fChain->GetBranch("svtxdl")) fChain->SetBranchAddress("svtxdl", svtxdl, &b_svtxdl);
+  if (fChain->GetBranch("svtxdls")) fChain->SetBranchAddress("svtxdls", svtxdls, &b_svtxdls);
+  if (fChain->GetBranch("svtxdl2d")) fChain->SetBranchAddress("svtxdl2d", svtxdl2d, &b_svtxdl2d);
+  if (fChain->GetBranch("svtxdls2d")) fChain->SetBranchAddress("svtxdls2d", svtxdls2d, &b_svtxdls2d);
+  if (fChain->GetBranch("svtxm")) fChain->SetBranchAddress("svtxm", svtxm, &b_svtxm);
+  if (fChain->GetBranch("svtxpt")) fChain->SetBranchAddress("svtxpt", svtxpt, &b_svtxpt);
+  if (fChain->GetBranch("svtxmcorr")) fChain->SetBranchAddress("svtxmcorr", svtxmcorr, &b_svtxmcorr);
+  if (fChain->GetBranch("nIPtrk")) fChain->SetBranchAddress("nIPtrk", nIPtrk, &b_nIPtrk);
+  if (fChain->GetBranch("nselIPtrk")) fChain->SetBranchAddress("nselIPtrk", nselIPtrk, &b_nselIPtrk);
+  if (fChain->GetBranch("mue")) fChain->SetBranchAddress("mue", mue, &b_mue);
+  if (fChain->GetBranch("mupt")) fChain->SetBranchAddress("mupt", mupt, &b_mupt);
   if (fChain->GetBranch("mueta")) fChain->SetBranchAddress("mueta", mueta, &b_mueta);
   if (fChain->GetBranch("muphi")) fChain->SetBranchAddress("muphi", muphi, &b_muphi);
   if (fChain->GetBranch("mudr")) fChain->SetBranchAddress("mudr", mudr, &b_mudr);
@@ -814,5 +814,23 @@ void initTree(TChain *tree)
   if (fChain->GetBranch("gendphijt")) fChain->SetBranchAddress("gendphijt", gendphijt, &b_gendphijt);
   if (fChain->GetBranch("gendrjt")) fChain->SetBranchAddress("gendrjt", gendrjt, &b_gendrjt);
   if (fChain->GetBranch("gensubid")) fChain->SetBranchAddress("gensubid", gensubid, &b_gensubid);
+
+  if (fChain->GetBranch("ProcessID")) fChain->SetBranchAddress("ProcessID", &ProcessID, &b_ProcessID);
+  //if (fChain->GetBranch("pthat")) fChain->SetBranchAddress("pthat", &pthat, &b_pthat);
+  if (fChain->GetBranch("weight")) fChain->SetBranchAddress("weight", &weight, &b_weight);
+  if (fChain->GetBranch("alphaQCD")) fChain->SetBranchAddress("alphaQCD", &alphaQCD, &b_alphaQCD);
+  if (fChain->GetBranch("alphaQED")) fChain->SetBranchAddress("alphaQED", &alphaQED, &b_alphaQED);
+  if (fChain->GetBranch("qScale")) fChain->SetBranchAddress("qScale", &qScale, &b_qScale);
+  if (fChain->GetBranch("nMEPartons")) fChain->SetBranchAddress("nMEPartons", &nMEPartons, &b_nMEPartons);
+  if (fChain->GetBranch("nMEPartonsFiltered")) fChain->SetBranchAddress("nMEPartonsFiltered", &nMEPartonsFiltered, &b_nMEPartonsFiltered);
+  if (fChain->GetBranch("first")) fChain->SetBranchAddress("first", &first, &b_pdfID_first);
+  if (fChain->GetBranch("second")) fChain->SetBranchAddress("second", &second, &b_pdfID_second);
+  //if (fChain->GetBranch("first")) fChain->SetBranchAddress("first", &first, &b_pdfX_first);
+  //if (fChain->GetBranch("second")) fChain->SetBranchAddress("second", &second, &b_pdfX_second);
+  //if (fChain->GetBranch("first")) fChain->SetBranchAddress("first", &first, &b_pdfXpdf_first);
+  //if (fChain->GetBranch("second")) fChain->SetBranchAddress("second", &second, &b_pdfXpdf_second);
+  if (fChain->GetBranch("ttbar_w")) fChain->SetBranchAddress("ttbar_w", &ttbar_w, &b_ttbar_w);
+  if (fChain->GetBranch("npus")) fChain->SetBranchAddress("npus", &npus, &b_npus);
+  if (fChain->GetBranch("tnpus")) fChain->SetBranchAddress("tnpus", &tnpus, &b_tnpus);
 }
 #endif // #ifndef initTree_C
