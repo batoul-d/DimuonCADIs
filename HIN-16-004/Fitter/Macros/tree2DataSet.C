@@ -132,13 +132,13 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
     {
       setCentralityMap(Form("%s/Input/CentralityMap_PbPb2015.txt",gSystem->ExpandPathName(gSystem->pwd())));
       if (isMC) {
-        cols = new RooArgSet(*mass, *zed, *ctau, *ctauErr, *ctauTrue, *ptQQ, *rapQQ,/* *ptJet, *rapJet,*/ *cent, *weight);
+        cols = new RooArgSet(*mass, *zed, *ctau, *ctauErr, *ctauTrue, *ptQQ, *rapQQ, *cent, *weight);
         cols->add(*ctauNRes);
         cols->add(*ctauRes);
 	cols->add(*ptJet);
 	cols->add(*rapJet);
       } else {
-        cols = new RooArgSet(*mass, *zed, *ctau, *ctauErr, *ptQQ, *rapQQ,/* *ptJet, *rapJet,*/ *cent, *weight);
+        cols = new RooArgSet(*mass, *zed, *ctau, *ctauErr, *ptQQ, *rapQQ, *cent, *weight);
         cols->add(*ctauN);
 	cols->add(*ptJet);
 	cols->add(*rapJet);
@@ -150,13 +150,13 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
     else if (applyWeight_Corr)
     {
       if (isMC) {
-        cols = new RooArgSet(*mass, *zed, *ctau, *ctauErr, *ctauTrue, *ptQQ, *rapQQ,/* *ptJet, *rapJet,*/ *cent, *weightCorr);
+        cols = new RooArgSet(*mass, *zed, *ctau, *ctauErr, *ctauTrue, *ptQQ, *rapQQ, *cent, *weightCorr);
         cols->add(*ctauNRes);
         cols->add(*ctauRes);
 	cols->add(*ptJet);
 	cols->add(*rapJet);
       } else {
-        cols = new RooArgSet(*mass, *zed, *ctau, *ctauErr,/* *ptQQ, *rapQQ, *ptJet, *rapJet,*/ *cent, *weightCorr);
+        cols = new RooArgSet(*mass, *zed, *ctau, *ctauErr, *ptQQ, *rapQQ,*cent, *weightCorr);
         cols->add(*ctauN);
 	cols->add(*ptJet);
 	cols->add(*rapJet);
@@ -169,7 +169,7 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
     else
     {
       if (isMC) {
-        cols = new RooArgSet(*mass, *zed, *ctau, *ctauErr, *ctauTrue, *ptQQ,/* *rapQQ, *ptJet,*/ *rapJet, *cent);
+        cols = new RooArgSet(*mass, *zed, *ctau, *ctauErr, *ctauTrue, *ptQQ, *rapQQ,/* *ptJet, *rapJet,*/ *cent);
         cols->add(*ctauNRes);
         cols->add(*ctauRes);
 	cols->add(*ptJet);

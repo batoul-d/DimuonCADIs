@@ -499,8 +499,14 @@ bool setParameters(map<string, string> row, struct KinCuts& cut, map<string, str
   cut.dMuon.M.Max = 5.0;  
   cut.dMuon.AbsRap.Min = 0.0;
   cut.dMuon.AbsRap.Max = 2.4;
-  cut.dMuon.Pt.Min  =  0.0;
-  cut.dMuon.Pt.Max  =  1000.0;
+  cut.dMuon.Pt.Min  = 0.0;
+  cut.dMuon.Pt.Max  = 1000.0;
+  cut.dMuon.Zed.Min = 0.0;
+  cut.dMuon.Zed.Max = 1.0;
+  cut.jet.AbsRap.Min = 0.0;
+  cut.jet.AbsRap.Max = 2.4;
+  cut.jet.Pt.Min = 0.0;
+  cut.jet.Pt.Max = 1000.0;
   cut.Centrality.Start = 0;
   cut.Centrality.End = 200;
 
@@ -531,6 +537,42 @@ bool setParameters(map<string, string> row, struct KinCuts& cut, map<string, str
       cut.dMuon.Pt.Min = v.at(0); 
       cut.dMuon.Pt.Max = v.at(1);
     } 
+    else if (label=="zed"){
+      if (col->second=="" || col->second.find("-")==std::string::npos) {
+	cout << "[ERROR] Input column 'zed' has invalid value: " << col->second << endl; return false;
+      }
+      std::vector<double> v;
+      if(!parseString(col->second, "-", v)) { return false; }
+      if (v.size()!=2) {
+	cout << "[ERROR] Input column 'zed' has incorrect number of values, it should have 2 values but has: " << v.size() << endl; return false;
+      }
+      cut.dMuon.Zed.Min = (int) (2.0*v.at(0));
+      cut.dMuon.Zed.Max = (int) (2.0*v.at(1));
+    }
+    else if (label=="jetpt"){
+      if (col->second=="" || col->second.find("-")==std::string::npos) {
+	cout << "[ERROR] Input column 'jetpt' has invalid value: " << col->second << endl; return false;
+      }
+      std::vector<double> v;
+      if(!parseString(col->second, "-", v)) { return false; }
+      if (v.size()!=2) {
+	cout << "[ERROR] Input column 'jetpt' has incorrect number of values, it should have 2 values but has: " << v.size() << endl; return false;
+      }
+      cut.jet.Pt.Min = (int) (2.0*v.at(0));
+      cut.jet.Pt.Max = (int) (2.0*v.at(1));
+    }
+    else if (label=="jetrap"){
+      if (col->second=="" || col->second.find("-")==std::string::npos) {
+	cout << "[ERROR] Input column 'jetrap' has invalid value: " << col->second << endl; return false;
+      }
+      std::vector<double> v;
+      if(!parseString(col->second, "-", v)) { return false; }
+      if (v.size()!=2) {
+	cout << "[ERROR] Input column 'jetrap' has incorrect number of values, it should have 2 values but has: " << v.size() << endl; return false;
+      }
+      cut.jet.AbsRap.Min = (int) (2.0*v.at(0));
+      cut.jet.AbsRap.Max = (int) (2.0*v.at(1));
+    }
     else if (label=="cent"){
       if (isPbPb) {
         if (col->second=="" || col->second.find("-")==std::string::npos) {
@@ -544,7 +586,7 @@ bool setParameters(map<string, string> row, struct KinCuts& cut, map<string, str
         cut.Centrality.Start = (int) (2.0*v.at(0));
         cut.Centrality.End = (int) (2.0*v.at(1));
       }
-    } 
+    }
     else if (label=="mass"){
       if (col->second=="" || col->second.find("-")==std::string::npos) {
         cout << "[ERROR] Input column 'mass' has invalid value: " << col->second << endl; return false;

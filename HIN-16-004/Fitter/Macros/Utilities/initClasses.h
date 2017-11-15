@@ -86,9 +86,13 @@ typedef struct EvtPar {
 } EvtPar;
 
 typedef struct DiMuonPar {
-  MinMax ctau, ctauN, ctauNRes, ctauRes, ctauErr, ctauTrue, M, Pt, AbsRap;
+  MinMax ctau, ctauN, ctauNRes, ctauRes, ctauErr, ctauTrue, M, Pt, AbsRap, Zed;
   string ctauCut;
 } DiMuonPar;
+
+typedef struct JetPar {
+  MinMax Pt, AbsRap;
+} JetPar;
 
 typedef struct SiMuonPar {
   MinMax Pt, Eta;
@@ -103,6 +107,7 @@ typedef struct KinCuts {
   StartEnd   Centrality;
   SiMuonPar  sMuon;
   DiMuonPar  dMuon;
+  JetPar jet;
 } KinCuts;
 
 bool isEqualKinCuts(struct KinCuts cutA, struct KinCuts cutB, bool isPbPb) 
@@ -137,6 +142,13 @@ bool isEqualKinCuts(struct KinCuts cutA, struct KinCuts cutB, bool isPbPb)
   cond = cond && (cutA.dMuon.Pt.Max        == cutB.dMuon.Pt.Max);
   cond = cond && (cutA.dMuon.AbsRap.Min    == cutB.dMuon.AbsRap.Min);
   cond = cond && (cutA.dMuon.AbsRap.Max    == cutB.dMuon.AbsRap.Max);
+  cond = cond && (cutA.dMuon.Zed.Min       == cutB.dMuon.Zed.Min);
+  cond = cond && (cutA.dMuon.Zed.Max       == cutB.dMuon.Zed.Max);
+
+  cond = cond && (cutA.jet.Pt.Min          == cutB.jet.Pt.Min);
+  cond = cond && (cutA.jet.Pt.Max          == cutB.jet.Pt.Max);
+  cond = cond && (cutA.jet.AbsRap.Min      == cutB.jet.AbsRap.Min);
+  cond = cond && (cutA.jet.AbsRap.Max      == cutB.jet.AbsRap.Max);
 
   return cond;
 }
@@ -416,7 +428,7 @@ bool loadPreviousFitResult(RooWorkspace& myws, string FileName, string DSTAG, bo
   for (RooRealVar* it = (RooRealVar*)parIt->Next(); it!=NULL; it = (RooRealVar*)parIt->Next() ) {
     string name = it->GetName();
     if ( name=="invMass" || name=="ctau" || name=="ctauErr" || name=="ctauRes" || name=="ctauNRes" || name=="ctauN" ||
-         name=="ctauTrue" || name=="pt" || name=="cent" || 
+         name=="ctauTrue" || name=="pt" || name=="cent" || name=="zed" || name=="jetpt" || name=="jetrap" ||
          name=="rap" || name=="One" ) continue;
     if ( !loadNumberOfEvents && name.find("N_")!=std::string::npos ) continue;
     if (myws.var(name.c_str())) {
@@ -443,7 +455,7 @@ bool loadPreviousFitResult(RooWorkspace& myws, string FileName, string DSTAG, bo
   for (RooRealVar* it = (RooRealVar*)parFunIt->Next(); it!=NULL; it = (RooRealVar*)parFunIt->Next() ) {
     string name = it->GetName();
     if ( name=="invMass" || name=="ctau" || name=="ctauErr" || name=="ctauRes" || name=="ctauNRes" || name=="ctauN" ||
-         name=="ctauTrue" || name=="pt" || name=="cent" || 
+         name=="ctauTrue" || name=="pt" || name=="cent" || name=="zed" || name=="jetpt" || name=="jetrap" ||
          name=="rap" || name=="One" ) continue;
     if ( !loadNumberOfEvents && name.find("N_")!=std::string::npos ) continue;
     if (myws.var(name.c_str())) { 
@@ -625,6 +637,7 @@ int importDataset(RooWorkspace& myws, const RooWorkspace& inputWS, struct KinCut
   }
   string indMuonRap     = Form("(%.6f <= abs(rap) && abs(rap) < %.6f)",    cut.dMuon.AbsRap.Min,   cut.dMuon.AbsRap.Max);
   string indMuonPt      = Form("(%.6f <= pt && pt < %.6f)",                cut.dMuon.Pt.Min,       cut.dMuon.Pt.Max);
+  string indMuonZed     = Form("(%.2f <= zed && zed < %.2f",               cut.dMuon.Zed.Min,      cut.dMuon.Zed.Max);
   string indMuonCtau    = Form("(%.6f < ctau && ctau <= %.6f)",            cut.dMuon.ctau.Min,     cut.dMuon.ctau.Max); 
   if(cut.dMuon.ctauCut!=""){ indMuonCtau = cut.dMuon.ctauCut; }
   string indMuonCtauErr = Form("(%.12f < ctauErr && ctauErr < %.12f)",     cut.dMuon.ctauErr.Min,  cut.dMuon.ctauErr.Max);
@@ -633,7 +646,9 @@ int importDataset(RooWorkspace& myws, const RooWorkspace& inputWS, struct KinCut
   string indMuonCtauRes = Form("(%.12f < ctauRes && ctauRes < %.12f)",     cut.dMuon.ctauRes.Min,  cut.dMuon.ctauRes.Max);
   string indMuonCtauNRes = Form("(%.12f < ctauNRes && ctauNRes < %.12f)",  cut.dMuon.ctauNRes.Min, cut.dMuon.ctauNRes.Max);
   string indMuonCtauN   = Form("(%.12f < ctauN && ctauN < %.12f)",        cut.dMuon.ctauN.Min, cut.dMuon.ctauN.Max);
-  string strCut         = indMuonMass +"&&"+ indMuonRap +"&&"+ indMuonPt +"&&"+ indMuonCtau +"&&"+ indMuonCtauErr;
+  string injetRap       = Form("(%.6f <= abs(jet rap) && abs(jet rap) < %.6f)",    cut.jet.AbsRap.Min,   cut.jet.AbsRap.Max);
+  string injetPt        = Form("(%.6f <= pt(jet) && pt(jet) < %.6f)",                cut.jet.Pt.Min,       cut.jet.Pt.Max);
+  string strCut         = indMuonMass +"&&"+ indMuonRap +"&&"+ indMuonPt +"&&"+ indMuonZed +"&&"+ injetRap +"&&"+ injetPt +"&&"+ indMuonCtau +"&&"+ indMuonCtauErr;
   if (label.find("PbPb")!=std::string::npos){ strCut = strCut +"&&"+ inCentrality; }
   if (label.find("MC")!=std::string::npos){ strCut = strCut +"&&"+ indMuonCtauTrue +"&&"+ indMuonCtauNRes +"&&"+ indMuonCtauRes;  }
   else { strCut = strCut +"&&"+ indMuonCtauN;  }
@@ -676,6 +691,11 @@ int importDataset(RooWorkspace& myws, const RooWorkspace& inputWS, struct KinCut
   ((RooRealVar*)rowOS->find("ctau"))->setMax(cut.dMuon.ctau.Max);
   ((RooRealVar*)rowOS->find("ctauErr"))->setMin(cut.dMuon.ctauErr.Min);
   ((RooRealVar*)rowOS->find("ctauErr"))->setMax(cut.dMuon.ctauErr.Max);
+  ((RooRealVar*)rowOS->find("zed"))->setMin(cut.dMuon.Zed.Min);
+  ((RooRealVar*)rowOS->find("zed"))->setMax(cut.dMuon.Zed.Max);
+  ((RooRealVar*)rowOS->find("jetpt"))->setMin(cut.jet.Pt.Min);
+  ((RooRealVar*)rowOS->find("jetpt"))->setMax(cut.jet.Pt.Max);
+
   if (label.find("PbPb")!=std::string::npos){
     ((RooRealVar*)rowOS->find("cent"))->setMin(cut.Centrality.Start);      
     ((RooRealVar*)rowOS->find("cent"))->setMax(cut.Centrality.End);
@@ -706,6 +726,11 @@ int importDataset(RooWorkspace& myws, const RooWorkspace& inputWS, struct KinCut
       ((RooRealVar*)rowOS->find("ctau"))->setMax(cut.dMuon.ctau.Max);
       ((RooRealVar*)rowOS->find("ctauErr"))->setMin(cut.dMuon.ctauErr.Min);
       ((RooRealVar*)rowOS->find("ctauErr"))->setMax(cut.dMuon.ctauErr.Max);
+      ((RooRealVar*)rowOS->find("zed"))->setMin(cut.dMuon.Zed.Min);            
+      ((RooRealVar*)rowOS->find("zed"))->setMax(cut.dMuon.Zed.Max);
+      ((RooRealVar*)rowOS->find("jetpt"))->setMin(cut.jet.Pt.Min);            
+      ((RooRealVar*)rowOS->find("jetpt"))->setMax(cut.jet.Pt.Max);
+
       if (label.find("PbPb")!=std::string::npos){
         ((RooRealVar*)rowOS->find("cent"))->setMin(cut.Centrality.Start);      
         ((RooRealVar*)rowOS->find("cent"))->setMax(cut.Centrality.End);
@@ -745,6 +770,12 @@ int importDataset(RooWorkspace& myws, const RooWorkspace& inputWS, struct KinCut
   myws.var("ctau")->setMax(cut.dMuon.ctau.Max);
   myws.var("ctauErr")->setMin(cut.dMuon.ctauErr.Min);  
   myws.var("ctauErr")->setMax(cut.dMuon.ctauErr.Max);
+  myws.var("zed")->setMin(cut.dMuon.Zed.Min);            
+  myws.var("zed")->setMax(cut.dMuon.Zed.Max);
+  myws.var("jetpt")->setMin(cut.jet.Pt.Min);            
+  myws.var("jetpt")->setMax(cut.jet.Pt.Max);
+  myws.var("jetrap")->setMin(cut.jet.AbsRap.Min);       
+  myws.var("jetrap")->setMax(cut.jet.AbsRap.Max);
   if (label.find("PbPb")!=std::string::npos){
     myws.var("cent")->setMin(cut.Centrality.Start);      
     myws.var("cent")->setMax(cut.Centrality.End);
@@ -762,11 +793,17 @@ int importDataset(RooWorkspace& myws, const RooWorkspace& inputWS, struct KinCut
     myws.var("ctauN")->setMax(cut.dMuon.ctauN.Max);
   }
   cout << "[INFO] Analyzing bin: " << Form(
-                                           "%.3f < pt < %.3f, %.3f < rap < %.3f, %d < cent < %d", 
+                                           "%.3f < z < %.3f,%.3f < pt(JPsi) < %.3f, %.3f < rap(JPsi) < %.3f, %.3f < pt(jet) < %.3f, %.3f < rap(jet) < %.3f, %d < cent < %d", 
+					   cut.dMuon.Zed.Min,
+					   cut.dMuon.Zed.Max,
                                            cut.dMuon.Pt.Min,
                                            cut.dMuon.Pt.Max,
                                            cut.dMuon.AbsRap.Min,
                                            cut.dMuon.AbsRap.Max,
+					   cut.jet.Pt.Min,
+                                           cut.jet.Pt.Max,
+                                           cut.jet.AbsRap.Min,
+                                           cut.jet.AbsRap.Max,
                                            cut.Centrality.Start,
                                            cut.Centrality.End
                                            ) << endl;
