@@ -22,7 +22,7 @@ map<int, double>   fCentMap; // map for centrality-Ncoll mapping
 double             fCentBinning[200];
 int                fCentBins;
 TObjArray*         fcorrArray = NULL; // Array with the 2D correction for weighting
-double drmin = 1000;
+double drmin = 1;
 
 string  findMyTree(string FileName);
 string  findJetTree(string FileName);
@@ -112,7 +112,7 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
     iniBranch(theTree,isMC);                   // Initialize the Branches
     
     RooRealVar* mass    = new RooRealVar("invMass","#mu#mu mass", 1.0, 6.0, "GeV/c^{2}");
-    RooRealVar* zed     = new RooRealVar("zed", "z_{J/#psi}", -0.1, 2);
+    RooRealVar* zed     = new RooRealVar("zed", "z_{J/#psi}", -1, 2);
     RooRealVar* ctau    = new RooRealVar("ctau","c_{#tau}", -100000.0, 100000.0, "mm");
     RooRealVar* ctauN    = new RooRealVar("ctauN","c_{#tau}", -100000.0, 100000.0, "");
     RooRealVar* ctauTrue = new RooRealVar("ctauTrue","c_{#tau}", -100000.0, 100000.0, "mm");
@@ -231,21 +231,9 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
       theTree->GetEntry(jentry);
       
       for (int iQQ=0; iQQ<Reco_QQ_size; iQQ++) {
-	drmin= 1000;
+        TLorentzVector *RecoQQ4mom = (TLorentzVector*) Reco_QQ_4mom->At(iQQ);	
+	drmin= 1;
 	zed->setVal(-1);
-        TLorentzVector *RecoQQ4mom = (TLorentzVector*) Reco_QQ_4mom->At(iQQ);
-        mass->setVal(RecoQQ4mom->M());
-        if (theTree->GetBranch("Reco_QQ_ctau3D")) { ctau->setVal(Reco_QQ_ctau3D[iQQ]); }
-        else if (theTree->GetBranch("Reco_QQ_ctau")) { ctau->setVal(Reco_QQ_ctau[iQQ]); }
-        else { cout << "[ERROR] No ctau information found in the Onia Tree" << endl; }
-        if (theTree->GetBranch("Reco_QQ_ctauErr3D")) { ctauErr->setVal(Reco_QQ_ctauErr3D[iQQ]); }
-        else if (theTree->GetBranch("Reco_QQ_ctauErr")) { ctauErr->setVal(Reco_QQ_ctauErr[iQQ]); }
-        else { cout << "[ERROR] No ctauErr information found in the Onia Tree" << endl; }
-        
-        ctauN->setVal(ctau->getVal()/ctauErr->getVal());
-        ptQQ->setVal(RecoQQ4mom->Pt());
-        rapQQ->setVal(RecoQQ4mom->Rapidity());
-        cent->setVal(Centrality*CentFactor);
 	for (Long64_t ijet=0; ijet<nref; ijet++)
 	  {
 	    TLorentzVector v_jet;
@@ -255,46 +243,57 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
 		drmin = RecoQQ4mom->DeltaR (v_jet);
 		zed->setVal(RecoQQ4mom->Pt()/jtpt[ijet]);
 		ptJet->setVal(jtpt[ijet]);
-		rapJet->setVal(jty[ijet]);
+		rapJet->setVal(jty[ijet]);	
 	      }
 	  }
-
-        if (isMC) {
-          if (theTree->GetBranch("Reco_QQ_ctauTrue3D")) { ctauTrue->setVal(Reco_QQ_ctauTrue3D[iQQ]); }
-          else if (theTree->GetBranch("Reco_QQ_ctauTrue")) { ctauTrue->setVal(Reco_QQ_ctauTrue[iQQ]); }
-          else { cout << "[ERROR] No ctauTrue information found in the Onia Tree" << endl; }
-          ctauNRes->setVal( (ctau->getValV() - ctauTrue->getValV())/(ctauErr->getValV()) );
-          ctauRes->setVal( (ctau->getValV() - ctauTrue->getValV()) );
-        }
-
-        if (applyWeight){
-          double w = theTree->GetWeight();
-          if (isMC && isPbPb) w = w*normF;//*getNColl(Centrality,!isPbPb)*normF;
-          weight->setVal(w);
-        }
-        else if (applyWeight_Corr)
-        {
-          double Corr = getCorr(RecoQQ4mom->Rapidity(),RecoQQ4mom->Pt(),RecoQQ4mom->M(),!isPbPb);
-          double wCorr = 1/Corr;
-          weightCorr->setVal(wCorr);
-        }
+	mass->setVal(RecoQQ4mom->M());
+	if (theTree->GetBranch("Reco_QQ_ctau3D")) { ctau->setVal(Reco_QQ_ctau3D[iQQ]); }
+	else if (theTree->GetBranch("Reco_QQ_ctau")) { ctau->setVal(Reco_QQ_ctau[iQQ]); }
+	else { cout << "[ERROR] No ctau information found in the Onia Tree" << endl; }
+	if (theTree->GetBranch("Reco_QQ_ctauErr3D")) { ctauErr->setVal(Reco_QQ_ctauErr3D[iQQ]); }
+	else if (theTree->GetBranch("Reco_QQ_ctauErr")) { ctauErr->setVal(Reco_QQ_ctauErr[iQQ]); }
+	else { cout << "[ERROR] No ctauErr information found in the Onia Tree" << endl; }
         
-        if (
-            ( RecoQQ::areMuonsInAcceptance2015(iQQ) ) &&  // 2015 Global Muon Acceptance Cuts
-            ( RecoQQ::passQualityCuts2015(iQQ)      ) &&  // 2015 Soft Global Muon Quality Cuts
-            ( isPbPb ? (RecoQQ::isTriggerMatch(iQQ,triggerIndex_PbPb) || (usePeriPD ? RecoQQ::isTriggerMatch(iQQ,HI::HLT_HIL1DoubleMu0_2HF0_Cent30100_v1) : (RecoQQ::isTriggerMatch(iQQ,HI::HLT_HIL1DoubleMu0_2HF_v1) || RecoQQ::isTriggerMatch(iQQ,HI::HLT_HIL1DoubleMu0_2HF0_v1)))) :
+	ctauN->setVal(ctau->getVal()/ctauErr->getVal());
+	ptQQ->setVal(RecoQQ4mom->Pt());
+	rapQQ->setVal(RecoQQ4mom->Rapidity());
+	cent->setVal(Centrality*CentFactor);
+	if (isMC) {
+	  if (theTree->GetBranch("Reco_QQ_ctauTrue3D")) { ctauTrue->setVal(Reco_QQ_ctauTrue3D[iQQ]); }
+	  else if (theTree->GetBranch("Reco_QQ_ctauTrue")) { ctauTrue->setVal(Reco_QQ_ctauTrue[iQQ]); }
+	  else { cout << "[ERROR] No ctauTrue information found in the Onia Tree" << endl; }
+	  ctauNRes->setVal( (ctau->getValV() - ctauTrue->getValV())/(ctauErr->getValV()) );
+	  ctauRes->setVal( (ctau->getValV() - ctauTrue->getValV()) );
+	}
+	
+	if (applyWeight){
+	  double w = theTree->GetWeight();
+	  if (isMC && isPbPb) w = w*normF;//*getNColl(Centrality,!isPbPb)*normF;
+	  weight->setVal(w);
+	}
+	else if (applyWeight_Corr)
+	  {
+	    double Corr = getCorr(RecoQQ4mom->Rapidity(),RecoQQ4mom->Pt(),RecoQQ4mom->M(),!isPbPb);
+	    double wCorr = 1/Corr;
+	    weightCorr->setVal(wCorr);
+	  }
+        
+	if (
+	    ( RecoQQ::areMuonsInAcceptance2015(iQQ) ) &&  // 2015 Global Muon Acceptance Cuts
+	    ( RecoQQ::passQualityCuts2015(iQQ)      ) &&  // 2015 Soft Global Muon Quality Cuts
+	    ( isPbPb ? (RecoQQ::isTriggerMatch(iQQ,triggerIndex_PbPb) || (usePeriPD ? RecoQQ::isTriggerMatch(iQQ,HI::HLT_HIL1DoubleMu0_2HF0_Cent30100_v1) : (RecoQQ::isTriggerMatch(iQQ,HI::HLT_HIL1DoubleMu0_2HF_v1) || RecoQQ::isTriggerMatch(iQQ,HI::HLT_HIL1DoubleMu0_2HF0_v1)))) :
               RecoQQ::isTriggerMatch(iQQ, triggerIndex_PP) )     // if PbPb && !periPD then (HLT_HIL1DoubleMu0_v1 || HLT_HIL1DoubleMu0_2HF_v1)
-            )
-        {
-          if (Reco_QQ_sign[iQQ]==0) { // Opposite-Sign dimuons
-            if (isMC && isPureSDataset && isMatchedRecoDiMuon(iQQ)) dataOSNoBkg->add(*cols, (applyWeight ? weight->getVal() : 1.0)); // Signal-only dimuons
-            else if (applyWeight_Corr) dataOS->add(*cols,weightCorr->getVal()); //Signal and background dimuons
-            else dataOS->add(*cols, ( applyWeight ? weight->getVal() : 1.0)); //Signal and background dimuons            
-          }
-          else { // Like-Sign dimuons
-            if (!isPureSDataset && !applyWeight_Corr ) dataSS->add(*cols, ( applyWeight  ? weight->getVal() : 1.0));
-          }
-        }
+	    )
+	  {
+	    if (Reco_QQ_sign[iQQ]==0) { // Opposite-Sign dimuons
+	      if (isMC && isPureSDataset && isMatchedRecoDiMuon(iQQ)) dataOSNoBkg->add(*cols, (applyWeight ? weight->getVal() : 1.0)); // Signal-only dimuons
+	      else if (applyWeight_Corr) dataOS->add(*cols,weightCorr->getVal()); //Signal and background dimuons
+	      else dataOS->add(*cols, ( applyWeight ? weight->getVal() : 1.0)); //Signal and background dimuons            
+	    }
+	    else { // Like-Sign dimuons
+	      if (!isPureSDataset && !applyWeight_Corr ) dataSS->add(*cols, ( applyWeight  ? weight->getVal() : 1.0));
+	    }
+	  }
       }
     }
     // Close the TChain and all its pointers
@@ -345,8 +344,8 @@ string findMyTree(string FileName)
 {
   TFile *f = TFile::Open(FileName.c_str(), "READ");
   string name = "";
-  if(f->GetListOfKeys()->Contains("hionia")){ name = "hionia/myTree"; cout<<"fount onia Tree";}
-  else if(f->GetListOfKeys()->Contains("myTree")){ name = "myTree"; cout<<"found onia Tree";}
+  if(f->GetListOfKeys()->Contains("hionia")){ name = "hionia/myTree";}
+  else if(f->GetListOfKeys()->Contains("myTree")){ name = "myTree";}
   else { cout << "[ERROR] myTree was not found in: " << FileName << endl;}
   //htr = (TTree*)f->Get(name.c_str());
   f->Close(); delete f;

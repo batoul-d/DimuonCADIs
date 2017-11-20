@@ -631,23 +631,23 @@ bool loadSPlotDS(RooWorkspace& myws, string FileName, string dsName)
 
 int importDataset(RooWorkspace& myws, const RooWorkspace& inputWS, struct KinCuts cut, string label, bool cutSideBand=false)
 {
-  string indMuonMass    = Form("(%.6f < invMass && invMass < %.6f)",       cut.dMuon.M.Min,       cut.dMuon.M.Max);
+  string indMuonMass    = Form("(%.6f < invMass && invMass < %.6f)",         cut.dMuon.M.Min,       cut.dMuon.M.Max);
   if (cutSideBand) {
     indMuonMass =  indMuonMass + "&&" + "((2.0 < invMass && invMass < 2.8) || (3.3 < invMass && invMass < 3.5) || (3.9 < invMass && invMass < 5.0))";
   }
-  string indMuonRap     = Form("(%.6f <= abs(rap) && abs(rap) < %.6f)",    cut.dMuon.AbsRap.Min,   cut.dMuon.AbsRap.Max);
-  string indMuonPt      = Form("(%.6f <= pt && pt < %.6f)",                cut.dMuon.Pt.Min,       cut.dMuon.Pt.Max);
-  string indMuonZed     = Form("(%.2f <= zed && zed < %.2f",               cut.dMuon.Zed.Min,      cut.dMuon.Zed.Max);
-  string indMuonCtau    = Form("(%.6f < ctau && ctau <= %.6f)",            cut.dMuon.ctau.Min,     cut.dMuon.ctau.Max); 
+  string indMuonRap     = Form("(%.6f <= abs(rap) && abs(rap) < %.6f)",      cut.dMuon.AbsRap.Min,   cut.dMuon.AbsRap.Max);
+  string indMuonPt      = Form("(%.6f <= pt && pt < %.6f)",                  cut.dMuon.Pt.Min,       cut.dMuon.Pt.Max);
+  string indMuonZed     = Form("(%.2f <= zed && zed < %.2f)",                cut.dMuon.Zed.Min,      cut.dMuon.Zed.Max);
+  string indMuonCtau    = Form("(%.6f < ctau && ctau <= %.6f)",              cut.dMuon.ctau.Min,     cut.dMuon.ctau.Max); 
   if(cut.dMuon.ctauCut!=""){ indMuonCtau = cut.dMuon.ctauCut; }
-  string indMuonCtauErr = Form("(%.12f < ctauErr && ctauErr < %.12f)",     cut.dMuon.ctauErr.Min,  cut.dMuon.ctauErr.Max);
-  string inCentrality   = Form("(%d <= cent && cent < %d)",                cut.Centrality.Start,   cut.Centrality.End);
-  string indMuonCtauTrue = Form("(%.12f < ctauTrue && ctauTrue < %.12f)",  cut.dMuon.ctauTrue.Min, cut.dMuon.ctauTrue.Max);
-  string indMuonCtauRes = Form("(%.12f < ctauRes && ctauRes < %.12f)",     cut.dMuon.ctauRes.Min,  cut.dMuon.ctauRes.Max);
-  string indMuonCtauNRes = Form("(%.12f < ctauNRes && ctauNRes < %.12f)",  cut.dMuon.ctauNRes.Min, cut.dMuon.ctauNRes.Max);
-  string indMuonCtauN   = Form("(%.12f < ctauN && ctauN < %.12f)",        cut.dMuon.ctauN.Min, cut.dMuon.ctauN.Max);
-  string injetRap       = Form("(%.6f <= abs(jet rap) && abs(jet rap) < %.6f)",    cut.jet.AbsRap.Min,   cut.jet.AbsRap.Max);
-  string injetPt        = Form("(%.6f <= pt(jet) && pt(jet) < %.6f)",                cut.jet.Pt.Min,       cut.jet.Pt.Max);
+  string indMuonCtauErr = Form("(%.12f < ctauErr && ctauErr < %.12f)",       cut.dMuon.ctauErr.Min,  cut.dMuon.ctauErr.Max);
+  string inCentrality   = Form("(%d <= cent && cent < %d)",                  cut.Centrality.Start,   cut.Centrality.End);
+  string indMuonCtauTrue = Form("(%.12f < ctauTrue && ctauTrue < %.12f)",    cut.dMuon.ctauTrue.Min, cut.dMuon.ctauTrue.Max);
+  string indMuonCtauRes = Form("(%.12f < ctauRes && ctauRes < %.12f)",       cut.dMuon.ctauRes.Min,  cut.dMuon.ctauRes.Max);
+  string indMuonCtauNRes = Form("(%.12f < ctauNRes && ctauNRes < %.12f)",    cut.dMuon.ctauNRes.Min, cut.dMuon.ctauNRes.Max);
+  string indMuonCtauN   = Form("(%.12f < ctauN && ctauN < %.12f)",           cut.dMuon.ctauN.Min, cut.dMuon.ctauN.Max);
+  string injetRap       = Form("(%.6f <= abs(jetrap) && abs(jetrap) < %.6f)",cut.jet.AbsRap.Min,   cut.jet.AbsRap.Max);
+  string injetPt        = Form("(%.6f <= jetpt && jetpt < %.6f)",            cut.jet.Pt.Min,       cut.jet.Pt.Max);
   string strCut         = indMuonMass +"&&"+ indMuonRap +"&&"+ indMuonPt +"&&"+ indMuonZed +"&&"+ injetRap +"&&"+ injetPt +"&&"+ indMuonCtau +"&&"+ indMuonCtauErr;
   if (label.find("PbPb")!=std::string::npos){ strCut = strCut +"&&"+ inCentrality; }
   if (label.find("MC")!=std::string::npos){ strCut = strCut +"&&"+ indMuonCtauTrue +"&&"+ indMuonCtauNRes +"&&"+ indMuonCtauRes;  }
@@ -662,7 +662,7 @@ int importDataset(RooWorkspace& myws, const RooWorkspace& inputWS, struct KinCut
   RooDataSet* dataOS = (RooDataSet*)inputWS.data(Form("dOS_%s", label.c_str()))->reduce(strCut.c_str());
   if (dataOS->sumEntries()==0){ 
     cout << "[ERROR] No events from dataset " <<  Form("dOS_%s", label.c_str()) << " passed the kinematic cuts!" << endl;
-    return -1;
+    //return -1;
   }
   myws.import(*dataOS);
   delete dataOS;
@@ -671,7 +671,7 @@ int importDataset(RooWorkspace& myws, const RooWorkspace& inputWS, struct KinCut
   {
     if (!(inputWS.data(Form("dSS_%s", label.c_str())))){
       cout << "[ERROR] The dataset " <<  Form("dSS_%s", label.c_str()) << " was not found!" << endl;
-      return -1;
+      //return -1;
     }
     RooDataSet* dataSS = (RooDataSet*)inputWS.data(Form("dSS_%s", label.c_str()))->reduce(strCut.c_str());
     if (dataSS->sumEntries()==0){

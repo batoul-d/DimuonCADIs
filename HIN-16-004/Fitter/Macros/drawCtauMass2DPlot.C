@@ -59,7 +59,7 @@ void drawCtauMass2DPlot(RooWorkspace& myws,   // Local workspace
   hPDF->Draw("LEGO2");
 
   gSystem->mkdir(Form("%sctauMass/%s/plot/pdf2D/", outputDir.c_str(), DSTAG.c_str()), kTRUE); 
-  cFigPDF->SaveAs(Form("%sctauMass/%s/plot/pdf2D/PLOT_%s_%s_%s%s_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.pdf", outputDir.c_str(), DSTAG.c_str(), "CTAUMASSPDF", DSTAG.c_str(), (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End));
+  cFigPDF->SaveAs(Form("%sctauMass/%s/plot/pdf2D/PLOT_%s_%s_%s%s_z%.0f%.0f_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.pdf", outputDir.c_str(), DSTAG.c_str(), "CTAUMASSPDF", DSTAG.c_str(), (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Zed.Min*10.0), (cut.dMuon.Zed.Max*10.0), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End));
 
   cFigPDF->Clear();
   cFigPDF->Close();
@@ -88,7 +88,7 @@ void drawCtauMass2DPlot(RooWorkspace& myws,   // Local workspace
   hDATA->Draw("LEGO2");
 
   gSystem->mkdir(Form("%sctauMass/%s/plot/pdf2D/", outputDir.c_str(), DSTAG.c_str()), kTRUE); 
-  cFigDATA->SaveAs(Form("%sctauMass/%s/plot/pdf2D/PLOT_%s_%s_%s%s_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.pdf", outputDir.c_str(), DSTAG.c_str(), "CTAUMASSDATA", DSTAG.c_str(), (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End));
+  cFigDATA->SaveAs(Form("%sctauMass/%s/plot/pdf2D/PLOT_%s_%s_%s%s_z%.0f%.0f_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.pdf", outputDir.c_str(), DSTAG.c_str(), "CTAUMASSDATA", DSTAG.c_str(), (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Zed.Min*10.0), (cut.dMuon.Zed.Max*10.0), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End));
 
   cFigDATA->Clear();
   cFigDATA->Close();
