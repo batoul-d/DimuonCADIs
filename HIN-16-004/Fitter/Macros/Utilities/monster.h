@@ -42,7 +42,7 @@ double doubleratio_nonprompt_syst(const char* workDir_pass, const char* workDir_
 #include "RooRealVar.h"
 #include "RooFormulaVar.h"
 #include "resultUtils.h"
-#include "../../../Efficiency/eff.h"
+//#include "../../../Efficiency/eff.h"
 #include "../../Systematics/syst.C"
 
 // simple function for quadratic sum
@@ -370,9 +370,9 @@ double doubleratio_monster_generic(const char* workDir_pass, const char* workDir
    double rfrac_pp_fail_err = PbPbonly ? 0 : poiErrFromBin(workDir_fail, "PP", "RFrac2Svs1S", thebin, "DATA", prependPath);
 
    TString prependPathForEff("../Efficiency"); if (TString(prependPath) != "") prependPathForEff = TString(prependPath) + "/" + prependPathForEff;
-   double effjpsi_pp_P = ljpsieff("jpsi","pp",thebin,prependPathForEff); 
-   double effpsip_pp_P = ljpsieff("psi2s","pp",thebin,prependPathForEff);
-   double effjpsi_pp_NP = ljpsieff("npjpsi","pp",thebin,prependPathForEff); 
+   double effjpsi_pp_P =1;// ljpsieff("jpsi","pp",thebin,prependPathForEff); 
+   double effpsip_pp_P = 1;//ljpsieff("psi2s","pp",thebin,prependPathForEff);
+   double effjpsi_pp_NP = 1;//ljpsieff("npjpsi","pp",thebin,prependPathForEff); 
 
    TString TSprependPath(prependPath); if (TSprependPath != "") TSprependPath += "/";
 

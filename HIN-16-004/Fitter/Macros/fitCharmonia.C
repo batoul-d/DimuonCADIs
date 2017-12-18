@@ -42,6 +42,7 @@ bool fitCharmonia( const RooWorkspace&  inputWorkspace,  // Workspace with all t
                    bool wantPureSMC  = false,      // Flag to indicate if we want to fit pure signal MC
                    map<string, string> inputFitDir={},// User-defined Location of the fit results
                    const char* applyCorr ="",      // Flag to indicate if we want corrected dataset and which correction
+		   bool applyJEC = false,
                    int  numCores     = 2,          // Number of cores used for fitting
                    // Select the drawing options
                    bool setLogScale  = true,       // Draw plot with log scale
@@ -104,7 +105,7 @@ bool fitCharmonia( const RooWorkspace&  inputWorkspace,  // Workspace with all t
     if ( !fitCharmoniaMassModel( myws, inputWorkspace, cut, parIni, opt, outputDir, 
                                  DSTAG, isPbPb, importDS,
                                  incJpsi, incPsi2S, incBkg, 
-                                 doFit, cutCtau, doConstrFit, doSimulFit, wantPureSMC, applyCorr, loadFitResult, iFitDir, numCores,
+                                 doFit, cutCtau, doConstrFit, doSimulFit, wantPureSMC, applyCorr, applyJEC, loadFitResult, iFitDir, numCores,
                                  setLogScale, incSS, zoomPsi, ibWidth, getMeanPT 
                                  ) 
          ) { return false; }

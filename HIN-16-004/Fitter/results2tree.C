@@ -46,15 +46,19 @@ void results2tree(
                   const char* DSTag, //="DATA", // Data Set tag can be: "DATA","MCPSI2SP", "MCJPSIP" ...
                   const char* prependPath, //="",
                   const char* fitType, // "mass", "ctau"...
-                  const char* thePoiNames, //="N_Jpsi,b_Jpsi,f_Jpsi,m_Jpsi,sigma1_Jpsi,alpha_Jpsi,n_Jpsi,sigma2_Jpsi,rSigma21_Jpsi,
+		  bool wantPureSMC, // =false,
+		  const char* applyCorr, // = "",
+		  bool applyJEC, // = false,
+                  const char* thePoiNames //="N_Jpsi,b_Jpsi,f_Jpsi,m_Jpsi,sigma1_Jpsi,alpha_Jpsi,n_Jpsi,sigma2_Jpsi,rSigma21_Jpsi,
                   // lambda1_Bkg,lambda2_Bkg,lambda3_Bkg,lambda4_Bkg,lambda5_Bkg,N_Bkg,b_Bkg,
                   // ctau1_CtauRes,ctau2_CtauRes,f_CtauRes,rSigma21_CtauRes,sigma1_CtauRes,
                   // fDFSS_BkgNoPR,fDLIV_BkgNoPR,lambdaDDS_BkgNoPR,lambdaDF_BkgNoPR,lambdaDSS_BkgNoPR,lambdaDSS_JpsiNoPR,
                   // eff,effnp,acc,accnp,lumi,taa,ncoll,npart,correl_N_Jpsi_vs_b_Jpsi",
-                  bool wantPureSMC //=false
-) {
+		  ) {
   // workDirName: usual tag where to look for files in Output
   // thePoiNames: comma-separated list of parameters to store ("par1,par2,par3"). Default: all
+
+  //wantPureSMC = true;
   
   TFile *f = new TFile(treeFileName(workDirName,DSTag,prependPath,fitType),"RECREATE");
   TTree *tr = new TTree("fitresults","fit results");
@@ -62,7 +66,7 @@ void results2tree(
   bin<int> centbin_int(0,200); // Integrated bin to use in pp (to avoid centrality [-1,1000])
   
   // bin edges
-  float ptmin, ptmax, ymin, ymax, centmin, centmax;
+  float zmin, zmax, ptmin, ptmax, ymin, ymax, centmin, centmax;
   // model names
   Char_t jpsiName[128], bkgName[128];
   // collision system
@@ -83,6 +87,8 @@ void results2tree(
   cout << endl;
   
   // create tree branches
+  tr->Branch("zmin",&zmin,"zmin/F");
+  tr->Branch("zmax",&zmax,"zmax/F");
   tr->Branch("ptmin",&ptmin,"ptmin/F");
   tr->Branch("ptmax",&ptmax,"ptmax/F");
   tr->Branch("ymin",&ymin,"ymin/F");
@@ -134,6 +140,8 @@ void results2tree(
     
     // parse the file name to get info
     anabin thebin = binFromFile(*it);
+    zmin = thebin.zbin().low();
+    zmax = thebin.zbin().high();
     ptmin = thebin.ptbin().low();
     ptmax = thebin.ptbin().high();
     ymin = thebin.rapbin().low();
@@ -178,7 +186,9 @@ void results2tree(
       RooAbsPdf *model_bkg = pdfFromWS(ws, Form("_%s",collSystem), Form("pdf%s_Bkg",modelType.Data()));
       
       // get the dataset
-      const char* token = (strcmp(DSTag,"DATA") && wantPureSMC) ? Form("_%s_NoBkg",collSystem) : Form("_%s",collSystem);
+      const char* token = (strcmp(DSTag,"DATA") && wantPureSMC) ? Form("_%s_NoBkg%s",collSystem, (applyJEC?"_JEC":"")) : Form("_%s%s",collSystem,(applyJEC?"_JEC":""));
+      if (!strcmp(applyCorr,""))
+	token = (strcmp(DSTag,"DATA") && wantPureSMC) ? Form("_%s_NoBkg_%s%s",collSystem, applyCorr, (applyJEC?"_JEC":"")) : Form("_%s_%s%s",collSystem,applyCorr, (applyJEC?"_JEC":""));
       RooAbsData *dat = dataFromWS(ws, token, Form("dOS_%s", DSTag));
       
       if (dat) {
@@ -273,18 +283,18 @@ void results2tree(
         else if (TString(itpoi->name).Contains("eff") || TString(itpoi->name).Contains("acc")) {
           // efficiency
           TFile *feff(0x0);
-          if (TString(itpoi->name).Contains("eff")) feff = TFile::Open(Form("../Efficiency/files_eff/nominal/histos_%s_%s.root",
-                                         TString(itpoi->name)=="effnp" ? "npjpsi" : "jpsi",
-                                         isPP ? "pp" : "pbpb"));
-          else feff = TFile::Open(Form("../Efficiency/files_acc/nominal/histos_%s_%s.root",
-                                  TString(itpoi->name)=="accnp" ? "npjpsi" : "jpsi",
-                                  isPP ? "pp" : "pbpb"));
+          //if (TString(itpoi->name).Contains("eff")) feff = TFile::Open(Form("../Efficiency/files_eff/nominal/histos_%s_%s.root",
+	  //TString(itpoi->name)=="effnp" ? "npjpsi" : "jpsi",
+	  //                             isPP ? "pp" : "pbpb"));
+      //else feff = TFile::Open(Form("../Efficiency/files_acc/nominal/histos_%s_%s.root",
+	  //                      TString(itpoi->name)=="accnp" ? "npjpsi" : "jpsi",
+	  //                      isPP ? "pp" : "pbpb"));
           
           int catmin, catmax;
           bool isallcent = (thebin.centbin() == binI(0,200));
           bool isallrap = (thebin.rapbin() == binF(0,2.4));
           bool islowpt = (thebin.ptbin() == binF(3,6.5));
-          bool israpFwd = (thebin.rapbin() == binF(1.8,2.4));
+          bool israpFwd = (thebin.rapbin() == binF(1.6,2.4));
           bool ishighpt = ((thebin.ptbin() == binF(6.5,50)) || (thebin.ptbin() == binF(6.5,30)) || (thebin.ptbin() == binF(3.0,30)) );
           bool israpBin = (thebin.rapbin() == binF(0.,0.4)) || (thebin.rapbin() == binF(0.4,0.8)) || (thebin.rapbin() == binF(0.8,1.2)) || (thebin.rapbin() == binF(1.2,1.6)) || (thebin.rapbin() == binF(1.6,2.0)) || (thebin.rapbin() == binF(2.0,2.4));
           bool israpBin4PtCent = ((thebin.rapbin() == binF(0.,0.6)) || (thebin.rapbin() == binF(0.6,1.2)) || (thebin.rapbin() == binF(1.2,1.8)) || (thebin.rapbin() == binF(1.8,2.4)) || (thebin.rapbin() == binF(0.,1.6)) || (thebin.rapbin() == binF(1.6,2.4)));
@@ -301,82 +311,82 @@ void results2tree(
           bool isFwdLowPtCentPP = !isPtCentPbPb && !isPtCentPP && !isPtRap && !isPt && !isRap && !isCent && !isCentRap && !isCentRapIntPbPb && !isFwdLowPtCentPbPb && !ishighpt && islowpt && israpFwd && isPP && isallcent;
           bool isallInt = !isPtCentPbPb && !isPtCentPP && !isPtRap && !isPt && !isRap && !isCent && !isCentRap && !isFwdLowPtCentPbPb && !isFwdLowPtCentPP && isallcent && isallrap && ishighpt;
           
-          TString hnumname, hdenname;
-          TString tag1, tag2;
-          if (isPtCentPbPb || isPtCentPP || isPtRap || isPt || isCent || isCentRap || isCentRapIntPbPb)
-          {
-            if (isPtCentPbPb || isPtCentPP) {tag2 = "cent"; tag1 = "pt";}
-            if (isPtRap || isPt) {tag2 = "rap"; tag1 = "pt";}
-            if (isCent || isCentRap || isCentRapIntPbPb) {tag2 = "rap"; tag1 = "cent";}
+          //TString hnumname, hdenname;
+          //TString tag1, tag2;
+          //if (isPtCentPbPb || isPtCentPP || isPtRap || isPt || isCent || isCentRap || isCentRapIntPbPb)
+          //{
+	  //if (isPtCentPbPb || isPtCentPP) {tag2 = "cent"; tag1 = "pt";}
+	  //if (isPtRap || isPt) {tag2 = "rap"; tag1 = "pt";}
+	  //if (isCent || isCentRap || isCentRapIntPbPb) {tag2 = "rap"; tag1 = "cent";}
             
-            if (tag2 == "cent")
-            {
-              catmin = (TString(itpoi->name).Contains("acc") || isPtCentPP) ? 0 : thebin.centbin().low()/2;
-              catmax = (TString(itpoi->name).Contains("acc") || isPtCentPP) ? 10 : thebin.centbin().high()/2;
-            }
-            else
-            {
-              catmin = thebin.rapbin().low()*10;
-              catmax = thebin.rapbin().high()*10;
-            }
+	  //if (tag2 == "cent")
+	  //{
+	  //catmin = (TString(itpoi->name).Contains("acc") || isPtCentPP) ? 0 : thebin.centbin().low()/2;
+	  //catmax = (TString(itpoi->name).Contains("acc") || isPtCentPP) ? 10 : thebin.centbin().high()/2;
+	  //}
+	  //else
+	  //{
+	  //catmin = thebin.rapbin().low()*10;
+	  //catmax = thebin.rapbin().high()*10;
+	  //}
             
-            hnumname = Form("hnum_%s_%s%02i%02i", tag1.Data(), tag2.Data(), catmin, catmax);
-            hdenname = Form("hden_%s_%s%02i%02i", tag1.Data(), tag2.Data(), catmin, catmax);
-          }
-          else if (isRap || isallInt)
-          {
-            tag1 = "rap";
-            hnumname = "hnum_rap";
-            hdenname = "hden_rap";
-          }
-          else if (isFwdLowPtCentPbPb || isFwdLowPtCentPP)
-          {
-            tag1 = "cent";
-            hnumname = "hnum_cent_rap1824_pt3065";
-            hdenname = "hden_cent_rap1824_pt3065";
-          }
-          else
-          {
-            cout << "ERROR: no histo defined for this bin:" << endl;
-            thebin.print();
-          }
-
-          TH1F *hnum = (TH1F*) feff->Get(hnumname);
-          TH1F *hden = (TH1F*) feff->Get(hdenname);
-          if (!hnum || !hden) {
-            thebin.print();
-            cout << hnumname << " not found!" << endl;
-            itpoi->val = 0;
-            itpoi->errL = 0;
-            itpoi->errH = itpoi->errL;
-            continue;
-          }
+	  //hnumname = Form("hnum_%s_%s%02i%02i", tag1.Data(), tag2.Data(), catmin, catmax);
+	  //hdenname = Form("hden_%s_%s%02i%02i", tag1.Data(), tag2.Data(), catmin, catmax);
+}//
+//else if (isRap || isallInt)
+//{
+//tag1 = "rap";
+//          hnumname = "hnum_rap";
+//          hdenname = "hden_rap";
+//        }
+//        else if (isFwdLowPtCentPbPb || isFwdLowPtCentPP)
+//        {
+//          tag1 = "cent";
+//          hnumname = "hnum_cent_rap1824_pt3065";
+//          hdenname = "hden_cent_rap1824_pt3065";
+//        }
+//        else
+//        {
+//          cout << "ERROR: no histo defined for this bin:" << endl;
+//          thebin.print();
+//        }
+//
+//        TH1F *hnum = (TH1F*) feff->Get(hnumname);
+//        TH1F *hden = (TH1F*) feff->Get(hdenname);
+//        if (!hnum || !hden) {
+//          thebin.print();
+//          cout << hnumname << " not found!" << endl;
+//          itpoi->val = 0;
+//          itpoi->errL = 0;
+//          itpoi->errH = itpoi->errL;
+//          continue;
+//        }
           
-          double numval, numerr, denval, denerr;
-          int ibin = hnum->FindBin((thebin.centbin().low()+thebin.centbin().high())/4.);
-          if (tag1 == "cent" && (TString(itpoi->name).Contains("acc") || isFwdLowPtCentPP || (isCentRap && isPP))) ibin = 1;
-          else if (tag1 == "pt") ibin = hnum->FindBin((thebin.ptbin().low()+thebin.ptbin().high())/2.);
-          else if (tag1 == "rap") ibin = hnum->FindBin((thebin.rapbin().low()+thebin.rapbin().high())/2.);
-          cout << "bin: " << ibin << " ; " << hnum->GetBinCenter(ibin) << endl;
-          numval = hnum->GetBinContent(ibin);
-          numerr = hnum->GetBinError(ibin);
-          denval = hden->GetBinContent(ibin);
-          denerr = hden->GetBinError(ibin);
-          if (isallInt || isCentRapIntPbPb) {
-            cout << "Will use integrated efficiency" << endl;
-            numval = hnum->IntegralAndError(1,hnum->GetNbinsX(),numerr);
-            denval = hden->IntegralAndError(1,hden->GetNbinsX(),denerr);
-          }
-          double efficiency = (denval>0) ? numval / denval : 0;
-          itpoi->val = efficiency;
-          itpoi->errL = (numval>0 && denval>0) ? efficiency*sqrt(pow(numerr/numval,2)+pow(denerr/denval,2)) : 0;
-          itpoi->errH = itpoi->errL;
-          
-          thebin.print();
-          cout << hnumname << " ; " << hdenname << (TString(itpoi->name).Contains("eff") ? " ; eff = " : " ; acc = ") << efficiency << endl;
-          
-          delete feff;
-        }
+//        double numval, numerr, denval, denerr;
+//        int ibin = hnum->FindBin((thebin.centbin().low()+thebin.centbin().high())/4.);
+//        if (tag1 == "cent" && (TString(itpoi->name).Contains("acc") || isFwdLowPtCentPP || (isCentRap && isPP))) ibin = 1;
+//        else if (tag1 == "pt") ibin = hnum->FindBin((thebin.ptbin().low()+thebin.ptbin().high())/2.);
+//        else if (tag1 == "rap") ibin = hnum->FindBin((thebin.rapbin().low()+thebin.rapbin().high())/2.);
+//        cout << "bin: " << ibin << " ; " << hnum->GetBinCenter(ibin) << endl;
+//        numval = hnum->GetBinContent(ibin);
+//        numerr = hnum->GetBinError(ibin);
+//        denval = hden->GetBinContent(ibin);
+//        denerr = hden->GetBinError(ibin);
+//        if (isallInt || isCentRapIntPbPb) {
+//          cout << "Will use integrated efficiency" << endl;
+//          numval = hnum->IntegralAndError(1,hnum->GetNbinsX(),numerr);
+//          denval = hden->IntegralAndError(1,hden->GetNbinsX(),denerr);
+//        }
+//        double efficiency = (denval>0) ? numval / denval : 0;
+//        itpoi->val = efficiency;
+//        itpoi->errL = (numval>0 && denval>0) ? efficiency*sqrt(pow(numerr/numval,2)+pow(denerr/denval,2)) : 0;
+//        itpoi->errH = itpoi->errL;
+//        
+//        thebin.print();
+//        cout << hnumname << " ; " << hdenname << (TString(itpoi->name).Contains("eff") ? " ; eff = " : " ; acc = ") << efficiency << endl;
+//        
+//        delete feff;
+//      }
         else if (TString(itpoi->name)=="lumi") {
           // luminosity and Ncoll
           if (isPP) {
@@ -440,7 +450,6 @@ void results2tree(
     cnt++;
     cout << endl;
   } // loop on the files
-  
   f->Write();
   f->Close();
   cout << "Tree with results created" << endl;

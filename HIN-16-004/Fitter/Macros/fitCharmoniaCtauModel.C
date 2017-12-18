@@ -173,6 +173,7 @@ bool fitCharmoniaCtauModel( RooWorkspace& myws,             // Local Workspace
       bool getMeanPT = false;
       bool zoomPsi = false;
       const char* applyCorr = "";
+      bool applyJEC = false;
       bool doSimulFit = false;
       bool cutCtau = false;
       bool doConstrFit = false;
@@ -180,7 +181,7 @@ bool fitCharmoniaCtauModel( RooWorkspace& myws,             // Local Workspace
       if ( !fitCharmoniaMassModel( myws, inputWorkspace, cut, parIni, opt, outputDir,
                                    DSTAG, isPbPb, impDS,
                                    true, incPsi2S, true,
-                                   doMassFit, cutCtau, doConstrFit, doSimulFit, false, applyCorr, loadMassFitResult, iMassFitDir, numCores,
+                                   doMassFit, cutCtau, doConstrFit, doSimulFit, false, applyCorr, applyJEC, loadMassFitResult, iMassFitDir, numCores,
                                    setLogScale, incSS, zoomPsi, ibWidth, getMeanPT
                                    )
            ) { return false; }

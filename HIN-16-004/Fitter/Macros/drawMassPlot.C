@@ -47,22 +47,28 @@ void drawMassPlot(RooWorkspace& myws,   // Local workspace
   bool applyWeight_Corr = false;
   if ( (plotLabel.find("AccEff")!=std::string::npos) || (plotLabel.find("_lJpsiEff")!=std::string::npos) ) applyWeight_Corr = true;
   else applyWeight_Corr = false;
+
+  bool applyJEC = false;
+  if (plotLabel.find("_JEC")!=std::string::npos) applyJEC = true;
+  else applyJEC = false;
+
   bool SB = (incBkg&&(!incPsi2S&&!incJpsi));
   
-  string dsOSName = Form("dOS_%s_%s", DSTAG.c_str(), (isPbPb?"PbPb":"PP"));
-  string dsSSName = Form("dSS_%s_%s", DSTAG.c_str(), (isPbPb?"PbPb":"PP"));
+  string dsOSName = Form("dOS_%s_%s%s", DSTAG.c_str(), (isPbPb?"PbPb":"PP"), (applyJEC?"_JEC":""));
+  string dsSSName = Form("dSS_%s_%s%s", DSTAG.c_str(), (isPbPb?"PbPb":"PP"), (applyJEC?"_JEC":""));
+  TString corrName = "";
   if(applyWeight_Corr)
-  {
-    TString corrName = "";
-    if (plotLabel.find("AccEff")!=std::string::npos) corrName = "AccEff";
-    else if (plotLabel.find("_lJpsiEff")!=std::string::npos) corrName = "lJpsiEff";
-    dsOSName = Form("dOS_%s_%s_%s", DSTAG.c_str(),(isPbPb?"PbPb":"PP"),corrName.Data());
-  }
+    {
+      if (plotLabel.find("AccEff")!=std::string::npos) corrName = "AccEff";
+      else if (plotLabel.find("_lJpsiEff")!=std::string::npos) corrName = "lJpsiEff";
+      dsOSName = Form("dOS_%s_%s_%s%s", DSTAG.c_str(),(isPbPb?"PbPb":"PP"),corrName.Data(), (applyJEC?"_JEC":""));
+    }
 //  if(applyWeight_Corr) dsSSName = Form("dSS_%s", DSTAG.c_str());
 
   string pdfName  = Form("pdfMASS_Tot_%s", (isPbPb?"PbPb":"PP"));
-  if (plotPureSMC) dsOSName = Form("dOS_%s_%s_NoBkg", DSTAG.c_str(), (isPbPb?"PbPb":"PP"));
-    
+  if (plotPureSMC) dsOSName = Form("dOS_%s_%s_NoBkg%s", DSTAG.c_str(), (isPbPb?"PbPb":"PP"), (applyJEC?"_JEC":""));
+  if (plotPureSMC && applyWeight_Corr) dsOSName = Form("dOS_%s_%s_NoBkg_%s%s", DSTAG.c_str(), (isPbPb?"PbPb":"PP"), corrName.Data(), (applyJEC?"_JEC":"")); 
+  
   bool isWeighted = myws.data(dsOSName.c_str())->isWeighted();
   string cutSB = parIni["BkgMassRange_FULL_Cut"];
   string cutSBLabel = parIni["BkgMassRange_FULL_Label"];
@@ -351,7 +357,7 @@ void drawMassPlot(RooWorkspace& myws,   // Local workspace
   if (cut.dMuon.AbsRap.Min>0.1) {t->DrawLatex(0.5175, 0.86-dy, Form("%.1f < |y^{#mu#mu}| < %.1f",cut.dMuon.AbsRap.Min,cut.dMuon.AbsRap.Max)); dy+=0.045;}
   else {t->DrawLatex(0.5175, 0.86-dy, Form("|y^{#mu#mu}| < %.1f",cut.dMuon.AbsRap.Max)); dy+=0.045;}
   t->DrawLatex(0.5175, 0.86-dy, Form("%g < p_{T}^{#mu#mu} < %g GeV/c",cut.dMuon.Pt.Min,cut.dMuon.Pt.Max)); dy+=0.045;
-  t->DrawLatex(0.5175, 0.86-dy, Form("%g < p_{T}^{jet} <%g GeV/c",cut.jet.Pt.Min,cut.jet.Pt.Max)); dy+=0.045;
+  t->DrawLatex(0.5175, 0.86-dy, Form("%g < p_{T}^{jet} < %g GeV/c",cut.jet.Pt.Min,cut.jet.Pt.Max)); dy+=0.045;
   if (isPbPb) {t->DrawLatex(0.5175, 0.86-dy, Form("Cent. %d-%d%%", (int)(cut.Centrality.Start/2), (int)(cut.Centrality.End/2))); dy+=0.045;}
   if (getMeanPT){
     if (incJpsi) {

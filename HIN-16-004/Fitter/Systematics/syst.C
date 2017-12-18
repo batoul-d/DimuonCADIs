@@ -39,7 +39,7 @@ map<anabin, syst> readSyst(const char* systfile, bool setSystZero) {
    string systname; getline(file,systname);
 
    string line;
-   double rapmin=0, rapmax=0, ptmin=0, ptmax=0, centmin=0, centmax=0, value=0;
+   double zmin=0, zmax=0, rapmin=0, rapmax=0, ptmin=0, ptmax=0, centmin=0, centmax=0, value=0;
 
    while (file.good()) {
       getline(file,line);
@@ -61,7 +61,7 @@ map<anabin, syst> readSyst(const char* systfile, bool setSystZero) {
          }
          cnt++;
       }
-      anabin thebin(rapmin, rapmax, ptmin, ptmax, centmin, centmax);
+      anabin thebin(zmin, zmax, rapmin, rapmax, ptmin, ptmax, centmin, centmax);
       syst thesyst; thesyst.value = (setSystZero ? 0. : value); thesyst.name = systname;
       ans[thebin] = thesyst;
    }
@@ -186,15 +186,15 @@ map<anabin, syst> readSyst_all(const char* collSystem, const char* poiname, cons
    map<anabin,syst> ans = combineSyst(systmap_all, "Total");
    systmap_all.push_back(ans);
 
-   if (doPrintTex) {
-      printTex(systmap_all, TString(texName).ReplaceAll(".tex","_cent.tex").Data(), anabin(0,2.4,6.5,50,0,0));
-      printTex(systmap_all, TString(texName).ReplaceAll(".tex","_pt.tex").Data(), anabin(0,2.4,0,0,0,200));
-      printTex(systmap_all, TString(texName).ReplaceAll(".tex","_rap.tex").Data(), anabin(0,0,6.5,50,0,200));
-      printTex(systmap_all, TString(texName).ReplaceAll(".tex","_ptrap.tex").Data(), anabin(0,-2.4,-6.5,-50,0,200));
-      printTex(systmap_all, TString(texName).ReplaceAll(".tex","_centrap.tex").Data(), anabin(0,-2.4,6.5,50,0,-200));
-      printTex(systmap_all, TString(texName).ReplaceAll(".tex","_ptcent.tex").Data(), anabin(0,2.4,-6.5,-50,0,-200));
-      printTex(systmap_all, TString(texName).ReplaceAll(".tex","_fwd.tex").Data(), anabin(1.8,2.4,0,0,0,-200));
-   }
+   //if (doPrintTex) {
+     //printTex(systmap_all, TString(texName).ReplaceAll(".tex","_cent.tex").Data(), anabin(0,2.4,6.5,50,0,0));
+     //printTex(systmap_all, TString(texName).ReplaceAll(".tex","_pt.tex").Data(), anabin(0,2.4,0,0,0,200));
+     //printTex(systmap_all, TString(texName).ReplaceAll(".tex","_rap.tex").Data(), anabin(0,0,6.5,50,0,200));
+     //printTex(systmap_all, TString(texName).ReplaceAll(".tex","_ptrap.tex").Data(), anabin(0,-2.4,-6.5,-50,0,200));
+     //printTex(systmap_all, TString(texName).ReplaceAll(".tex","_centrap.tex").Data(), anabin(0,-2.4,6.5,50,0,-200));
+     //printTex(systmap_all, TString(texName).ReplaceAll(".tex","_ptcent.tex").Data(), anabin(0,2.4,-6.5,-50,0,-200));
+     //printTex(systmap_all, TString(texName).ReplaceAll(".tex","_fwd.tex").Data(), anabin(1.8,2.4,0,0,0,-200));
+     //}
 
    return ans;
 };
@@ -219,7 +219,7 @@ void printTex(vector< map<anabin, syst> > theSysts, const char* texName, anabin 
    file<< "\\\\" << endl;
    file << "\\hline" << endl;
 
-   anabin oldbin(0,0,0,0,0,0);
+   anabin oldbin(0,0,0,0,0,0,0,0);
    map<anabin, vector<syst> > themap = vm2mv(theSysts);
    map<anabin, vector<syst> >::const_iterator itm;
    for (itm=themap.begin(); itm!=themap.end(); itm++) {
@@ -236,6 +236,8 @@ void printTex(vector< map<anabin, syst> > theSysts, const char* texName, anabin 
       // filter
       if ((mask.rapbin().low()>0 || mask.rapbin().high()>0) && (thebin.rapbin() != mask.rapbin())) continue;
       if ((mask.rapbin().low()<0 || mask.rapbin().high()<0) && (thebin.rapbin() == binF(-mask.rapbin().low(),-mask.rapbin().high()))) continue;
+      if ((mask.zbin().low()>0 || mask.zbin().high()>0) && (thebin.zbin() != mask.zbin())) continue;
+      if ((mask.zbin().low()<0 || mask.zbin().high()<0) && (thebin.zbin() == binF(-mask.zbin().low(),-mask.zbin().high()))) continue;
       if ((mask.ptbin().low()>0 || mask.ptbin().high()>0) && (thebin.ptbin() != mask.ptbin())) continue;
       if ((mask.ptbin().low()<0 || mask.ptbin().high()<0) && (thebin.ptbin() == binF(-mask.ptbin().low(),-mask.ptbin().high()))) continue;
       if ((mask.centbin().low()>0 || mask.centbin().high()>0) && (thebin.centbin() != mask.centbin())) continue;
@@ -247,6 +249,13 @@ void printTex(vector< map<anabin, syst> > theSysts, const char* texName, anabin 
          if (itm != themap.begin()) file << "\\hline" << endl;
          file.precision(1); file.setf(ios::fixed);
          file << thebin.rapbin().low() << " $< |y| < $ " << thebin.rapbin().high();
+      }
+      file << " & ";
+      if (thebin.zbin() == oldbin.zbin()) {
+         file << " - ";
+      } else {
+         file.precision(1); file.setf(ios::fixed);
+         file << thebin.zbin().low() << " $< \\z < $ " << thebin.zbin().high();
       }
       file << " & ";
       if (thebin.ptbin() == oldbin.ptbin()) {
@@ -348,7 +357,7 @@ RooWorkspace* getWorkspaceFromBin(anabin thebin, const char* workDirName, const 
   return wsClone;
 }
 
-void expandsyst(const char* input, const char* output, bool ptdep, bool rapdep, bool centdep) {
+void expandsyst(const char* input, const char* output, bool zdep, bool ptdep, bool rapdep, bool centdep) {
    set<anabin> sb = allbins();
    map<anabin, syst> ms = readSyst(input);
 
@@ -363,15 +372,17 @@ void expandsyst(const char* input, const char* output, bool ptdep, bool rapdep, 
    for (set<anabin>::const_iterator it=sb.begin(); it!=sb.end(); it++) {
       double value=0;
       for (map<anabin,syst>::const_iterator it2=ms.begin(); it2!=ms.end(); it2++) {
+         bool okz = (!zdep) || (it->zbin() == it2->first.zbin());
          bool okpt = (!ptdep) || (it->ptbin() == it2->first.ptbin());
          bool okrap = (!rapdep) || (it->rapbin() == it2->first.rapbin());
          bool okcent = (!centdep) || (it->centbin() == it2->first.centbin());
-         if (okpt && okrap && okcent) {
+         if (okpt && okz && okrap && okcent) {
             value = it2->second.value;
             break;
          }
       }
       of << it->rapbin().low() << "," << it->rapbin().high() << ","
+	 << it->zbin().low() << "," << it->zbin().high() << ","
          << it->ptbin().low() << "," << it->ptbin().high() << ","
          << it->centbin().low() << "," << it->centbin().high() << ","
          << value << endl;

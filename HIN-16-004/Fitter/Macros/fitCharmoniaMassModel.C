@@ -33,6 +33,7 @@ bool fitCharmoniaMassModel( RooWorkspace& myws,            // Local Workspace
                             bool doSimulFit  = false,      // Do simultaneous fit
                             bool wantPureSMC = false,      // Flag to indicate if we want to fit pure signal MC
                             const char* applyCorr ="",     // Flag to indicate if we want corrected dataset and which correction
+			    bool applyJEC = false,
                             uint loadFitResult = false,    // Load previous fit results
                             string inputFitDir = "",       // Location of the fit results
                             int  numCores    = 2,          // Number of cores used for fitting
@@ -78,6 +79,7 @@ bool fitCharmoniaMassModel( RooWorkspace& myws,            // Local Workspace
     string label = ((DSTAG.find("PP")!=std::string::npos) ? DSTAG.c_str() : Form("%s_%s", DSTAG.c_str(), "PP"));
     if (wantPureSMC) label += "_NoBkg";
     if (applyWeight_Corr) label += Form("_%s",applyCorr);
+    if (applyJEC) label += "_JEC";
     string dsName = Form("dOS_%s", label.c_str());
     if (importDS) {
       if ( !(myws.data(dsName.c_str())) ) {
@@ -102,6 +104,7 @@ bool fitCharmoniaMassModel( RooWorkspace& myws,            // Local Workspace
     if (incBkg)   { plotLabelPP += Form("_Bkg_%s", parIni["Model_Bkg_PP"].c_str());     }
     if (wantPureSMC) plotLabelPP +="_NoBkg";
     if (applyWeight_Corr) plotLabelPP +=Form("_%s",applyCorr);
+    if (applyJEC) plotLabelPP += "_JEC";
   }
 
   if (doSimulFit || isPbPb) {
@@ -114,6 +117,7 @@ bool fitCharmoniaMassModel( RooWorkspace& myws,            // Local Workspace
     string label = ((DSTAG.find("PbPb")!=std::string::npos) ? DSTAG.c_str() : Form("%s_%s", DSTAG.c_str(), "PbPb"));
     if (wantPureSMC) label += "_NoBkg";
     if (applyWeight_Corr) label += Form("_%s",applyCorr);
+    if (applyJEC) label += "_JEC";
     string dsName = Form("dOS_%s", label.c_str());
     if (importDS) {
       if ( !(myws.data(dsName.c_str())) ) {
@@ -138,6 +142,7 @@ bool fitCharmoniaMassModel( RooWorkspace& myws,            // Local Workspace
     if (incBkg)   { plotLabelPbPb += Form("_Bkg_%s", parIni["Model_Bkg_PbPb"].c_str());     }
     if (wantPureSMC) plotLabelPbPb += "_NoBkg";
     if (applyWeight_Corr) plotLabelPbPb += Form("_%s",applyCorr);
+    if (applyJEC) plotLabelPbPb +="_JEC";
   }
 
   if (doSimulFit) {
@@ -202,6 +207,7 @@ bool fitCharmoniaMassModel( RooWorkspace& myws,            // Local Workspace
     string label = ((DSTAG.find(COLL.c_str())!=std::string::npos) ? DSTAG.c_str() : Form("%s_%s", DSTAG.c_str(), COLL.c_str()));
     if (wantPureSMC) label += "_NoBkg";
     if (applyWeight_Corr) label += Form("_%s",applyCorr);
+    if (applyJEC) label+= "_JEC";
     string dsName = Form("dOS_%s", label.c_str());
       
     // check if we have already done this fit. If yes, do nothing and return true.

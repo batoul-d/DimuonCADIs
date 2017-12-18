@@ -15,13 +15,14 @@
 #include "Utilities/initTree.C"
 #include "Utilities/EVENTUTILS.h"
 #include "Utilities/initClasses.h"
-
+#include "TEfficiency.h"
 #include "TObjArray.h"
 
 map<int, double>   fCentMap; // map for centrality-Ncoll mapping
 double             fCentBinning[200];
 int                fCentBins;
 TObjArray*         fcorrArray = NULL; // Array with the 2D correction for weighting
+TH2F*              corrHist = NULL;
 double drmin = 1000;
 
 string  findMyTree(string FileName);
@@ -35,11 +36,11 @@ double  getNColl(int centr, bool isPP);
 double  getCorr(Double_t rapidity, Double_t pt, Double_t mass, bool isPP);
 bool    readCorrection(const char* file);
 void    setCentralityMap(const char* file);
+double  jecCorr(double jtPt, double rawPt, double jpsiPt);
 
 bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string DSName, string OutputFileName, bool UpdateDS=false)
 {
   RooDataSet* dataOS = NULL; RooDataSet* dataSS = NULL; RooDataSet* dataOSNoBkg = NULL;
-  
   bool isMC = false;
   if (DSName.find("MC")!=std::string::npos) isMC =true;
   
@@ -65,7 +66,6 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
   bool applyWeight_Corr = false;
   if ( (OutputFileName.find("_AccEff")!=std::string::npos) || (OutputFileName.find("_lJpsiEff")!=std::string::npos) ) applyWeight_Corr = true;
   if(applyWeight == true) applyWeight_Corr = false;
-  
   TString corrName = "";
   TString corrFileName = "";
   if (OutputFileName.find("_AccEff")!=std::string::npos)
@@ -78,29 +78,39 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
     corrFileName = "correction_lJpsiEff.root";
     corrName = "lJpsiEff";
   }
-  
+
+  bool applyJEC = false;
+  if (OutputFileName.find("_JEC")!=std::string::npos) applyJEC = true;
+
   bool createDS = ( gSystem->AccessPathName(OutputFileName.c_str()) || UpdateDS );
+
   if ( !gSystem->AccessPathName(OutputFileName.c_str()) ) {
   cout << "[INFO] Loading RooDataSet from " << OutputFileName << endl;
     
   TFile *DBFile = TFile::Open(OutputFileName.c_str(),"READ");
   if (isMC && isPureSDataset) {
-  dataOSNoBkg = (RooDataSet*)DBFile->Get(Form("dOS_%s_NoBkg", DSName.c_str()));
-  if (checkDS(dataOSNoBkg, DSName)==false) { createDS = true; }
+    if (applyWeight_Corr) {
+      dataOSNoBkg = (RooDataSet*)DBFile->Get(Form("dOS_%s_NoBkg_%s%s", DSName.c_str(),corrName.Data(), (applyJEC?"_JEC":"")));
+    if (checkDS(dataOSNoBkg, DSName)==false) { createDS = true; }
+    }
+    else {
+      dataOSNoBkg = (RooDataSet*)DBFile->Get(Form("dOS_%s_NoBkg%s", DSName.c_str(), (applyJEC?"_JEC":"")));
+      if (checkDS(dataOSNoBkg, DSName)==false) { createDS = true; }
+      }  
   } 
   else if (applyWeight_Corr) {
-  dataOS = (RooDataSet*)DBFile->Get(Form("dOS_%s_%s", DSName.c_str(),corrName.Data()));
+    dataOS = (RooDataSet*)DBFile->Get(Form("dOS_%s_%s%s", DSName.c_str(),corrName.Data(), (applyJEC?"_JEC":"")));
   if (checkDS(dataOS, DSName)==false) { createDS = true; }
   }
   else {
-  dataOS = (RooDataSet*)DBFile->Get(Form("dOS_%s", DSName.c_str()));
+    dataOS = (RooDataSet*)DBFile->Get(Form("dOS_%s%s", DSName.c_str(),(applyJEC?"_JEC":"")));
   if (checkDS(dataOS, DSName)==false) { createDS = true; }
-  dataSS = (RooDataSet*)DBFile->Get(Form("dSS_%s", DSName.c_str()));
+  dataSS = (RooDataSet*)DBFile->Get(Form("dSS_%s%s", DSName.c_str(),(applyJEC?"_JEC":"")));
   if (checkDS(dataSS, DSName)==false) { createDS = true; }
   }
   DBFile->Close(); delete DBFile;
   }
-
+  //cout<< "FileName: "<< OutputFileName << " DSName: " << DSName.c_str() << " CorrName: " << corrName.Data() << " or " <<corrName << endl;
   if (createDS) {
     cout << "[INFO] Creating " << (isPureSDataset ? "pure signal " : "") << "RooDataSet for " << DSName << endl;
     TreeName = findMyTree(InputFileNames[0]); if(TreeName==""){return false;}
@@ -143,9 +153,9 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
 	cols->add(*ptJet);
 	cols->add(*rapJet);
       }
-      dataOS = new RooDataSet(Form("dOS_%s", DSName.c_str()), "dOS", *cols, WeightVar(*weight), StoreAsymError(*mass));
-      dataSS = new RooDataSet(Form("dSS_%s", DSName.c_str()), "dSS", *cols, WeightVar(*weight), StoreAsymError(*mass));
-      if (isPureSDataset) dataOSNoBkg = new RooDataSet(Form("dOS_%s_NoBkg", DSName.c_str()), "dOSNoBkg", *cols, WeightVar(*weight), StoreAsymError(*mass));
+      dataOS = new RooDataSet(Form("dOS_%s%s", DSName.c_str(), (applyJEC?"_JEC":"")), "dOS", *cols, WeightVar(*weight), StoreAsymError(*mass));
+      dataSS = new RooDataSet(Form("dSS_%s%s", DSName.c_str(), (applyJEC?"_JEC":"")), "dSS", *cols, WeightVar(*weight), StoreAsymError(*mass));
+      if (isPureSDataset) dataOSNoBkg = new RooDataSet(Form("dOS_%s_NoBkg%s", DSName.c_str(), (applyJEC?"_JEC":"")), "dOSNoBkg", *cols, WeightVar(*weight), StoreAsymError(*mass));
     }
     else if (applyWeight_Corr)
     {
@@ -162,31 +172,33 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
 	cols->add(*rapJet);
       }
       if (!readCorrection(Form("%s/Input/%s",gSystem->ExpandPathName(gSystem->pwd()),corrFileName.Data()))){ return false; }
-      dataOS = new RooDataSet(Form("dOS_%s_%s", DSName.c_str(),corrName.Data()), "dOS", *cols, WeightVar(*weightCorr), StoreAsymError(*mass));
+      dataOS = new RooDataSet(Form("dOS_%s_%s%s", DSName.c_str(),corrName.Data(), (applyJEC?"_JEC":"")), "dOS", *cols, WeightVar(*weightCorr), StoreAsymError(*mass));
+      if (isMC && isPureSDataset)
+	dataOSNoBkg = new RooDataSet(Form("dOS_%s_NoBkg_%s%s", DSName.c_str(),corrName.Data(),(applyJEC?"_JEC":"")), "dOSNoBkg", *cols, WeightVar(*weightCorr), StoreAsymError(*mass));
       //      dataSS = new RooDataSet(Form("dSS_%s", DSName.c_str()), "dSS", *cols, WeightVar(*weightCorr), StoreAsymError(*mass));
       cout<<"--- 1./applyWeight_Corr applied---"<<endl;
     }
     else
     {
       if (isMC) {
-        cols = new RooArgSet(*mass, *zed, *ctau, *ctauErr, *ctauTrue, *ptQQ, *rapQQ,/* *ptJet, *rapJet,*/ *cent);
+        cols = new RooArgSet(*mass, *zed, *ctau, *ctauErr, *ctauTrue, *ptQQ, *rapQQ, *cent);
         cols->add(*ctauNRes);
         cols->add(*ctauRes);
 	cols->add(*ptJet);
 	cols->add(*rapJet);
       } else {
-        cols = new RooArgSet(*mass, *zed, *ctau, *ctauErr, *ptQQ, *rapQQ,/* *ptJet, *rapJet,*/ *cent);
+        cols = new RooArgSet(*mass, *zed, *ctau, *ctauErr, *ptQQ, *rapQQ, *cent);
         cols->add(*ctauN);
 	cols->add(*ptJet);
 	cols->add(*rapJet);
       }  
-      dataOS = new RooDataSet(Form("dOS_%s", DSName.c_str()), "dOS", *cols, StoreAsymError(*mass));
-      dataSS = new RooDataSet(Form("dSS_%s", DSName.c_str()), "dSS", *cols, StoreAsymError(*mass));
-      if (isMC && isPureSDataset) dataOSNoBkg = new RooDataSet(Form("dOS_%s_NoBkg", DSName.c_str()), "dOSNoBkg", *cols, StoreAsymError(*mass));
+      dataOS = new RooDataSet(Form("dOS_%s%s", DSName.c_str(),(applyJEC?"_JEC":"")), "dOS", *cols, StoreAsymError(*mass));
+      dataSS = new RooDataSet(Form("dSS_%s%s", DSName.c_str(), (applyJEC?"_JEC":"")), "dSS", *cols, StoreAsymError(*mass));
+      if (isMC && isPureSDataset) dataOSNoBkg = new RooDataSet(Form("dOS_%s_NoBkg%s", DSName.c_str(),(applyJEC?"_JEC":"")), "dOSNoBkg", *cols, StoreAsymError(*mass));
     }
-    
+
     Long64_t nentries = theTree->GetEntries();
-    //nentries = 50000;
+    //nentries = 2000000;
     
     float normF = 0.;
     if (isMC && isPbPb)
@@ -253,8 +265,14 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
 	    if (RecoQQ4mom->DeltaR (v_jet)<=drmin)
 	      {
 		drmin = RecoQQ4mom->DeltaR (v_jet);
-		zed->setVal(RecoQQ4mom->Pt()/jtpt[ijet]);
-		ptJet->setVal(jtpt[ijet]);
+		if (applyJEC){
+		  zed->setVal(RecoQQ4mom->Pt()/jecCorr(jtpt[ijet], rawpt[ijet], RecoQQ4mom->Pt()));
+		  ptJet->setVal(jecCorr(jtpt[ijet], rawpt[ijet], RecoQQ4mom->Pt()));
+		}
+		else{
+		  zed->setVal(RecoQQ4mom->Pt()/jtpt[ijet]);
+		  ptJet->setVal(jtpt[ijet]);
+		}
 		rapJet->setVal(jty[ijet]);
 	      }
 	  }
@@ -268,16 +286,17 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
         }
 
         if (applyWeight){
-          double w = theTree->GetWeight();
-          if (isMC && isPbPb) w = w*normF;//*getNColl(Centrality,!isPbPb)*normF;
-          weight->setVal(w);
+	  double w = theTree->GetWeight();
+	  if (isMC && isPbPb) w = w*normF;//*getNColl(Centrality,!isPbPb)*normF;
+	  weight->setVal(w);
         }
         else if (applyWeight_Corr)
-        {
-          double Corr = getCorr(RecoQQ4mom->Rapidity(),RecoQQ4mom->Pt(),RecoQQ4mom->M(),!isPbPb);
-          double wCorr = 1/Corr;
-          weightCorr->setVal(wCorr);
-        }
+	  { double Corr = 1;
+	    //if (abs(RecoQQ4mom->Rapidity())<2.4 && RecoQQ4mom->Pt()>3 && RecoQQ4mom->Pt()<50)
+	    Corr = getCorr(RecoQQ4mom->Rapidity(),RecoQQ4mom->Pt(),RecoQQ4mom->M(),!isPbPb);
+	  double wCorr = 1/Corr;
+	  weightCorr->setVal(wCorr);
+	  }
         
         if (
             ( RecoQQ::areMuonsInAcceptance2015(iQQ) ) &&  // 2015 Global Muon Acceptance Cuts
@@ -285,9 +304,15 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
             ( isPbPb ? (RecoQQ::isTriggerMatch(iQQ,triggerIndex_PbPb) || (usePeriPD ? RecoQQ::isTriggerMatch(iQQ,HI::HLT_HIL1DoubleMu0_2HF0_Cent30100_v1) : (RecoQQ::isTriggerMatch(iQQ,HI::HLT_HIL1DoubleMu0_2HF_v1) || RecoQQ::isTriggerMatch(iQQ,HI::HLT_HIL1DoubleMu0_2HF0_v1)))) :
               RecoQQ::isTriggerMatch(iQQ, triggerIndex_PP) )     // if PbPb && !periPD then (HLT_HIL1DoubleMu0_v1 || HLT_HIL1DoubleMu0_2HF_v1)
             )
-        {
+
+	  {
           if (Reco_QQ_sign[iQQ]==0) { // Opposite-Sign dimuons
-            if (isMC && isPureSDataset && isMatchedRecoDiMuon(iQQ)) dataOSNoBkg->add(*cols, (applyWeight ? weight->getVal() : 1.0)); // Signal-only dimuons
+            if (isMC && isPureSDataset && isMatchedRecoDiMuon(iQQ)) {
+	      if (applyWeight_Corr)
+		dataOSNoBkg->add(*cols, weightCorr->getVal()); //Signal-only dimuons
+	      else 
+		dataOSNoBkg->add(*cols, (applyWeight ? weight->getVal() : 1.0)); // Signal-only dimuons
+	    }
             else if (applyWeight_Corr) dataOS->add(*cols,weightCorr->getVal()); //Signal and background dimuons
             else dataOS->add(*cols, ( applyWeight ? weight->getVal() : 1.0)); //Signal and background dimuons            
           }
@@ -304,12 +329,15 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
     // Save all the datasets
     TFile *DBFile = TFile::Open(OutputFileName.c_str(),"RECREATE");
     DBFile->cd();
-    if (isMC && isPureSDataset) dataOSNoBkg->Write(Form("dOS_%s_NoBkg", DSName.c_str()));
-    else if (applyWeight_Corr) dataOS->Write(Form("dOS_%s_%s", DSName.c_str(),corrName.Data()));
-    else
+    if (isMC && isPureSDataset &&  applyWeight_Corr)
+      dataOSNoBkg->Write(Form("dOS_%s_NoBkg_%s%s", DSName.c_str(),corrName.Data(),(applyJEC?"_JEC":"")));
+    else if (isMC && isPureSDataset && !applyWeight_Corr)
+      dataOSNoBkg->Write(Form("dOS_%s_NoBkg%s", DSName.c_str(),(applyJEC?"_JEC":"")));
+    else if (!isPureSDataset && applyWeight_Corr) dataOS->Write(Form("dOS_%s_%s%s", DSName.c_str(),corrName.Data(),(applyJEC?"_JEC":"")));
+    else 
     {
-      dataOS->Write(Form("dOS_%s", DSName.c_str()));
-      dataSS->Write(Form("dSS_%s", DSName.c_str()));
+      dataOS->Write(Form("dOS_%s%s", DSName.c_str(),(applyJEC?"_JEC":"")));
+      dataSS->Write(Form("dSS_%s%s", DSName.c_str(),(applyJEC?"_JEC":"")));
     }
     DBFile->Write(); DBFile->Close(); delete DBFile;
   }
@@ -336,7 +364,7 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
   delete dataSS; delete dataOS; delete dataOSNoBkg;
   
   // delete the correction array
-  if (fcorrArray) delete fcorrArray;
+  //if (fcorrArray) delete fcorrArray;
   
   return true;
 };
@@ -345,8 +373,8 @@ string findMyTree(string FileName)
 {
   TFile *f = TFile::Open(FileName.c_str(), "READ");
   string name = "";
-  if(f->GetListOfKeys()->Contains("hionia")){ name = "hionia/myTree"; cout<<"fount onia Tree";}
-  else if(f->GetListOfKeys()->Contains("myTree")){ name = "myTree"; cout<<"found onia Tree";}
+  if(f->GetListOfKeys()->Contains("hionia")) name = "hionia/myTree";
+  else if(f->GetListOfKeys()->Contains("myTree")) name = "myTree";
   else { cout << "[ERROR] myTree was not found in: " << FileName << endl;}
   //htr = (TTree*)f->Get(name.c_str());
   f->Close(); delete f;
@@ -357,8 +385,8 @@ string  findJetTree(string FileName)
 {
   TFile *f = TFile::Open(FileName.c_str(), "READ");
   string name = "";
-  if(f->GetListOfKeys()->Contains("ak4PFJetAnalyzer")){ name = "ak4PFJetAnalyzer/t"; cout<<"found jet tree";}
-  else if(f->GetListOfKeys()->Contains("t")){ name = "t"; cout<<"found jet tree";}
+  if(f->GetListOfKeys()->Contains("ak4PFJetAnalyzer")) name = "ak4PFJetAnalyzer/t";
+  else if(f->GetListOfKeys()->Contains("t")) name = "t";
   else { cout << "[ERROR] t was not found in: " << FileName << endl; }
   //jtr = (TTree*)f->Get(name.c_str());
   f->Close(); delete f;
@@ -403,7 +431,9 @@ void iniBranch(TChain* fChain, bool isMC)
   if (fChain->GetBranch("Reco_QQ_ctauErr"))   { fChain->SetBranchStatus("Reco_QQ_ctauErr",1);   }
   if (fChain->GetBranch("nref"))              { fChain->SetBranchStatus("nref",1);              }
   if (fChain->GetBranch("jtpt"))              { fChain->SetBranchStatus("jtpt",1);              }
+  if (fChain->GetBranch("rawpt"))             { fChain->SetBranchStatus("rawpt",1);             }
   if (fChain->GetBranch("jteta"))             { fChain->SetBranchStatus("jteta",1);             }
+  if (fChain->GetBranch("jty"))               { fChain->SetBranchStatus("jty",1);               }
   if (fChain->GetBranch("jtphi"))             { fChain->SetBranchStatus("jtphi",1);             }
   if (fChain->GetBranch("jtm"))               { fChain->SetBranchStatus("jtm",1);               }
 
@@ -414,11 +444,12 @@ void iniBranch(TChain* fChain, bool isMC)
     if (fChain->GetBranch("Gen_QQ_mumi_4mom")) { fChain->SetBranchStatus("Gen_QQ_mumi_4mom",1); }
     if (fChain->GetBranch("Reco_QQ_ctauTrue3D")) { fChain->SetBranchStatus("Reco_QQ_ctauTrue3D",1); }
     if (fChain->GetBranch("Reco_QQ_ctauTrue")) { fChain->SetBranchStatus("Reco_QQ_ctauTrue",1); }
-    if (fChain->GetBranch("ngen"))             { fChain->SetBranchStatus("ngen",1);              }
-    if (fChain->GetBranch("genpt"))            { fChain->SetBranchStatus("genpt",1);              }
-    if (fChain->GetBranch("geneta"))           { fChain->SetBranchStatus("geneta",1);             }
-    if (fChain->GetBranch("genphi"))           { fChain->SetBranchStatus("genphi",1);             }
-    if (fChain->GetBranch("genm"))             { fChain->SetBranchStatus("genm",1);               }
+    if (fChain->GetBranch("ngen"))             { fChain->SetBranchStatus("ngen",1);             }
+    if (fChain->GetBranch("genpt"))            { fChain->SetBranchStatus("genpt",1);            }
+    if (fChain->GetBranch("geneta"))           { fChain->SetBranchStatus("geneta",1);           }
+    if (fChain->GetBranch("geny"))             { fChain->SetBranchStatus("geny",1);             }
+    if (fChain->GetBranch("genphi"))           { fChain->SetBranchStatus("genphi",1);           }
+    if (fChain->GetBranch("genm"))             { fChain->SetBranchStatus("genm",1);             }
   }
 };
 
@@ -531,7 +562,6 @@ bool readCorrection(const char* file)
     cout << "[ERROR] File "<< file << " for correction of events not found" << endl;
     return false;
   }
-  
   TList* lcorr = froot->GetListOfKeys();
   TIter nextCorr(lcorr);
   
@@ -541,21 +571,27 @@ bool readCorrection(const char* file)
   TObjString* fname(0x0);
   while ( (fname = static_cast<TObjString*>(nextCorr.Next())) )
   {
-    TH2* h = static_cast<TH2*>(froot->FindObjectAny(fname->GetString().Data()));
+  TEfficiency* h = static_cast<TEfficiency*>(froot->FindObjectAny(fname->GetString().Data()));
 
-    TString sName(h->GetName());
-    if ( sName.Contains("hcorr") ) fcorrArray->Add(h->Clone());
-    else cout << "[WARNING] Correction histo " << sName.Data() << " not according to naming convention. Not included in correction array" << endl;
+  TString sName(h->GetName());
+  if ( sName.Contains("hcorr") ) 
+  fcorrArray->Add(h->Clone());
+  else cout << "[WARNING] Correction histo " << sName.Data() << " not according to naming convention. Not included in correction array" << endl;
   }
   
   if (!(fcorrArray->GetSize()>0))
   {
-    cout << "[ERROR] Correction array empty: No corrections found." << endl;
-    return false;
+  cout << "[ERROR] Correction array empty: No corrections found." << endl;
+  return false;
   }
   delete lcorr;
-//  froot->Close(); delete froot;
-  
+  //froot->Close(); delete froot;
+  //corrHist = static_cast<TH2F*>(froot->FindObjectAny("hcorr_Jpsi_PP"));
+  //TString sName(corrHist->GetName());
+  //if (sName.Contains("hcorr")){
+  //cout<< "[INFO] Adding correction "<<sName<<" to the list of correction"<< endl;
+  //}                                                         
+  //else cout << "[WARNING] Correction histo " << sName.Data() << " not according to naming convention. but anyway taken as the correction" << endl;
   return true;
 };
 
@@ -564,48 +600,59 @@ double getCorr(Double_t rapidity, Double_t pt, Double_t mass, bool isPP)
   const char* collName = "PbPb";
   const char* massName = "Interp";
   if (isPP) collName = "PP";
-  if (mass>3.5) massName = "Psi2S";
-  else if (mass<3.3) massName = "Jpsi";
+  //if (mass>3.5) massName = "Psi2S";
+  //else //if (mass<3.3) 
+  massName = "Jpsi";
   
-  if (!fcorrArray)
-  {
+    if (!fcorrArray)
+    {
     cout << "[ERROR] No correction array exist" << endl;
     return 0;
-  }
+    }
 
   Double_t corr = 1.;
   if (!strcmp(massName,"Interp"))
   {
-    TH2* corrHistoJpsi = static_cast<TH2*>(fcorrArray->FindObject(Form("hcorr_Jpsi_%s",collName)));
-    TH2* corrHistoPsi2S = static_cast<TH2*>(fcorrArray->FindObject(Form("hcorr_Psi2S_%s",collName)));
-    if (!corrHistoJpsi || !corrHistoPsi2S)
+  TEfficiency* corrHistoJpsi = static_cast<TEfficiency*>(fcorrArray->FindObject(Form("hcorr_Jpsi_%s",collName)));
+    //TH2* corrHistoJpsi = static_cast<TH2*>(fcorrArray->FindObject("ptrapg_clone"));
+    //TH2* corrHistoPsi2S = static_cast<TH2*>(fcorrArray->FindObject(Form("hcorr_Psi2S_%s",collName)));
+  if (!corrHistoJpsi) // || !corrHistoPsi2S)
     {
       std::cout << "[Error] No histogram provided for correction of " << collName << " " << massName << ". Weight set to 1." << std::endl;
       return 1.;
     }
     
-    Int_t binJpsi = corrHistoJpsi->FindBin(fabs(rapidity), pt);
-    Double_t corrJpsi = corrHistoJpsi->GetBinContent(binJpsi);
+  Int_t binJpsi = corrHistoJpsi->FindFixBin(rapidity, pt); // removed fabs()
+  Double_t corrJpsi = corrHistoJpsi->GetEfficiency(binJpsi);
     
-    Int_t binPsi2S = corrHistoPsi2S->FindBin(fabs(rapidity), pt);
-    Double_t corrPsi2S = corrHistoPsi2S->GetBinContent(binPsi2S);
+    //Int_t binPsi2S = corrHistoPsi2S->FindBin(fabs(rapidity), pt); //removed fabs()
+    //Double_t corrPsi2S = corrHistoPsi2S->GetBinContent(binPsi2S);
     
-    corr = ((corrPsi2S - corrJpsi)/(3.5-3.3))*(mass-3.3) + corrJpsi;
-    
+    //corr = ((corrPsi2S - corrJpsi)/(3.5-3.3))*(mass-3.3) + corrJpsi;
+  corr = corrJpsi;
   }
   else
   {
-    TH2* corrHisto = static_cast<TH2*>(fcorrArray->FindObject(Form("hcorr_%s_%s",massName,collName)));
+    //TH2* corrHisto = static_cast<TH2*>(fcorrArray->FindObject("ptrapg_clone"));
+    TEfficiency* corrHisto = static_cast<TEfficiency*>(fcorrArray->FindObject(Form("hcorr_Jpsi_%s",collName)));
     if (!corrHisto)
-    {
-      std::cout << "[Error] No histogram provided for correction of " << collName << " " << massName << ". Weight set to 1." << std::endl;
-      return 1.;
+      {
+	std::cout << "[Error] No histogram provided for correction of " << collName << " " << massName << ". Weight set to 1." << std::endl;
+	return 1.;
+      }
+    //cout<< "[INFO] pt = "<<pt<<" rap = "<< rapidity <<endl;
+  if (pt > 3 && pt < 50 && abs(rapidity) < 2.4){
+    //Int_t bin = corrHisto->FindBin(rapidity, pt); //changed one thing: instead of rapidity it was the absolute value
+    //corr = corrHisto->GetBinContent(bin);
+    corr = corrHisto->GetEfficiency(corrHisto->FindFixBin(rapidity, pt));
+    // cout<<"[INFO] corr = "<< corr<< endl;
     }
-    
-    Int_t bin = corrHisto->FindBin(fabs(rapidity), pt);
-    corr = corrHisto->GetBinContent(bin);
-  }
-  if(corr<0.00001) corr=1.0;
-  
+    }
+    if(corr<0.00001) corr=1.0;
   return corr;
 };
+
+double  jecCorr(double jtPt, double rawPt, double jpsiPt)
+{
+  return ( (1-(jpsiPt/rawPt))*jtPt + ((jpsiPt/rawPt)/(jtPt/rawPt))*jtPt );
+}

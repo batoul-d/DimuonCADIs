@@ -66,12 +66,14 @@ void results2tree(
       const char* DSTag="DATA", // Data Set tag can be: "DATA","MCPSI2SP", "MCJPSIP" ...
       const char* prependPath="",
       const char* fitType = "",
+      bool wantPureSMC = false,
+      const char* applyCorr = "",
+      bool applyJEC = false,
       const char* thePoiNames="N_Jpsi,b_Jpsi,f_Jpsi,m_Jpsi,sigma1_Jpsi,alpha_Jpsi,n_Jpsi,sigma2_Jpsi,rSigma21_Jpsi,"
       "lambda1_Bkg,lambda2_Bkg,lambda3_Bkg,lambda4_Bkg,lambda5_Bkg,N_Bkg,b_Bkg,"
       "ctau1_CtauRes,ctau2_CtauRes,f_CtauRes,rSigma21_CtauRes,s1_CtauRes,"
       "fDFSS_BkgNoPR,fDLIV_BkgNoPR,lambdaDDS_BkgNoPR,lambdaDF_BkgNoPR,lambdaDSS_BkgNoPR,lambdaDSS_JpsiNoPR,"
-      "eff,effnp,acc,accnp,lumi,taa,ncoll,npart,correl_N_Jpsi_vs_b_Jpsi",
-      bool wantPureSMC=false
+      "eff,effnp,acc,accnp,lumi,taa,ncoll,npart,correl_N_Jpsi_vs_b_Jpsi"
       );
 #include "../../results2tree.C"
 
@@ -235,21 +237,22 @@ anabin binFromFile(const char* filename) {
    TFile *f = TFile::Open(filename);
    if (!f) {
       cout << "Error, file " << filename << " does not exist." << endl;
-      return anabin(0,0,0,0,0,0);
+      return anabin(0,0,0,0,0,0,0,0);
    }
    RooWorkspace *ws = (RooWorkspace*) f->Get("workspace");
    if (!ws) {
       cout << "Error, file " << filename << " is bad." << endl;
-      return anabin(0,0,0,0,0,0);
+      return anabin(0,0,0,0,0,0,0,0);
    }
+   RooRealVar *zed = (RooRealVar*) ws->var("zed");
    RooRealVar *pt = (RooRealVar*) ws->var("pt");
    RooRealVar *rap = (RooRealVar*) ws->var("rap");
    RooRealVar *cent = (RooRealVar*) ws->var("cent");
-   if (!pt || !rap || !cent) {
+   if (!zed || !pt || !rap || !cent) {
       cout << "Error, file " << filename << " is bad." << endl;
-      return anabin(0,0,0,0,0,0);
+      return anabin(0,0,0,0,0,0,0,0);
    }
-   anabin ans(rap->getMin(),rap->getMax(),pt->getMin(),pt->getMax(),cent->getMin(),cent->getMax());
+   anabin ans(zed->getMin(),zed->getMax(),rap->getMin(),rap->getMax(),pt->getMin(),pt->getMax(),cent->getMin(),cent->getMax());
    delete ws;
    delete f;
    return ans;
@@ -259,23 +262,28 @@ bool binok(vector<anabin> thecats, string xaxis, anabin &tocheck, bool override)
    bool ok=false;
 
    for (vector<anabin>::const_iterator it=thecats.begin(); it!=thecats.end(); it++) {
-      if (xaxis=="pt" && it->rapbin()==tocheck.rapbin() && it->centbin()==tocheck.centbin()
+      if (xaxis=="zed" && it->zbin()==tocheck.zbin() && it->rapbin()==tocheck.rapbin() && it->centbin()==tocheck.centbin()
+            && ! (it->ptbin()==tocheck.ptbin())) {
+         ok=true;
+         if (override) tocheck.setzbin(it->zbin());
+         break;
+      } else if (xaxis=="pt" && it->zbin()==tocheck.zbin() && it->rapbin()==tocheck.rapbin() && it->centbin()==tocheck.centbin()
             && ! (it->ptbin()==tocheck.ptbin())) {
          ok=true;
          if (override) tocheck.setptbin(it->ptbin());
          break;
-      } else if (xaxis=="cent" && it->rapbin()==tocheck.rapbin() && it->ptbin()==tocheck.ptbin()
+      } else if (xaxis=="cent" && it->zbin()==tocheck.zbin() && it->rapbin()==tocheck.rapbin() && it->ptbin()==tocheck.ptbin()
             && ! (it->centbin()==tocheck.centbin())) {
          ok=true;
          if (override) tocheck.setcentbin(it->centbin());
          break;
-      } else if (xaxis=="rap" && it->centbin()==tocheck.centbin() && it->ptbin()==tocheck.ptbin()
+      } else if (xaxis=="rap" && it->zbin()==tocheck.zbin() && it->centbin()==tocheck.centbin() && it->ptbin()==tocheck.ptbin()
             && ! (it->rapbin()==tocheck.rapbin())) {
          ok=true;
          if (override) tocheck.setrapbin(it->rapbin());
          break;
       } else if ((it->centbin().low()<=0 && it->centbin().high()<=0)
-            && it->rapbin()==tocheck.rapbin() && it->ptbin()==tocheck.ptbin()
+            && it->zbin()==tocheck.zbin() && it->rapbin()==tocheck.rapbin() && it->ptbin()==tocheck.ptbin()
             &&  (abs(it->centbin().low())==abs(tocheck.centbin().low()) && abs(it->centbin().high())==abs(tocheck.centbin().high()))) {
          ok=true;
          break;
@@ -300,7 +308,7 @@ bool isSameBinPPPbPb(const char* filenamePbPb, const char* filenamePP)
   
   if ( fPbPb.Contains("_PbPb_") && fPP.Contains("_PP_"))
   {
-    if ( (thebin_PbPb.ptbin().low() == thebin_PP.ptbin().low()) && (thebin_PbPb.ptbin().high() == thebin_PP.ptbin().high())  && (thebin_PbPb.rapbin().low() == thebin_PP.rapbin().low()) && (thebin_PbPb.rapbin().high() == thebin_PP.rapbin().high()) ) return true;
+    if ( (thebin_PbPb.zbin().low() == thebin_PP.zbin().low()) && (thebin_PbPb.zbin().high() == thebin_PP.zbin().high())  && (thebin_PbPb.ptbin().low() == thebin_PP.ptbin().low()) && (thebin_PbPb.ptbin().high() == thebin_PP.ptbin().high())  && (thebin_PbPb.rapbin().low() == thebin_PP.rapbin().low()) && (thebin_PbPb.rapbin().high() == thebin_PP.rapbin().high()) ) return true;
     else return false;
   }
   else
@@ -332,10 +340,12 @@ double poiFromBin(const char* workDirName, const char* theCollSystem, const char
    // fix centrality for pp
    if (TString(theCollSystem) == "PP") thebin.setcentbin(binI(0,200));
 
-   float ptmin, ptmax, ymin, ymax, centmin, centmax;
+   float zmin, zmax, ptmin, ptmax, ymin, ymax, centmin, centmax;
    float val=-999.;
    int valI=-999.;
    char collSystem[5];
+   tr->SetBranchAddress("zmin",&zmin);
+   tr->SetBranchAddress("zmax",&zmax);
    tr->SetBranchAddress("ptmin",&ptmin);
    tr->SetBranchAddress("ptmax",&ptmax);
    tr->SetBranchAddress("ymin",&ymin);
@@ -351,7 +361,7 @@ double poiFromBin(const char* workDirName, const char* theCollSystem, const char
    bool found=false;
    for (int i=0; i<ntr; i++) {
       tr->GetEntry(i);
-      if ((anabin(ymin, ymax, ptmin, ptmax, centmin, centmax) == thebin) && (TString(collSystem) == TString(theCollSystem))) {
+      if ((anabin(zmin, zmax, ymin, ymax, ptmin, ptmax, centmin, centmax) == thebin) && (TString(collSystem) == TString(theCollSystem))) {
          found=true;
          break;
       }
@@ -376,9 +386,11 @@ double poiErrFromBin(const char* workDirName, const char* theCollSystem, const c
    // fix centrality for pp
    if (TString(theCollSystem) == "PP") thebin.setcentbin(binI(0,200));
 
-   float ptmin, ptmax, ymin, ymax, centmin, centmax;
+   float zmin, zmax, ptmin, ptmax, ymin, ymax, centmin, centmax;
    float err=0;
    char collSystem[5];
+   tr->SetBranchAddress("zmin",&zmin);
+   tr->SetBranchAddress("zmax",&zmax);
    tr->SetBranchAddress("ptmin",&ptmin);
    tr->SetBranchAddress("ptmax",&ptmax);
    tr->SetBranchAddress("ymin",&ymin);
@@ -392,7 +404,7 @@ double poiErrFromBin(const char* workDirName, const char* theCollSystem, const c
    bool found=false;
    for (int i=0; i<ntr; i++) {
       tr->GetEntry(i);
-      if ((anabin(ymin, ymax, ptmin, ptmax, centmin, centmax) == thebin) && (TString(collSystem) == TString(theCollSystem))) {
+      if ((anabin(zmin, zmax, ymin, ymax, ptmin, ptmax, centmin, centmax) == thebin) && (TString(collSystem) == TString(theCollSystem))) {
          found=true;
          break;
       }
@@ -410,14 +422,14 @@ void prune(vector<anabin> &v, bool keepshort) {
       bool binok=true;
       for (it2=v.begin(); it2!=v.end(); it2++) {
          if (*it1==*it2) continue;
-         if (it1->rapbin()==it2->rapbin() && it1->ptbin()==it2->ptbin()) {
+         if (it1->zbin()==it2->zbin() && it1->rapbin()==it2->rapbin() && it1->ptbin()==it2->ptbin()) {
             binI cb1 = it1->centbin();
             binI cb2 = it2->centbin();
             if (!(cb1==binI(0,200)) && cb1.low()==cb2.low()) { // the bin is not MB and there is another bin with the same lower edge
                if (keepshort && cb1.high()>cb2.high()) binok=false;
                if (!keepshort && cb1.high()<cb2.high()) binok=false;
             }
-         } // same pt and rap bins
+         } // same z and pt and rap bins
       } // for it2
       if (binok) ans.push_back(*it1);
    } // for it1

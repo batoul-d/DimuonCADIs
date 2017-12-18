@@ -2,7 +2,7 @@
 #include "Macros/tree2DataSet.C"
 #include "Macros/fitCharmonia.C"
 
-bool checkSettings(bool fitData, bool fitMC, bool fitPbPb, bool fitPP, bool fitMass, bool fitCtau, bool fitCtauTrue, bool fitCtauReco, bool fitRes, bool doCtauErrPDF, bool incJpsi, bool incPsi2S, bool incBkg, bool incPrompt, bool incNonPrompt, bool cutCtau, bool doConstrFit, bool doSimulFit, bool wantPureSMC, const char* applyCorr, bool setLogScale, bool zoomPsi, bool incSS, int numCores);
+bool checkSettings(bool fitData, bool fitMC, bool fitPbPb, bool fitPP, bool fitMass, bool fitCtau, bool fitCtauTrue, bool fitCtauReco, bool fitRes, bool doCtauErrPDF, bool incJpsi, bool incPsi2S, bool incBkg, bool incPrompt, bool incNonPrompt, bool cutCtau, bool doConstrFit, bool doSimulFit, bool wantPureSMC, const char* applyCorr, bool applyJEC, bool setLogScale, bool zoomPsi, bool incSS, int numCores);
 
 bool parseFile(string FileName, vector< map<string, string> >& data);
 bool parseString(string input, string delimiter, vector<double>& output);
@@ -47,6 +47,7 @@ void fitter(
             bool doSimulFit   = false,        // Do simultaneous fit
             bool wantPureSMC  = false,        // Flag to indicate if we want to fit pure signal MC
             const char* applyCorr  = "",     // Apply weight to data for correction (Acceptance & Ef , l_J/psi eff...). No correction if empty variable.
+	    bool applyJEC     = false,       // Apply Jet Energy Correction
             int  numCores     = 32,           // Number of cores used for fitting
             // Select the drawing options
             bool  setLogScale  = true,         // Draw plot with log scale
@@ -79,7 +80,7 @@ void fitter(
   if (workDirName.find("Peri")!=std::string::npos) { usePeriPD = true; }
 
   map<string, string> inputFitDir;
-  inputFitDir["MASS"]     = string("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Output/MassFits/") + (usePeriPD ? "DataFitsMassPeri_2CB_polBkg_nominal/" : "DataFitsMassCent_2CB_polBkg_nominal/");
+  inputFitDir["MASS"]     = string("");//("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Output/MassFits/") + (usePeriPD ? "DataFitsMassPeri_2CB_polBkg_nominal/" : "DataFitsMassCent_2CB_polBkg_nominal/");
   //inputFitDir["MASS"]     = string("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Output/MassFits/") + (usePeriPD ? "DataFitsMassPeri_2CB_polBkg_minvRange/" : "DataFitsMassCent_2CB_polBkg_minvRange/");
   //inputFitDir["MASS"]     = string("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Output/MassFits/") + (usePeriPD ? "DataFitsMassPeri_2CB_polBkg_LLR10/" : "DataFitsMassCent_2CB_polBkg_LLR10/");
   //inputFitDir["MASS"]     = string("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Output/MassFits/") + (usePeriPD ? "DataFitsMassPeri_2CB_polBkg_LLR25/" : "DataFitsMassCent_2CB_polBkg_LLR25/");
@@ -87,20 +88,20 @@ void fitter(
   //inputFitDir["MASS"]     = string("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Output/MassFits/") + (usePeriPD ? "DataFitsMassPeri_2CB_expBkg/" : "DataFitsMassCent_2CB_expBkg/");
   //inputFitDir["MASS"]     = string("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Output/MassFits/") + (usePeriPD ? "DataFitsMassPeri_CBG_polBkg/" : "DataFitsMassCent_CBG_polBkg/");
   
-  inputFitDir["CTAUERR"]  = string("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Output/CtauErrFits/") + (usePeriPD ? "DataFitsPeri_ctauErr_nominal/" :  "DataFitsCent_ctauErr_nominal/");
-  inputFitDir["CTAUTRUE"] = string("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Output/CtauTrueFits/") + (usePeriPD ? "MCFitsPeri_nonPrompt_ctauTrue/" :  "MCFitsCent_nonPrompt_ctauTrue/");
-  inputFitDir["CTAURECO"] = string("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Output/CtauRecoFits/") + (usePeriPD ? "MCFitsPeri_nonPrompt_ctauReco/" :  "MCFitsCent_nonPrompt_ctauReco/");
+  inputFitDir["CTAUERR"]  = string("");//("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Output/CtauErrFits/") + (usePeriPD ? "DataFitsPeri_ctauErr_nominal/" :  "DataFitsCent_ctauErr_nominal/");
+  inputFitDir["CTAUTRUE"] = string("");//("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Output/CtauTrueFits/") + (usePeriPD ? "MCFitsPeri_nonPrompt_ctauTrue/" :  "MCFitsCent_nonPrompt_ctauTrue/");
+  inputFitDir["CTAURECO"] = string("");//("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Output/CtauRecoFits/") + (usePeriPD ? "MCFitsPeri_nonPrompt_ctauReco/" :  "MCFitsCent_nonPrompt_ctauReco/");
   
-  inputFitDir["CTAURES"]  = string("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Output/CtauResFits/") + (usePeriPD ? "DataFitsPeri_ctauRes_nominalErr/" :  "DataFitsCent_ctauRes_nominalErr/");
+  inputFitDir["CTAURES"]  = string("");//("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Output/CtauResFits/") + (usePeriPD ? "DataFitsPeri_ctauRes_nominalErr/" :  "DataFitsCent_ctauRes_nominalErr/");
   //inputFitDir["CTAURES"]  = string("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Output/CtauResFits/") + (usePeriPD ? "MCFitsPeri_prompt_ctauRes/" :  "MCFitsCent_prompt_ctauRes/");
   //inputFitDir["CTAURES"]  = string("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Output/CtauResFits/") + (usePeriPD ? "MCFitsPeri_nonPrompt_ctauRes/" :  "MCFitsCent_nonPrompt_ctauRes/");  
   
-  inputFitDir["CTAUSB"]   = string("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Output/CtauBkgFits/") + (usePeriPD ? "DataFitsPeri_ctauBkg_dataCTauRes/" : "DataFitsCent_ctauBkg_dataCTauRes/");
+  inputFitDir["CTAUSB"]   = string("");//("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Output/CtauBkgFits/") + (usePeriPD ? "DataFitsPeri_ctauBkg_dataCTauRes/" : "DataFitsCent_ctauBkg_dataCTauRes/");
   //inputFitDir["CTAUSB"]   = string("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Output/CtauBkgFits/") + (usePeriPD ? "DataFitsPeri_ctauBkg_promptCTauRes/" : "DataFitsCent_ctauBkg_promptCTauRes/");
   //inputFitDir["CTAUSB"]   = string("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Output/CtauBkgFits/") + (usePeriPD ? "DataFitsPeri_ctauBkg_nonPromptCTauRes/" : "DataFitsCent_ctauBkg_nonPromptCTauRes/");  
 
   map<string, string> inputInitialFilesDir;
-  inputInitialFilesDir["MASS"]     = string("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Input/MassFits/") + (usePeriPD ? "DataFitsMassPeri_2CB_polBkg_nominal/" :  "DataFitsMassCent_2CB_polBkg_nominal/");
+  inputInitialFilesDir["MASS"]     = string("");//("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Input/MassFits/") + (usePeriPD ? "DataFitsMassPeri_2CB_polBkg_nominal/" :  "DataFitsMassCent_2CB_polBkg_nominal/");
   //inputInitialFilesDir["MASS"]     = string("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Input/MassFits/") + (usePeriPD ? "DataFitsMassPeri_2CB_polBkg_minvRange/" : "DataFitsMassCent_2CB_polBkg_minvRange/");
   //inputInitialFilesDir["MASS"]     = string("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Input/MassFits/") + (usePeriPD ? "DataFitsMassPeri_2CB_polBkg_LLR10/" : "DataFitsMassCent_2CB_polBkg_LLR10/");
   //inputInitialFilesDir["MASS"]     = string("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Input/MassFits/") + (usePeriPD ? "DataFitsMassPeri_2CB_polBkg_LLR25/" : "DataFitsMassCent_2CB_polBkg_LLR25/");
@@ -108,30 +109,30 @@ void fitter(
   //inputInitialFilesDir["MASS"]     = string("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Input/MassFits/") + (usePeriPD ? "DataFitsMassPeri_2CB_expBkg/" : "DataFitsMassCent_2CB_expBkg/");
   //inputInitialFilesDir["MASS"]     = string("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Input/MassFits/") + (usePeriPD ? "DataFitsMassPeri_CBG_polBkg/" : "DataFitsMassCent_CBG_polBkg/");
   
-  inputInitialFilesDir["CTAUTRUE"] = string("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Input/CtauTrueFits/") + (usePeriPD ? "MCFitsPeri_nonPrompt_ctauTrue/" :  "MCFitsCent_nonPrompt_ctauTrue/");
+  inputInitialFilesDir["CTAUTRUE"] = string("");//("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Input/CtauTrueFits/") + (usePeriPD ? "MCFitsPeri_nonPrompt_ctauTrue/" :  "MCFitsCent_nonPrompt_ctauTrue/");
   //inputInitialFilesDir["CTAUTRUE"] = string("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Input/CtauTrueFits/") + (usePeriPD ? "MCFitsPeri_nonPrompt_ctauTrue_minvRange/" :  "MCFitsCent_nonPrompt_ctauTrue_minvRange/");  
 
-  inputInitialFilesDir["CTAURECO"] = string("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Input/CtauRecoFits/") + (usePeriPD ? "MCFitsPeri_nonPrompt_ctauReco/" :  "MCFitsCent_nonPrompt_ctauReco/");
+  inputInitialFilesDir["CTAURECO"] = string("");//("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Input/CtauRecoFits/") + (usePeriPD ? "MCFitsPeri_nonPrompt_ctauReco/" :  "MCFitsCent_nonPrompt_ctauReco/");
   //inputInitialFilesDir["CTAURECO"] = string("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Input/CtauRecoFits/") + (usePeriPD ? "MCFitsPeri_nonPrompt_ctauReco_minvRange/" :  "MCFitsCent_nonPrompt_ctauReco_minvRange/");  
 
-  inputInitialFilesDir["CTAURES"]  = string("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Input/CtauResFits/") + (usePeriPD ? "DataFitsPeri_ctauRes_nominalErr/" :  "DataFitsCent_ctauRes_nominalErr/");
+  inputInitialFilesDir["CTAURES"]  = string("");//("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Input/CtauResFits/") + (usePeriPD ? "DataFitsPeri_ctauRes_nominalErr/" :  "DataFitsCent_ctauRes_nominalErr/");
   //inputInitialFilesDir["CTAURES"]  = string("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Input/CtauResFits/") + (usePeriPD ? "MCFitsPeri_prompt_ctauRes/" :  "MCFitsCent_prompt_ctauRes/");
   //inputInitialFilesDir["CTAURES"]  = string("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Input/CtauResFits/") + (usePeriPD ? "MCFitsPeri_nonPrompt_ctauRes/" :  "MCFitsCent_nonPrompt_ctauRes/");  
   //inputInitialFilesDir["CTAURES"]  = string("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Input/CtauResFits/") + (usePeriPD ? "DataFitsPeri_ctauRes_nominalErr_minvRange/" :  "DataFitsCent_ctauRes_nominalErr_minvRange/");  
 
-  inputInitialFilesDir["CTAUSB"]   = string("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Input/CtauBkgFits/") + (usePeriPD ? "DataFitsPeri_ctauBkg_dataCTauRes/" :  "DataFitsCent_ctauBkg_dataCTauRes/");
+  inputInitialFilesDir["CTAUSB"]   = string("");//("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Input/CtauBkgFits/") + (usePeriPD ? "DataFitsPeri_ctauBkg_dataCTauRes/" :  "DataFitsCent_ctauBkg_dataCTauRes/");
   //inputInitialFilesDir["CTAUSB"]   = string("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Input/CtauBkgFits/") + (usePeriPD ? "DataFitsPeri_ctauBkg_promptCTauRes/" : "DataFitsCent_ctauBkg_promptCTauRes/");
   //inputInitialFilesDir["CTAUSB"]   = string("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Input/CtauBkgFits/") + (usePeriPD ? "DataFitsPeri_ctauBkg_nonPromptCTauRes/" : "DataFitsCent_ctauBkg_nonPromptCTauRes/");
   //inputInitialFilesDir["CTAUSB"]   = string("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Input/CtauBkgFits/") + (usePeriPD ? "DataFitsPeri_ctauBkg_dataCTauRes_minvRange/" :  "DataFitsCent_ctauBkg_dataCTauRes_minvRange/");  
 
   inputInitialFilesDir["CTAU"]     = string("");//string("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Input/") + (usePeriPD ? "DataFitsPeri_2D_nominal/" :  "DataFitsCent_2D_nominal/");
-  inputInitialFilesDir["FILES"]    = string("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Input/MassFits/") + (usePeriPD ? "DataFitsMassPeri_2CB_polBkg_nominal/" : "DataFitsMassCent_2CB_polBkg_nominal/");
+  inputInitialFilesDir["FILES"]    = string("");//("/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/Input/MassFits/") + (usePeriPD ? "DataFitsMassPeri_2CB_polBkg_nominal/" : "DataFitsMassCent_2CB_polBkg_nominal/");
   
   
   map<string, string> inputDataSet;
-  inputDataSet["DOUBLEMUON"] = "/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/DataSets/";
-  inputDataSet["PERIPHERAL"] = "/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/DataSets/";
-  inputDataSet["MONTECARLO"] = "/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/DataSets/";
+  inputDataSet["DOUBLEMUON"] = "";//"/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/DataSets/";
+  inputDataSet["PERIPHERAL"] = "";//"/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/DataSets/";
+  inputDataSet["MONTECARLO"] = "";//"/afs/cern.ch/work/j/jmartinb/public/JpsiRAA/DataSets/";
 
   if (workDirName.find("Peri")!=std::string::npos) { usePeriPD = true; }
 
@@ -143,7 +144,7 @@ void fitter(
   if (fitRes || fitTest) { inputFitDir["CTAURES"] = ""; inputInitialFilesDir["CTAURES"] = ""; }
   if ((fitCtau && fitData && incBkg && !incJpsi) || fitTest) { inputFitDir["CTAUSB"] = ""; inputInitialFilesDir["CTAUSB"] = ""; }
 
-  if (!checkSettings(fitData, fitMC, fitPbPb, fitPP, fitMass, fitCtau, fitCtauTrue, fitCtauReco, fitRes, doCtauErrPDF, incJpsi, incPsi2S, incBkg, incPrompt, incNonPrompt, cutCtau, doConstrFit, doSimulFit, wantPureSMC, applyCorr, setLogScale, zoomPsi, incSS, numCores)) { return; }
+  if (!checkSettings(fitData, fitMC, fitPbPb, fitPP, fitMass, fitCtau, fitCtauTrue, fitCtauReco, fitRes, doCtauErrPDF, incJpsi, incPsi2S, incBkg, incPrompt, incNonPrompt, cutCtau, doConstrFit, doSimulFit, wantPureSMC, applyCorr, applyJEC, setLogScale, zoomPsi, incSS, numCores)) { return; }
 
   map< string, vector<string> > DIR;
   if(!iniWorkEnv(DIR, workDirName)){ return; }
@@ -220,14 +221,14 @@ void fitter(
       if (useExtDS==true && usePeriPD==true  && inputDataSet["PERIPHERAL"]!="" && (existDir(inputDataSet["PERIPHERAL"])==true)) { dir = inputDataSet["PERIPHERAL"]; }
       if (useExtDS==true && usePeriPD==false && inputDataSet["DOUBLEMUON"]!="" && (existDir(inputDataSet["DOUBLEMUON"])==true)) { dir = inputDataSet["DOUBLEMUON"]; }
       if(strcmp(applyCorr,"")){
-        OutputFileName = dir + "DATASET_" + FILETAG + "_" + string(applyCorr) + (isPbPb?(isPeriPD?"_PERI":"_CENT"):"") + ".root";
-        if(gSystem->AccessPathName(OutputFileName.c_str())) { OutputFileName = DIR["dataset"][0] + "DATASET_" + FILETAG + "_" + string(applyCorr) + ".root"; }
-        if(!tree2DataSet(Workspace[Form("%s_%s",DSTAG.c_str(),applyCorr)], InputFileNames, FILETAG, OutputFileName)){ return; }
+        OutputFileName = dir + "DATASET_" + FILETAG + "_" + string(applyCorr) + (applyJEC?"_JEC":"") + (isPbPb?(isPeriPD?"_PERI":"_CENT"):"") + ".root";
+        if(gSystem->AccessPathName(OutputFileName.c_str())) { OutputFileName = DIR["dataset"][0] + "DATASET_" + FILETAG + "_" + string(applyCorr) + (applyJEC?"_JEC":"") + ".root"; }
+        if(!tree2DataSet(Workspace[Form("%s_%s%s",DSTAG.c_str(),applyCorr,(applyJEC?"_JEC":""))], InputFileNames, FILETAG, OutputFileName)){ return; }
       }
       else {
-        OutputFileName = dir + "DATASET_" + FILETAG + (isPbPb?(isPeriPD?"_PERI":"_CENT"):"") + ".root";
-        if(gSystem->AccessPathName(OutputFileName.c_str())) { OutputFileName = DIR["dataset"][0] + "DATASET_" + FILETAG + (isPbPb?(isPeriPD?"_PERI":"_CENT"):"") + ".root"; }
-        string NAMETAG = DSTAG;
+        OutputFileName = dir + "DATASET_" + FILETAG + (applyJEC?"_JEC":"") + (isPbPb?(isPeriPD?"_PERI":"_CENT"):"") + ".root";
+        if(gSystem->AccessPathName(OutputFileName.c_str())) { OutputFileName = DIR["dataset"][0] + "DATASET_" + FILETAG + (applyJEC?"_JEC":"") + (isPbPb?(isPeriPD?"_PERI":"_CENT"):"") + ".root"; }
+        string NAMETAG = DSTAG + (applyJEC?"_JEC":"");
         if (checkData) { NAMETAG = string("MC")+(incJpsi?"JPSI":"PSI2S")+(incNonPrompt?"NOPR":"PR")+"_"+(fitPP?"PP":"PbPb"); }
         if(!tree2DataSet(Workspace[NAMETAG], InputFileNames, FILETAG, OutputFileName)){ return; }
       }
@@ -243,15 +244,39 @@ void fitter(
       if ( (FILETAG.find("NOPR")!=std::string::npos) ) { if (!incNonPrompt) continue; } // If we find Non-Prompt MC, check if the user wants to include Non-Prompt
       else if ( (FILETAG.find("PR")!=std::string::npos) && !incPrompt ) continue; // If we find Prompt MC, check if the user wants to include Prompt
       string dir = DIR["dataset"][0];
+
+      bool isPbPb = false, isPeriPD = false;
+      if (FILETAG.find("PbPb")!=std::string::npos) { isPbPb = true; }
+      if (InputFileNames[0].find("HIOniaPeripheral30100")!=std::string::npos) { isPeriPD = true; }
+      
+      if (isPbPb && usePeriPD && !isPeriPD){
+        cout << "[ERROR] Requested to use Peripheral PD but InputTress.txt does not contain the corresponding trees" << endl;
+        return;
+      }
       if (useExtDS==true && inputDataSet["MONTECARLO"]!="" && (existDir(inputDataSet["MONTECARLO"])==true)) { dir = inputDataSet["MONTECARLO"]; }
-      OutputFileName = dir + "DATASET_" + FILETAG + ".root";
-      if(gSystem->AccessPathName(OutputFileName.c_str())) { OutputFileName = DIR["dataset"][0] + "DATASET_" + FILETAG + ".root"; }
-      if(!tree2DataSet(Workspace[DSTAG], InputFileNames, FILETAG, OutputFileName)){ return; }
+      
+      if(strcmp(applyCorr,"")){
+        OutputFileName = dir + "DATASET_" + FILETAG + "_" + string(applyCorr) + (applyJEC?"_JEC":"") + (isPbPb?(isPeriPD?"_PERI":"_CENT"):"") + ".root";
+        if(gSystem->AccessPathName(OutputFileName.c_str())) { OutputFileName = DIR["dataset"][0] + "DATASET_" + FILETAG + "_" + string(applyCorr) + (applyJEC?"_JEC":"") + ".root"; }
+        if(!tree2DataSet(Workspace[Form("%s_%s%s",DSTAG.c_str(),applyCorr,(applyJEC?"_JEC":""))], InputFileNames, FILETAG, OutputFileName)){ return; }
+      }
+      else {      
+	OutputFileName = dir + "DATASET_" + FILETAG + (applyJEC?"_JEC":"") + ".root";
+	if(gSystem->AccessPathName(OutputFileName.c_str())) { OutputFileName = DIR["dataset"][0] + "DATASET_" + FILETAG + (applyJEC?"_JEC":"") + ".root"; }
+	if(!tree2DataSet(Workspace[DSTAG+(applyJEC?"_JEC":"")], InputFileNames, FILETAG, OutputFileName)){ return; }
+      }
       if (fitMC && !aDSTAG->FindObject(DSTAG.c_str())) aDSTAG->Add(new TObjString(DSTAG.c_str()));
       if (wantPureSMC)
 	{
-	  OutputFileName = dir + "DATASET_" + FILETAG + "_PureS" + ".root";
-	  if(!tree2DataSet(Workspace[Form("%s_PureS",DSTAG.c_str())], InputFileNames, FILETAG, OutputFileName)){ return; }
+
+	  if (strcmp(applyCorr,"")) {
+	    OutputFileName = dir + "DATASET_" + FILETAG + "_PureS_" + string(applyCorr) + (applyJEC?"_JEC":"") + (isPbPb?(isPeriPD?"_PERI":"_CENT"):"") + ".root";
+	    if(!tree2DataSet(Workspace[Form("%s_PureS_%s%s",DSTAG.c_str(),applyCorr, (applyJEC?"_JEC":""))], InputFileNames, FILETAG, OutputFileName)){ return; }
+	  }
+	  else{
+	    OutputFileName = dir + "DATASET_" + FILETAG + "_PureS" + (applyJEC?"_JEC":"") + ".root";
+	    if(!tree2DataSet(Workspace[Form("%s_PureS%s",DSTAG.c_str(),(applyJEC?"_JEC":""))], InputFileNames, FILETAG, OutputFileName)){ return; }
+	  }
 	}
     }
   }
@@ -347,9 +372,14 @@ void fitter(
           if ( fitMass && fitCtau && !DSTAG.Contains("DATA") ) continue;
 
           TString wsName = "";
-          if (DSTAG.Contains("MC") && wantPureSMC) wsName = Form("%s_PureS",DSTAG.Data());
-          else if (DSTAG.Contains("DATA") && strcmp(applyCorr,"")) wsName = Form("%s_%s",DSTAG.Data(),applyCorr);
-          else wsName = DSTAG;
+          if (DSTAG.Contains("MC") && wantPureSMC) {
+	    if(strcmp(applyCorr,""))
+	      wsName = Form("%s_PureS_%s%s",DSTAG.Data(),applyCorr,(applyJEC?"_JEC":""));
+	    else
+	      wsName = Form("%s_PureS%s",DSTAG.Data(),(applyJEC?"_JEC":""));
+	  }
+          else if (DSTAG.Contains("DATA") && strcmp(applyCorr,"")) wsName = Form("%s_%s%s",DSTAG.Data(),applyCorr,(applyJEC?"_JEC":""));
+          else wsName = DSTAG + (applyJEC?"_JEC":"");
           
           if (Workspace.count(wsName.Data())>0) {
             
@@ -382,6 +412,7 @@ void fitter(
                                  wantPureSMC,     // Flag to indicate if we want to fit pure signal MC
                                  inputFitDirs[index], // Map of user-defined directory paths of previous fit results
                                  applyCorr,       // Flag to indicate if we want corrected dataset and which correction
+				 applyJEC,        // Flag to indicate if we want to apply the Jet Energy corrections
                                  numCores,        // Number of cores used for fitting
                                  // Select the drawing options
                                  setLogScale,     // Draw plot with log scale
@@ -427,6 +458,7 @@ void fitter(
                                             wantPureSMC,           // Flag to indicate if we want to fit pure signal MC
                                             inputFitDirs[index],// Map of user-defined directory paths of previous fit results
                                             applyCorr,       // Flag to indicate if we want corrected dataset and which correction
+					    applyJEC,        // Flag to indicate if we want to apply the Jet Energy Corrections
                                             numCores,        // Number of cores used for fitting
                                             // Select the drawing options
                                             setLogScale,     // Draw plot with log scale
@@ -888,7 +920,7 @@ bool existDir(string dir)
 };
 
 
-bool checkSettings(bool fitData, bool fitMC, bool fitPbPb, bool fitPP, bool fitMass, bool fitCtau, bool fitCtauTrue, bool fitCtauReco, bool fitRes, bool doCtauErrPDF, bool incJpsi, bool incPsi2S, bool incBkg, bool incPrompt, bool incNonPrompt, bool cutCtau, bool doConstrFit, bool doSimulFit, bool wantPureSMC, const char* applyCorr, bool setLogScale, bool zoomPsi, bool incSS, int numCores)
+bool checkSettings(bool fitData, bool fitMC, bool fitPbPb, bool fitPP, bool fitMass, bool fitCtau, bool fitCtauTrue, bool fitCtauReco, bool fitRes, bool doCtauErrPDF, bool incJpsi, bool incPsi2S, bool incBkg, bool incPrompt, bool incNonPrompt, bool cutCtau, bool doConstrFit, bool doSimulFit, bool wantPureSMC, const char* applyCorr, bool applyJEC, bool setLogScale, bool zoomPsi, bool incSS, int numCores)
 { 
   cout << "[INFO] Checking user settings " << endl;
 
@@ -935,7 +967,11 @@ bool checkSettings(bool fitData, bool fitMC, bool fitPbPb, bool fitPP, bool fitM
     cout << "[WARNING] Pure signal MC will not be fitted since you have selected DATA!" << endl;
   }
   if (!fitData && strcmp(applyCorr,"")) {
-    cout << "[WARNING] Correction only to Data, please make fitData = true" << endl; return false;
+    //cout << "[WARNING] Correction only to Data, please make fitData = true" << endl; //return false;
+    cout << "[WARNING] You are applying " << applyCorr << " corrections to MC, If you want to fit Data please make fitData = true." << endl;
+  }
+  if (!fitData && applyJEC){
+    cout << "[WARNING] You are applying Jet Energy corrections on MC. If you want to fit Data please make fitData = true." << endl;
   }
   if (wantPureSMC && (!incPsi2S && !incJpsi)) {
     cout << "[ERROR] Pure signal MC can only be fitted if at least one signal model is included, please fix your input settings!" << endl;

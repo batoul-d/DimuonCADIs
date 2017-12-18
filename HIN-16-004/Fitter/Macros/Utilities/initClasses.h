@@ -15,6 +15,7 @@
 #include "TH2D.h"
 #include "TH1.h"
 #include "TF1.h"
+#include "TH2.h"
 #include "TProfile.h"
 #include "TVectorD.h"
 #include "TMatrixD.h"
@@ -667,19 +668,19 @@ int importDataset(RooWorkspace& myws, const RooWorkspace& inputWS, struct KinCut
   myws.import(*dataOS);
   delete dataOS;
   
-  if (label.find("NoBkg")==std::string::npos && label.find("AccEff")==std::string::npos && label.find("lJpsiEff")==std::string::npos) // Don't try to find SS dataset if label contais NoBkg or correction
-  {
-    if (!(inputWS.data(Form("dSS_%s", label.c_str())))){
-      cout << "[ERROR] The dataset " <<  Form("dSS_%s", label.c_str()) << " was not found!" << endl;
-      //return -1;
-    }
-    RooDataSet* dataSS = (RooDataSet*)inputWS.data(Form("dSS_%s", label.c_str()))->reduce(strCut.c_str());
-    if (dataSS->sumEntries()==0){
-      cout << "[WARNING] No events from dataset " <<  Form("dSS_%s", label.c_str()) << " passed the kinematic cuts!" << endl;
-    }
-    myws.import(*dataSS);
-    delete dataSS;
-  }
+  //if (label.find("NoBkg")==std::string::npos && label.find("AccEff")==std::string::npos && label.find("lJpsiEff")==std::string::npos) // Don't try to find SS dataset if label contais NoBkg or correction
+  //{
+  //if (!(inputWS.data(Form("dSS_%s", label.c_str())))){
+  //  cout << "[ERROR] The dataset " <<  Form("dSS_%s", label.c_str()) << " was not found!" << endl;
+  //  //return -1;
+  //}
+  //RooDataSet* dataSS = (RooDataSet*)inputWS.data(Form("dSS_%s", label.c_str()))->reduce(strCut.c_str());
+  //if (dataSS->sumEntries()==0){
+  //  cout << "[WARNING] No events from dataset " <<  Form("dSS_%s", label.c_str()) << " passed the kinematic cuts!" << endl;
+  //}
+  //myws.import(*dataSS);
+  //delete dataSS;
+  //}
 
   // Set the range of each global parameter in the local roodataset
   const RooArgSet* rowOS = myws.data(Form("dOS_%s", label.c_str()))->get();
