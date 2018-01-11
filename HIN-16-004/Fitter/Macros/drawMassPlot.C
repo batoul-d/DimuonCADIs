@@ -580,23 +580,25 @@ void printMassParameters(RooWorkspace myws, TPad* Pad, bool isPbPb, string pdfNa
       label=Form("%s^{%s}", s1.c_str(), s2.c_str());
     }
     // Print the parameter's results
+    bool limClose = false;
+    if ((it->getValV()+3*it->getError() > it->getMax())||(it->getValV()-3*it->getError() < it->getMin())||(abs(it->getError()/it->getValV()) > 0.5)) limClose = true;
     if(s1=="N"){ 
-      t->DrawLatex(0.20, 0.76-dy, Form((isWeighted?"%s = %.6f#pm%.6f ":"%s = %.0f#pm%.0f "), label.c_str(), it->getValV(), it->getError())); dy+=0.045; 
+      t->DrawLatex(0.20, 0.76-dy, Form((isWeighted?"%s = %.6f#pm%.6f %s":"%s = %.0f#pm%.0f %s "), label.c_str(), it->getValV(), it->getError(), (limClose?":P":""))); dy+=0.045; 
     }
     else if(s1.find("#sigma_{2}/#sigma_{1}")!=std::string::npos){ 
-      t->DrawLatex(0.20, 0.76-dy, Form("%s = %.3f#pm%.3f ", label.c_str(), it->getValV(), it->getError())); dy+=0.045; 
+      t->DrawLatex(0.20, 0.76-dy, Form("%s = %.3f#pm%.3f %s ", label.c_str(), it->getValV(), it->getError(), (limClose?":P":""))); dy+=0.045; 
     }
     else if(s1.find("sigma")!=std::string::npos){ 
-      t->DrawLatex(0.20, 0.76-dy, Form("%s = %.2f#pm%.2f MeV/c^{2}", label.c_str(), it->getValV()*1000., it->getError()*1000.)); dy+=0.045; 
+      t->DrawLatex(0.20, 0.76-dy, Form("%s = %.2f#pm%.2f MeV/c^{2} %s", label.c_str(), it->getValV()*1000., it->getError()*1000.,(limClose?":P":""))); dy+=0.045; 
     }
     else if(s1.find("lambda")!=std::string::npos){ 
-      t->DrawLatex(0.20, 0.76-dy, Form("%s = %.4f#pm%.4f", label.c_str(), it->getValV(), it->getError())); dy+=0.045; 
+      t->DrawLatex(0.20, 0.76-dy, Form("%s = %.4f#pm%.4f %s", label.c_str(), it->getValV(), it->getError(),(limClose?":P":""))); dy+=0.045; 
     }
     else if(s1.find("m")!=std::string::npos){ 
-      t->DrawLatex(0.20, 0.76-dy, Form("%s = %.5f#pm%.5f GeV/c^{2}", label.c_str(), it->getValV(), it->getError())); dy+=0.045; 
+      t->DrawLatex(0.20, 0.76-dy, Form("%s = %.5f#pm%.5f GeV/c^{2} %s", label.c_str(), it->getValV(), it->getError(), (limClose?":P":""))); dy+=0.045; 
     }
     else { 
-      t->DrawLatex(0.20, 0.76-dy, Form("%s = %.4f#pm%.4f", label.c_str(), it->getValV(), it->getError())); dy+=0.045; 
+      t->DrawLatex(0.20, 0.76-dy, Form("%s = %.4f#pm%.4f %s", label.c_str(), it->getValV(), it->getError(),(limClose?":P":""))); dy+=0.045; 
     }
   }
 };
