@@ -168,15 +168,15 @@ void printLLRStudy(
       },
       {"CTAU", 
        {
-         {"BKG",   true}, 
-         {"JPSI",  true}, 
+         {"BKG",   false }, //true}, 
+         {"JPSI",  false}, //true}, 
          {"PSI2S", false},
-         {"RES",   true},
-         {"TRUE",  true},
+         {"RES",   false}, //true},
+         {"TRUE",  false}, //true},
        }
       }
     };
-    map<string, bool> COLMAP = {{"PbPb", true}, {"PP", true}};
+    map<string, bool> COLMAP = {{"PbPb", false}, {"PP", true}}; //PbPb was true
  
     map< string, vector< int > > lineIndexToKeep;
     InputFile = Form("InitialParam_MASS_BKG_%s.csv", "PbPb");
@@ -207,7 +207,6 @@ void printLLRStudy(
       }
     }
   }
-
 };
 
 
@@ -381,73 +380,93 @@ vector<string> printNLL(map< string, setModels_t > content, string outputDir, st
     }
     TexTable.push_back("\\end{tabular}");
     TexTable.push_back(Form("\\label{tab:LLRTEST_%s}", binName.c_str()));
-    string rapStr, centStr, ptStr, modelStr, colStr;
+    string rapStr, zStr, centStr, ptStr, modelStr, colStr;
     if (bestModelFile.find("ExpChebychev")!=std::string::npos){ modelStr = "exponential chebychev polynomials"; }
     else if (bestModelFile.find("Chebychev")!=std::string::npos){ modelStr = "chebychev polynomials"; }
     else { modelStr = "chebychev polynomials"; }
     
-    if (binName.find("rap06")!=std::string::npos){ rapStr = "$\\abs{y} <$ 0.6"; }
-    else if (binName.find("rap024")!=std::string::npos){ rapStr = "$\\abs{y} <$ 2.4"; }
-    else if (binName.find("rap0612")!=std::string::npos){ rapStr = "0.6 $\\leq \\abs{y} <$ 1.2"; }
-    else if (binName.find("rap1218")!=std::string::npos){ rapStr = "1.2 $\\leq \\abs{y} <$ 1.8"; }
-    else if (binName.find("rap1824")!=std::string::npos){ rapStr = "1.8 $\\leq \\abs{y} <$ 2.4"; }
-    else if (binName.find("rap0004")!=std::string::npos){ rapStr = "$\\abs{y} <$ 0.4"; }
-    else if (binName.find("rap0408")!=std::string::npos){ rapStr = "0.4 $\\leq \\abs{y} <$ 0.8"; }
-    else if (binName.find("rap0812")!=std::string::npos){ rapStr = "0.8 $\\leq \\abs{y} <$ 1.2"; }
-    else if (binName.find("rap1216")!=std::string::npos){ rapStr = "1.2 $\\leq \\abs{y} <$ 1.6"; }
-    else if (binName.find("rap1620")!=std::string::npos){ rapStr = "1.6 $\\leq \\abs{y} <$ 2.0"; }
-    else if (binName.find("rap2024")!=std::string::npos){ rapStr = "2.0 $\\leq \\abs{y} <$ 2.4"; }
-    
-    if (binName.find("pt30500")!=std::string::npos){ ptStr = "3.0 $\\leq \\PT <$ 50.0 $\\GeVc$"; }
+    if (binName.find("rap024")!=std::string::npos){ rapStr = "$\\abs{y} <$ 2.4"; }                                                                                                               
+    else if (binName.find("rap016")!=std::string::npos){ rapStr = "$\\abs{y} <$ 1.6"; }
+    else if (binName.find("rap1624")!=std::string::npos){ rapStr = "1.6 $\\leq \\abs{y} <$ 2.4"; }
+
+    if (binName.find("pt30500")!=std::string::npos){ ptStr = "3.0 $\\leq \\PT <$ 50.0 $\\GeVc$"; }                                                                                                    
     else if (binName.find("pt65500")!=std::string::npos){ ptStr = "6.5 $\\leq \\PT <$ 50.0 $\\GeVc$"; }
-    else if (binName.find("pt30300")!=std::string::npos){ ptStr = "3.0 $\\leq \\PT <$ 30.0 $\\GeVc$"; }
-    else if (binName.find("pt3045")!=std::string::npos){ ptStr = "3.0 $\\leq \\PT <$ 4.5 $\\GeVc$"; }
-    else if (binName.find("pt3065")!=std::string::npos){ ptStr = "3.0 $\\leq \\PT <$ 6.5 $\\GeVc$"; }
-    else if (binName.find("pt4555")!=std::string::npos){ ptStr = "4.5 $\\leq \\PT <$ 5.5 $\\GeVc$"; }
-    else if (binName.find("pt5565")!=std::string::npos){ ptStr = "5.5 $\\leq \\PT <$ 6.5 $\\GeVc$"; }
-    else if (binName.find("pt6575")!=std::string::npos){ ptStr = "6.5 $\\leq \\PT <$ 7.5 $\\GeVc$"; }
-    else if (binName.find("pt6585")!=std::string::npos){ ptStr = "6.5 $\\leq \\PT <$ 8.5 $\\GeVc$"; }
-    else if (binName.find("pt7585")!=std::string::npos){ ptStr = "7.5 $\\leq \\PT <$ 8.5 $\\GeVc$"; }
-    else if (binName.find("pt8595")!=std::string::npos){ ptStr = "8.5 $\\leq \\PT <$ 9.5 $\\GeVc$"; }
-    else if (binName.find("pt95110")!=std::string::npos){ ptStr = "9.5 $\\leq \\PT <$ 11.0 $\\GeVc$"; }
-    else if (binName.find("pt110130")!=std::string::npos){ ptStr = "11.0 $\\leq \\PT <$ 13.0 $\\GeVc$"; }
-    else if (binName.find("pt110150")!=std::string::npos){ ptStr = "11.0 $\\leq \\PT <$ 15.0 $\\GeVc$"; }
-    else if (binName.find("pt130150")!=std::string::npos){ ptStr = "13.0 $\\leq \\PT <$ 15.0 $\\GeVc$"; }
-    else if (binName.find("pt150200")!=std::string::npos){ ptStr = "15.0 $\\leq \\PT <$ 20.0 $\\GeVc$"; }
-    else if (binName.find("pt150500")!=std::string::npos){ ptStr = "15.0 $\\leq \\PT <$ 50.0 $\\GeVc$"; }
-    else if (binName.find("pt200300")!=std::string::npos){ ptStr = "20.0 $\\leq \\PT <$ 30.0 $\\GeVc$"; }
-    else if (binName.find("pt200500")!=std::string::npos){ ptStr = "20.0 $\\leq \\PT <$ 50.0 $\\GeVc$"; }
-    else if (binName.find("pt300500")!=std::string::npos){ ptStr = "30.0 $\\leq \\PT <$ 50.0 $\\GeVc$"; }
+
+    if (binName.find("z010")!=std::string::npos){ ptStr = "$ 0 \\leq \\z <$ 1 $\\GeVc$"; }
+    else if (binName.find("z01")!=std::string::npos){ ptStr = "0 $\\leq \\z <$ 0.1 $\\GeVc$"; }
+    else if (binName.find("z12")!=std::string::npos){ ptStr = "0.1 $\\leq \\z <$ 0.2 $\\GeVc$"; }
+    else if (binName.find("z23")!=std::string::npos){ ptStr = "0.2 $\\leq \\z <$ 0.3 $\\GeVc$"; }
+    else if (binName.find("z34")!=std::string::npos){ ptStr = "0.3 $\\leq \\z <$ 0.4 $\\GeVc$"; }
+    else if (binName.find("z45")!=std::string::npos){ ptStr = "0.4 $\\leq \\z <$ 0.5 $\\GeVc$"; }
+    else if (binName.find("z56")!=std::string::npos){ ptStr = "0.5 $\\leq \\z <$ 0.6 $\\GeVc$"; }
+    else if (binName.find("z67")!=std::string::npos){ ptStr = "0.6 $\\leq \\z <$ 0.7 $\\GeVc$"; }
+    else if (binName.find("z78")!=std::string::npos){ ptStr = "0.7 $\\leq \\z <$ 0.8 $\\GeVc$"; }
+    else if (binName.find("z89")!=std::string::npos){ ptStr = "0.8 $\\leq \\z <$ 0.9 $\\GeVc$"; }
+    else if (binName.find("z910")!=std::string::npos){ ptStr = "0.9 $\\leq \\z <$ 1 $\\GeVc$"; }
+
+    //if (binName.find("rap06")!=std::string::npos){ rapStr = "$\\abs{y} <$ 0.6"; }
+    //else if (binName.find("rap024")!=std::string::npos){ rapStr = "$\\abs{y} <$ 2.4"; }
+    //else if (binName.find("rap0612")!=std::string::npos){ rapStr = "0.6 $\\leq \\abs{y} <$ 1.2"; }
+    //else if (binName.find("rap1218")!=std::string::npos){ rapStr = "1.2 $\\leq \\abs{y} <$ 1.8"; }
+    //else if (binName.find("rap1824")!=std::string::npos){ rapStr = "1.8 $\\leq \\abs{y} <$ 2.4"; }
+    //else if (binName.find("rap0004")!=std::string::npos){ rapStr = "$\\abs{y} <$ 0.4"; }
+    //else if (binName.find("rap0408")!=std::string::npos){ rapStr = "0.4 $\\leq \\abs{y} <$ 0.8"; }
+    //else if (binName.find("rap0812")!=std::string::npos){ rapStr = "0.8 $\\leq \\abs{y} <$ 1.2"; }
+    //else if (binName.find("rap1216")!=std::string::npos){ rapStr = "1.2 $\\leq \\abs{y} <$ 1.6"; }
+    //else if (binName.find("rap1620")!=std::string::npos){ rapStr = "1.6 $\\leq \\abs{y} <$ 2.0"; }
+    //else if (binName.find("rap2024")!=std::string::npos){ rapStr = "2.0 $\\leq \\abs{y} <$ 2.4"; }
     
-    if (binName.find("cent0200")!=std::string::npos){ centStr = "centratility bin 0-100$\\%$"; }
-    else if (binName.find("cent020")!=std::string::npos){ centStr = "centratility bin 0-10$\\%$"; }
-    else if (binName.find("cent010")!=std::string::npos){ centStr = "centratility bin 0-5$\\%$"; }
-    else if (binName.find("cent1020")!=std::string::npos){ centStr = "centratility bin 5-10$\\%$"; }
-    else if (binName.find("cent2030")!=std::string::npos){ centStr = "centratility bin 10-15$\\%$"; }
-    else if (binName.find("cent3040")!=std::string::npos){ centStr = "centratility bin 15-20$\\%$"; }
-    else if (binName.find("cent4050")!=std::string::npos){ centStr = "centratility bin 20-25$\\%$"; }
-    else if (binName.find("cent5060")!=std::string::npos){ centStr = "centratility bin 25-30$\\%$"; }
-    else if (binName.find("cent6070")!=std::string::npos){ centStr = "centratility bin 30-35$\\%$"; }
-    else if (binName.find("cent7080")!=std::string::npos){ centStr = "centratility bin 35-40$\\%$"; }
-    else if (binName.find("cent8090")!=std::string::npos){ centStr = "centratility bin 40-45$\\%$"; }
-    else if (binName.find("cent90100")!=std::string::npos){ centStr = "centratility bin 45-50$\\%$"; }
-    else if (binName.find("cent100120")!=std::string::npos){ centStr = "centratility bin 50-60$\\%$"; }
-    else if (binName.find("cent120140")!=std::string::npos){ centStr = "centratility bin 60-70$\\%$"; }
-    else if (binName.find("cent140200")!=std::string::npos){ centStr = "centratility bin 70-100$\\%$"; }
-    else if (binName.find("cent2040")!=std::string::npos){ centStr = "centratility bin 10-20$\\%$"; }
-    else if (binName.find("cent4060")!=std::string::npos){ centStr = "centratility bin 20-30$\\%$"; }
-    else if (binName.find("cent6080")!=std::string::npos){ centStr = "centratility bin 30-40$\\%$"; }
-    else if (binName.find("cent80100")!=std::string::npos){ centStr = "centratility bin 40-50$\\%$"; }
-    else if (binName.find("cent100200")!=std::string::npos){ centStr = "centratility bin 50-1000$\\%$"; }
-    else if (binName.find("cent2060")!=std::string::npos){ centStr = "centratility bin 10-30$\\%$"; }
-    else if (binName.find("cent60200")!=std::string::npos){ centStr = "centratility bin 30-100$\\%$"; }
-    else if (binName.find("cent040")!=std::string::npos){ centStr = "centratility bin 0-20$\\%$"; }
-    else if (binName.find("cent4080")!=std::string::npos){ centStr = "centratility bin 20-40$\\%$"; }
-    else if (binName.find("cent80200")!=std::string::npos){ centStr = "centratility bin 40-100$\\%$"; }
+    //if (binName.find("pt30500")!=std::string::npos){ ptStr = "3.0 $\\leq \\PT <$ 50.0 $\\GeVc$"; }
+    //else if (binName.find("pt65500")!=std::string::npos){ ptStr = "6.5 $\\leq \\PT <$ 50.0 $\\GeVc$"; }
+    //else if (binName.find("pt30300")!=std::string::npos){ ptStr = "3.0 $\\leq \\PT <$ 30.0 $\\GeVc$"; }
+    //else if (binName.find("pt3045")!=std::string::npos){ ptStr = "3.0 $\\leq \\PT <$ 4.5 $\\GeVc$"; }
+    //else if (binName.find("pt3065")!=std::string::npos){ ptStr = "3.0 $\\leq \\PT <$ 6.5 $\\GeVc$"; }
+    //else if (binName.find("pt4555")!=std::string::npos){ ptStr = "4.5 $\\leq \\PT <$ 5.5 $\\GeVc$"; }
+    //else if (binName.find("pt5565")!=std::string::npos){ ptStr = "5.5 $\\leq \\PT <$ 6.5 $\\GeVc$"; }
+    //else if (binName.find("pt6575")!=std::string::npos){ ptStr = "6.5 $\\leq \\PT <$ 7.5 $\\GeVc$"; }
+    //else if (binName.find("pt6585")!=std::string::npos){ ptStr = "6.5 $\\leq \\PT <$ 8.5 $\\GeVc$"; }
+    //else if (binName.find("pt7585")!=std::string::npos){ ptStr = "7.5 $\\leq \\PT <$ 8.5 $\\GeVc$"; }
+    //else if (binName.find("pt8595")!=std::string::npos){ ptStr = "8.5 $\\leq \\PT <$ 9.5 $\\GeVc$"; }
+    //else if (binName.find("pt95110")!=std::string::npos){ ptStr = "9.5 $\\leq \\PT <$ 11.0 $\\GeVc$"; }
+    //else if (binName.find("pt110130")!=std::string::npos){ ptStr = "11.0 $\\leq \\PT <$ 13.0 $\\GeVc$"; }
+    //else if (binName.find("pt110150")!=std::string::npos){ ptStr = "11.0 $\\leq \\PT <$ 15.0 $\\GeVc$"; }
+    //else if (binName.find("pt130150")!=std::string::npos){ ptStr = "13.0 $\\leq \\PT <$ 15.0 $\\GeVc$"; }
+    //else if (binName.find("pt150200")!=std::string::npos){ ptStr = "15.0 $\\leq \\PT <$ 20.0 $\\GeVc$"; }
+    //else if (binName.find("pt150500")!=std::string::npos){ ptStr = "15.0 $\\leq \\PT <$ 50.0 $\\GeVc$"; }
+    //else if (binName.find("pt200300")!=std::string::npos){ ptStr = "20.0 $\\leq \\PT <$ 30.0 $\\GeVc$"; }
+    //else if (binName.find("pt200500")!=std::string::npos){ ptStr = "20.0 $\\leq \\PT <$ 50.0 $\\GeVc$"; }
+    //else if (binName.find("pt300500")!=std::string::npos){ ptStr = "30.0 $\\leq \\PT <$ 50.0 $\\GeVc$"; }
+    
+    //if (binName.find("cent0200")!=std::string::npos){ centStr = "centratility bin 0-100$\\%$"; }
+    //else if (binName.find("cent020")!=std::string::npos){ centStr = "centratility bin 0-10$\\%$"; }
+    //else if (binName.find("cent010")!=std::string::npos){ centStr = "centratility bin 0-5$\\%$"; }
+    //else if (binName.find("cent1020")!=std::string::npos){ centStr = "centratility bin 5-10$\\%$"; }
+    //else if (binName.find("cent2030")!=std::string::npos){ centStr = "centratility bin 10-15$\\%$"; }
+    //else if (binName.find("cent3040")!=std::string::npos){ centStr = "centratility bin 15-20$\\%$"; }
+    //else if (binName.find("cent4050")!=std::string::npos){ centStr = "centratility bin 20-25$\\%$"; }
+    //else if (binName.find("cent5060")!=std::string::npos){ centStr = "centratility bin 25-30$\\%$"; }
+    //else if (binName.find("cent6070")!=std::string::npos){ centStr = "centratility bin 30-35$\\%$"; }
+    //else if (binName.find("cent7080")!=std::string::npos){ centStr = "centratility bin 35-40$\\%$"; }
+    //else if (binName.find("cent8090")!=std::string::npos){ centStr = "centratility bin 40-45$\\%$"; }
+    //else if (binName.find("cent90100")!=std::string::npos){ centStr = "centratility bin 45-50$\\%$"; }
+    //else if (binName.find("cent100120")!=std::string::npos){ centStr = "centratility bin 50-60$\\%$"; }
+    //else if (binName.find("cent120140")!=std::string::npos){ centStr = "centratility bin 60-70$\\%$"; }
+    //else if (binName.find("cent140200")!=std::string::npos){ centStr = "centratility bin 70-100$\\%$"; }
+    //else if (binName.find("cent2040")!=std::string::npos){ centStr = "centratility bin 10-20$\\%$"; }
+    //else if (binName.find("cent4060")!=std::string::npos){ centStr = "centratility bin 20-30$\\%$"; }
+    //else if (binName.find("cent6080")!=std::string::npos){ centStr = "centratility bin 30-40$\\%$"; }
+    //else if (binName.find("cent80100")!=std::string::npos){ centStr = "centratility bin 40-50$\\%$"; }
+    //else if (binName.find("cent100200")!=std::string::npos){ centStr = "centratility bin 50-1000$\\%$"; }
+    //else if (binName.find("cent2060")!=std::string::npos){ centStr = "centratility bin 10-30$\\%$"; }
+    //else if (binName.find("cent60200")!=std::string::npos){ centStr = "centratility bin 30-100$\\%$"; }
+    //else if (binName.find("cent040")!=std::string::npos){ centStr = "centratility bin 0-20$\\%$"; }
+    //else if (binName.find("cent4080")!=std::string::npos){ centStr = "centratility bin 20-40$\\%$"; }
+    //else if (binName.find("cent80200")!=std::string::npos){ centStr = "centratility bin 40-100$\\%$"; }
 
     if (binName.find("PP")!=std::string::npos){ colStr = "pp"; }
     else if (binName.find("PbPb")!=std::string::npos){ colStr = "PbPb"; }
-    TexTable.push_back(Form("\\caption{Negative loglikelihoods for fits with %s of orders 0-6 of %s data in %s %s. In addition the p-values of the LLR-test for the null-hypothesis are listed. Tests of which the null-hypothesis cannot be rejected for two consecutive orders are highlighted in bold, together with the corresponding order.}", modelStr.c_str(), colStr.c_str(), rapStr.c_str(), (colStr=="pp" ? Form("and %s", ptStr.c_str()) : Form(", %s and %s", ptStr.c_str(), centStr.c_str()))));
+    TexTable.push_back(Form("\\caption{Negative loglikelihoods for fits with %s of orders 0-6 of %s data for %s in %s %s. In addition the p-values of the LLR-test for the null-hypothesis are listed. Tests of which the null-hypothesis cannot be rejected for two consecutive orders are highlighted in bold, together with the corresponding order.}", modelStr.c_str(), colStr.c_str(), zStr.c_str(), rapStr.c_str(), (colStr=="p" ? Form("and %s", ptStr.c_str()) : Form(", %s and %s", ptStr.c_str(), centStr.c_str()))));
+    //TexTable.push_back(Form("\\caption{Negative loglikelihoods for fits with %s of orders 0-6 of %s data in %s %s. In addition the p-values of the LLR-test for the null-hypothesis are listed. Tests of which the null-hypothesis cannot be rejected for two consecutive orders are highlighted in bold, together with the corresponding order.}", modelStr.c_str(), colStr.c_str(), rapStr.c_str(), (colStr=="pp" ? Form("and %s", ptStr.c_str()) : Form(", %s and %s", ptStr.c_str(), centStr.c_str()))));
     TexTable.push_back("\\end{table}");
     printLines(TexTable, foutTexTable);
     foutTexTable << endl; foutTexTable << endl;
@@ -725,9 +744,12 @@ bool extractWinnerLabel(string fileName, string& winnerLabel)
     cout << "[ERROR] Workspace not found in " << fileName << endl; return false;
   }
   
-  winnerLabel = Form("%.1f-%.1f;%.1f-%.1f;%.0f-%.0f;",
+  winnerLabel = Form("%.1f-%.1f;%.1f-%.1f;%.2f-%.2f;%.1f-%.1f;%.1f-%.1f;%.0f-%.0f;",
                      ws->var("rap")->getMin(), ws->var("rap")->getMax(),
                      ws->var("pt")->getMin(), ws->var("pt")->getMax(),
+		     ws->var("zed")->getMin(), ws->var("zed")->getMax(),
+		     ws->var("jetpt")->getMin(), ws->var("jetpt")->getMax(),
+		     ws->var("jetrap")->getMin(), ws->var("jetrap")->getMax(),
                      ws->var("cent")->getMin()/2.0, ws->var("cent")->getMax()/2.0
                      );
 

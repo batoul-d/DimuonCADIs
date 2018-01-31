@@ -30,6 +30,8 @@ bool fitCharmoniaCtauErrModel( RooWorkspace& myws,             // Local Workspac
                                // Select the fitting options
                                bool doCtauErrPdf   = true,     // Flag to indicate if we want to make the ctau Error Pdf
                                bool wantPureSMC    = false,    // Flag to indicate if we want to use pure signal MC
+			       const char* applyCorr = "",     // Flag to indicate if we want to apply J/psi corrections
+			       bool applyJEC       = false,    // Flag to indecate if we want to apply Jet Energy correction 
                                bool loadCtauErrPdf = false,    // Load previous ctau Error Pdf
                                map<string, string> inputFitDir={},// User-defined Location of the fit results
                                int  numCores       = 2,         // Number of cores used for fitting
@@ -67,6 +69,8 @@ bool fitCharmoniaCtauErrModel( RooWorkspace& myws,             // Local Workspac
   if (incPsi2S) { plotLabel = plotLabel + "_Psi2S";  pdfNames.push_back(Form("%s_Psi2S_%s", pdfType.c_str(), COLL.c_str())); }
   if (!isMC)    { plotLabel = plotLabel + "_Bkg";    pdfNames.push_back(Form("%s_Bkg_%s", pdfType.c_str(), COLL.c_str()));   }
   if (wantPureSMC) { plotLabel = plotLabel + "_NoBkg"; }
+  if (strcmp(applyCorr,"")) {plotLabel = plotLabel + "_" + string(applyCorr);}
+  if (applyJEC) {plotLabel = plotLabel + "_JEC";}
 
   // check if we have already done this fit. If yes, do nothing and return true.
   string FileName = "";
@@ -89,8 +93,8 @@ bool fitCharmoniaCtauErrModel( RooWorkspace& myws,             // Local Workspac
 
   // Import the local datasets
   double numEntries = 1000000;
-  string label = ((DSTAG.find(COLL.c_str())!=std::string::npos) ? DSTAG.c_str() : Form("%s_%s", DSTAG.c_str(), COLL.c_str()));
-  if (wantPureSMC) label = Form("%s_NoBkg", label.c_str());
+  string label = ((DSTAG.find(COLL.c_str())!=std::string::npos) ? DSTAG.c_str() : Form("%s_%s_%s%s", DSTAG.c_str(), COLL.c_str(), applyCorr, (applyJEC?"_JEC":"")));
+  if (wantPureSMC) label = Form("%s_NoBkg_%s%s", label.c_str(),applyCorr,(applyJEC?"_JEC":""));
   string dsName = Form("dOS_%s", label.c_str());
   if (importDS) {
     if ( !(myws.data(dsName.c_str())) ) {
@@ -114,8 +118,6 @@ bool fitCharmoniaCtauErrModel( RooWorkspace& myws,             // Local Workspac
     bool importDS = false;
     bool getMeanPT = false;
     bool zoomPsi = false;
-    const char* applyCorr = "";
-    bool applyJEC = false;
     bool doSimulFit = false;
     bool cutCtau = false;
     bool doConstrFit = false;
@@ -195,7 +197,7 @@ void setCtauErrGlobalParameterRange(RooWorkspace& myws, map<string, string>& par
 void setCtauErrFileName(string& FileName, string outputDir, string TAG, string plotLabel, struct KinCuts cut, bool isPbPb, bool cutSideBand)
 {
   if (TAG.find("_")!=std::string::npos) TAG.erase(TAG.find("_"));
-  FileName = Form("%sctauErr%s/%s/result/FIT_%s_%s_%s%s_z%.0f%.0f_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.root", outputDir.c_str(), (cutSideBand?"SB":""), TAG.c_str(), "CTAUERR", TAG.c_str(), (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Zed.Min*10.0), (cut.dMuon.Zed.Max*10.0), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End);
+  FileName = Form("%sctauErr%s/%s/result/FIT_%s_%s_%s%s_z%.0f%.0f_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.root", outputDir.c_str(), (cutSideBand?"SB":""), TAG.c_str(), "CTAUERR", TAG.c_str(), (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Zed.Min*100.0), (cut.dMuon.Zed.Max*100.0), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End);
 
   return;
 };

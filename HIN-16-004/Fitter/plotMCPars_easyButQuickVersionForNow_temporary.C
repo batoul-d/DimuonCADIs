@@ -31,6 +31,7 @@
 using namespace std;
 
 void plotMCPars_easyButQuickVersionForNow_temporary(const char* workDirName,
+						    const char* rapRegion,
 						    const char* DSTag, //="DATA", // Data Set tag can be: "DATA","MCPSI2SP", "MCJPSIP" ...
 						    const char* fitType, // "mass", "ctau"...
 						    bool wantPureSMC, // =false,
@@ -40,30 +41,47 @@ void plotMCPars_easyButQuickVersionForNow_temporary(const char* workDirName,
 {
   gStyle->SetOptStat(0);
 
+  double zbins016 [] = {0.4, 0.6, 0.8, 1.0};
+  double zbins1624 [] = {0.2, 0.4, 0.6, 0.8, 1.0};
 
+  //double zbins016 [] = {0.4, 0.55, 0.55, 0.7, 0.85, 1.0};
+  //double zbins1624 [] = {0.25, 0.4, 0.55, 0.7, 0.85, 1.0};
+
+  int nzbins = 0;
+  double zedmin, zedmax;
+  if (strcmp(rapRegion,"1624")) {
+    nzbins = sizeof(zbins016)/sizeof(double)-1;
+    zedmin = zbins016[0];
+    zedmax = zbins016[nzbins];
+  }
+  else {
+    nzbins = sizeof(zbins1624)/sizeof(double)-1;
+    zedmin = zbins1624[0];
+    zedmax = zbins1624[nzbins];
+  }
   TCanvas* c = new TCanvas ("c","",1000,800);
 
-  gSystem->mkdir(Form("Output/%s/%s/%s/MCPars",workDirName, fitType, DSTag));
-  ofstream fileOut (Form("Output/%s/%s/%s/MCPars/ParsEvol.dat",workDirName, fitType, DSTag));
+  gSystem->mkdir(Form("Output/%s/DataFits_%s/%s/%s/MCPars",workDirName, rapRegion, fitType, DSTag));
+  ofstream fileOut (Form("Output/%s/DataFits_%s/%s/%s/MCPars/ParsEvol.dat",workDirName, rapRegion, fitType, DSTag));
   fileOut << "zmin  zmax  n  nerr  alpha  alphaerr"<<endl;
 
-  TH1F* aevol = new TH1F ("aevol",";z(J/#psi);alpha",10, 0, 1);
-  TH1F* nevol = new TH1F ("nevol",";z(J/#psi);n", 10, 0, 1);
+  TH1F* aevol = new TH1F ("aevol",";z(J/#psi);alpha",nzbins, (strcmp(rapRegion,"1624")?zbins016:zbins1624));
+  TH1F* nevol = new TH1F ("nevol",";z(J/#psi);n", nzbins, (strcmp(rapRegion,"1624")?zbins016:zbins1624));
   //TH1F* aevolnw = new TH1F ("aevolnw",";z(J/#psi);alpha",10, 0, 1);
   //TH1F* nevolnw = new TH1F ("nevolnw",";z(J/#psi);n", 10, 0, 1);
 
-  TH1F* atot = new TH1F ("atot",";z(J/#psi);alpha",10, 0, 0.00001);
-  TH1F* ntot = new TH1F ("ntot",";z(J/#psi);n", 10, 0, 0.00001);
+  TH1F* atot = new TH1F ("atot",";z(J/#psi);alpha",1000, zedmin, zedmin+0.03);
+  TH1F* ntot = new TH1F ("ntot",";z(J/#psi);n", 1000, zedmin, zedmin+0.03);
   //TH1F* atotnw = new TH1F ("atotnw",";z(J/#psi);alpha",10, 0, 0.00001);
   //TH1F* ntotnw = new TH1F ("ntotnw",";z(J/#psi);n", 10, 0, 0.00001);
 
 
-  TString treeFileName = Form ("Output/%s/%s/%s/result/tree_allvars.root",workDirName, fitType, DSTag);
+  TString treeFileName = Form ("Output/%s/DataFits_%s/%s/%s/result/tree_allvars.root",workDirName, rapRegion, fitType, DSTag);
   cout << "[INFO] extracting MC parameters from "<<treeFileName<<endl; 
   TFile *f = new TFile(treeFileName);
   if (!f || !f->IsOpen()) {
     cout << "[INFO] tree file not found! creating the result trees."<<endl;
-    results2tree(workDirName, DSTag,"", fitType, wantPureSMC, applyCorr, applyJEC);
+    results2tree(Form("%s/DataFits_%s", workDirName, rapRegion), DSTag,"", fitType, wantPureSMC, applyCorr, applyJEC);
     f = new TFile(treeFileName);
     if (!f) return;
   }
@@ -113,16 +131,15 @@ void plotMCPars_easyButQuickVersionForNow_temporary(const char* workDirName,
   int ntr = tr->GetEntries();
   for (int i=0; i<ntr; i++) {
     tr->GetEntry(i);
-
-    if (zmin==0 && zmax==1) {
-      atot->SetBinContent(atot->FindBin(zmin),alpha);
-      atot->SetBinError(atot->FindBin(zmin),alpha_errL);
-      ntot->SetBinContent(ntot->FindBin(zmin),n);
-      ntot->SetBinError(ntot->FindBin(zmin),n_errL);
+    if (zmin < zedmin+0.02 && zmax == 1){
+      atot->SetBinContent(atot->FindBin(zmin+0.0001),alpha);
+      atot->SetBinError(atot->FindBin(zmin+0.0001),alpha_errL);
+      ntot->SetBinContent(ntot->FindBin(zmin+0.0001),n);
+      ntot->SetBinError(ntot->FindBin(zmin+0.0001),n_errL);
       fileOut<< zmin << "  " << zmax << "  " <<n<<"  "<<n_errL<<"  "<<alpha<<"  "<<alpha_errL<<endl;
-      ShapeTag = Form("rap%.0f%.0f_%s", ymin*10, ymax*10, jpsiName);
-    }    
-    else if (zmin>0.2)
+      ShapeTag = jpsiName;
+    }
+    else
       { 
 	avr=avr+alpha;
 	avrn=avrn+n;
@@ -151,7 +168,7 @@ void plotMCPars_easyButQuickVersionForNow_temporary(const char* workDirName,
   ntot->SetMaximum(4);
 
   avr=avr/tot;
-  ave= new TLine(0,avr,1,avr);
+  ave= new TLine(zedmin,avr,1,avr);
   aevol->SetMarkerColor(kRed);
   aevol->SetMarkerStyle(33);
   aevol->SetLineColor(kRed+2);
@@ -187,12 +204,12 @@ void plotMCPars_easyButQuickVersionForNow_temporary(const char* workDirName,
   atot->Draw("same E1");
   leg->Draw("same");
   tbox->Draw("same");
-  c->SaveAs(Form("Output/%s/%s/%s/MCPars/alphaEvol_%s.png",workDirName, fitType, DSTag, ShapeTag.Data()));
-  c->SaveAs(Form("Output/%s/%s/%s/MCPars/alphaEvol_%s.pdf",workDirName, fitType, DSTag, ShapeTag.Data()));
-  c->SaveAs(Form("Output/%s/%s/%s/MCPars/alphaEvol_%s.root",workDirName, fitType, DSTag, ShapeTag.Data()));
+  c->SaveAs(Form("Output/%s/DataFits_%s/%s/%s/MCPars/alphaEvol_%s_%s.png",workDirName, rapRegion, fitType, DSTag, ShapeTag.Data(), rapRegion));
+  c->SaveAs(Form("Output/%s/DataFits_%s/%s/%s/MCPars/alphaEvol_%s_%s.pdf",workDirName, rapRegion, fitType, DSTag, ShapeTag.Data(), rapRegion));
+  c->SaveAs(Form("Output/%s/DataFits_%s/%s/%s/MCPars/alphaEvol_%s_%s.root",workDirName, rapRegion, fitType, DSTag, ShapeTag.Data(), rapRegion));
 
   avrn=avrn/tot;
-  ave = new TLine(0,avrn,1, avrn);
+  ave = new TLine(zedmin,avrn,1, avrn);
 
   nevol->SetMarkerColor(kRed);
   nevol->SetMarkerStyle(33);
@@ -215,9 +232,9 @@ void plotMCPars_easyButQuickVersionForNow_temporary(const char* workDirName,
   ave->Draw("same");
   leg->Draw("same");
   tbox->Draw("same");
-  c->SaveAs(Form("Output/%s/%s/%s/MCPars/nEvol_%s.png",workDirName, fitType, DSTag, ShapeTag.Data()));
-  c->SaveAs(Form("Output/%s/%s/%s/MCPars/nEvol_%s.pdf",workDirName, fitType, DSTag, ShapeTag.Data()));
-  c->SaveAs(Form("Output/%s/%s/%s/MCPars/nEvol_%s.root",workDirName, fitType, DSTag, ShapeTag.Data()));
+  c->SaveAs(Form("Output/%s/DataFits_%s/%s/%s/MCPars/nEvol_%s_%s.png",workDirName, rapRegion, fitType, DSTag, ShapeTag.Data(), rapRegion));
+  c->SaveAs(Form("Output/%s/DataFits_%s/%s/%s/MCPars/nEvol_%s_%s.pdf",workDirName, rapRegion, fitType, DSTag, ShapeTag.Data(), rapRegion));
+  c->SaveAs(Form("Output/%s/DataFits_%s/%s/%s/MCPars/nEvol_%s_%s.root",workDirName, rapRegion, fitType, DSTag, ShapeTag.Data(), rapRegion));
   f->Close();
   delete f;delete atot; delete ntot; delete aevol; delete nevol; delete c; delete leg; delete tbox; delete ave;
 }

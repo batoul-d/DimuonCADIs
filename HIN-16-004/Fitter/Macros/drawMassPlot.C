@@ -63,7 +63,6 @@ void drawMassPlot(RooWorkspace& myws,   // Local workspace
       else if (plotLabel.find("_lJpsiEff")!=std::string::npos) corrName = "lJpsiEff";
       dsOSName = Form("dOS_%s_%s_%s%s", DSTAG.c_str(),(isPbPb?"PbPb":"PP"),corrName.Data(), (applyJEC?"_JEC":""));
     }
-//  if(applyWeight_Corr) dsSSName = Form("dSS_%s", DSTAG.c_str());
 
   string pdfName  = Form("pdfMASS_Tot_%s", (isPbPb?"PbPb":"PP"));
   if (plotPureSMC) dsOSName = Form("dOS_%s_%s_NoBkg%s", DSTAG.c_str(), (isPbPb?"PbPb":"PP"), (applyJEC?"_JEC":""));
@@ -353,7 +352,7 @@ void drawMassPlot(RooWorkspace& myws,   // Local workspace
         t->DrawLatex(0.20, 0.86-dy, "HLT_HIL1DoubleMu0_v1"); dy+=2.0*0.045;
      } 
   }
-  t->DrawLatex(0.5175, 0.86-dy, Form("%.1f < z^{#mu#mu} < %.1f",cut.dMuon.Zed.Min,cut.dMuon.Zed.Max)); dy+=0.045;
+  t->DrawLatex(0.5175, 0.86-dy, Form("%g < z^{#mu#mu} < %g",cut.dMuon.Zed.Min,cut.dMuon.Zed.Max)); dy+=0.045;
   if (cut.dMuon.AbsRap.Min>0.1) {t->DrawLatex(0.5175, 0.86-dy, Form("%.1f < |y^{#mu#mu}| < %.1f",cut.dMuon.AbsRap.Min,cut.dMuon.AbsRap.Max)); dy+=0.045;}
   else {t->DrawLatex(0.5175, 0.86-dy, Form("|y^{#mu#mu}| < %.1f",cut.dMuon.AbsRap.Max)); dy+=0.045;}
   t->DrawLatex(0.5175, 0.86-dy, Form("%g < p_{T}^{#mu#mu} < %g GeV/c",cut.dMuon.Pt.Min,cut.dMuon.Pt.Max)); dy+=0.045;
@@ -471,11 +470,11 @@ void drawMassPlot(RooWorkspace& myws,   // Local workspace
 
   // Save the plot in different formats
   gSystem->mkdir(Form("%smass%s/%s/plot/root/", outputDir.c_str(), (SB?"SB":""), DSTAG.c_str()), kTRUE); 
-  cFig->SaveAs(Form("%smass%s/%s/plot/root/PLOT_%s_%s_%s%s_z%.0f%.0f_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.root", outputDir.c_str(), (SB?"SB":""), DSTAG.c_str(), "MASS", DSTAG.c_str(), (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Zed.Min*10.0), (cut.dMuon.Zed.Max*10.0), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End));
+  cFig->SaveAs(Form("%smass%s/%s/plot/root/PLOT_%s_%s_%s%s_z%.0f%.0f_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.root", outputDir.c_str(), (SB?"SB":""), DSTAG.c_str(), "MASS", DSTAG.c_str(), (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Zed.Min*100.0), (cut.dMuon.Zed.Max*100.0), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End));
   gSystem->mkdir(Form("%smass%s/%s/plot/png/", outputDir.c_str(), (SB?"SB":""), DSTAG.c_str()), kTRUE);
-  cFig->SaveAs(Form("%smass%s/%s/plot/png/PLOT_%s_%s_%s%s_z%.0f%.0f_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.png", outputDir.c_str(), (SB?"SB":""), DSTAG.c_str(), "MASS", DSTAG.c_str(), (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Zed.Min*10.0), (cut.dMuon.Zed.Max*10.0), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End));
+  cFig->SaveAs(Form("%smass%s/%s/plot/png/PLOT_%s_%s_%s%s_z%.0f%.0f_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.png", outputDir.c_str(), (SB?"SB":""), DSTAG.c_str(), "MASS", DSTAG.c_str(), (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Zed.Min*100.0), (cut.dMuon.Zed.Max*100.0), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End));
   gSystem->mkdir(Form("%smass%s/%s/plot/pdf/", outputDir.c_str(), (SB?"SB":""), DSTAG.c_str()), kTRUE);
-  cFig->SaveAs(Form("%smass%s/%s/plot/pdf/PLOT_%s_%s_%s%s_z%.0f%.0f_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.pdf", outputDir.c_str(), (SB?"SB":""), DSTAG.c_str(), "MASS", DSTAG.c_str(), (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Zed.Min*10.0), (cut.dMuon.Zed.Max*10.0), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End));
+  cFig->SaveAs(Form("%smass%s/%s/plot/pdf/PLOT_%s_%s_%s%s_z%.0f%.0f_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.pdf", outputDir.c_str(), (SB?"SB":""), DSTAG.c_str(), "MASS", DSTAG.c_str(), (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Zed.Min*100.0), (cut.dMuon.Zed.Max*100.0), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End));
   
   cFig->Clear();
   cFig->Close();
@@ -583,22 +582,22 @@ void printMassParameters(RooWorkspace myws, TPad* Pad, bool isPbPb, string pdfNa
     bool limClose = false;
     if ((it->getValV()+3*it->getError() > it->getMax())||(it->getValV()-3*it->getError() < it->getMin())||(abs(it->getError()/it->getValV()) > 0.5)) limClose = true;
     if(s1=="N"){ 
-      t->DrawLatex(0.20, 0.76-dy, Form((isWeighted?"%s = %.6f#pm%.6f %s":"%s = %.0f#pm%.0f %s "), label.c_str(), it->getValV(), it->getError(), (limClose?":P":""))); dy+=0.045; 
+      t->DrawLatex(0.20, 0.76-dy, Form((isWeighted?"%s = %.6f#pm%.6f %s":"%s = %.0f#pm%.0f %s "), label.c_str(), it->getValV(), it->getError(), (limClose?"XD":""))); dy+=0.045; 
     }
     else if(s1.find("#sigma_{2}/#sigma_{1}")!=std::string::npos){ 
-      t->DrawLatex(0.20, 0.76-dy, Form("%s = %.3f#pm%.3f %s ", label.c_str(), it->getValV(), it->getError(), (limClose?":P":""))); dy+=0.045; 
+      t->DrawLatex(0.20, 0.76-dy, Form("%s = %.3f#pm%.3f %s ", label.c_str(), it->getValV(), it->getError(), (limClose?"XD":""))); dy+=0.045; 
     }
     else if(s1.find("sigma")!=std::string::npos){ 
-      t->DrawLatex(0.20, 0.76-dy, Form("%s = %.2f#pm%.2f MeV/c^{2} %s", label.c_str(), it->getValV()*1000., it->getError()*1000.,(limClose?":P":""))); dy+=0.045; 
+      t->DrawLatex(0.20, 0.76-dy, Form("%s = %.2f#pm%.2f MeV/c^{2} %s", label.c_str(), it->getValV()*1000., it->getError()*1000.,(limClose?"XD":""))); dy+=0.045; 
     }
     else if(s1.find("lambda")!=std::string::npos){ 
-      t->DrawLatex(0.20, 0.76-dy, Form("%s = %.4f#pm%.4f %s", label.c_str(), it->getValV(), it->getError(),(limClose?":P":""))); dy+=0.045; 
+      t->DrawLatex(0.20, 0.76-dy, Form("%s = %.4f#pm%.4f %s", label.c_str(), it->getValV(), it->getError(),(limClose?"XD":""))); dy+=0.045; 
     }
     else if(s1.find("m")!=std::string::npos){ 
-      t->DrawLatex(0.20, 0.76-dy, Form("%s = %.5f#pm%.5f GeV/c^{2} %s", label.c_str(), it->getValV(), it->getError(), (limClose?":P":""))); dy+=0.045; 
+      t->DrawLatex(0.20, 0.76-dy, Form("%s = %.5f#pm%.5f GeV/c^{2} %s", label.c_str(), it->getValV(), it->getError(), (limClose?"XD":""))); dy+=0.045; 
     }
     else { 
-      t->DrawLatex(0.20, 0.76-dy, Form("%s = %.4f#pm%.4f %s", label.c_str(), it->getValV(), it->getError(),(limClose?":P":""))); dy+=0.045; 
+      t->DrawLatex(0.20, 0.76-dy, Form("%s = %.4f#pm%.4f %s", label.c_str(), it->getValV(), it->getError(),(limClose?"XD":""))); dy+=0.045; 
     }
   }
 };

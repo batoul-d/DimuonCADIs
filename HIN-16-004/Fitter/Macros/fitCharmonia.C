@@ -124,7 +124,7 @@ bool fitCharmonia( const RooWorkspace&  inputWorkspace,  // Workspace with all t
     if ( !fitCharmoniaCtauTrueModel( myws, inputWorkspace, cut, parIni, opt, outputDir, 
                                      DSTAG, isPbPb, importDS, 
                                      incJpsi, incPsi2S, incResol, 
-                                     doFit, wantPureSMC, loadFitResult, iFitDir, numCores, 
+                                     doFit, wantPureSMC, applyCorr, applyJEC, loadFitResult, iFitDir, numCores, 
                                      setLogScale, incSS, ibWidth
                                      ) 
          ) { return false; }
@@ -140,11 +140,11 @@ bool fitCharmonia( const RooWorkspace&  inputWorkspace,  // Workspace with all t
     bool doCtauRecoPdf = true;
     
     if ( !fitCharmoniaCtauRecoModel( myws, inputWorkspace, cut, parIni, opt, outputDir,
-                                    DSTAG, isPbPb, importDS,
-                                    incJpsi, incPsi2S,
-                                    doCtauRecoPdf, wantPureSMC, loadFitResult, iFitDir, numCores,
-                                    setLogScale, incSS, ibWidth
-                                    )
+				     DSTAG, isPbPb, importDS,
+				     incJpsi, incPsi2S,
+				     doCtauRecoPdf, wantPureSMC, applyCorr, applyJEC, loadFitResult, iFitDir, numCores,
+				     setLogScale, incSS, ibWidth
+				     )
         ) { return false; }
   }
   
@@ -158,7 +158,7 @@ bool fitCharmonia( const RooWorkspace&  inputWorkspace,  // Workspace with all t
     if ( !fitCharmoniaCtauErrModel( myws, inputWorkspace, cut, parIni, opt, outputDir, 
                                     DSTAG, isPbPb, importDS, 
                                     incJpsi, incPsi2S, incBkg, 
-                                    doFit, wantPureSMC, loadFitResult, inputFitDir, numCores, 
+                                    doFit, wantPureSMC, applyCorr, applyJEC, loadFitResult, inputFitDir, numCores, 
                                     setLogScale, incSS, binWidth
                                     ) 
          ) { return false; }
@@ -175,7 +175,7 @@ bool fitCharmonia( const RooWorkspace&  inputWorkspace,  // Workspace with all t
     if ( !fitCharmoniaCtauModel( myws, inputWorkspace, cut, parIni, opt, outputDir, 
                                  DSTAG, isPbPb, importDS, 
                                  incJpsi, incPsi2S, incBkg, incPrompt, incNonPrompt, useTotctauErrPdf, usectauBkgTemplate,
-                                 useSPlot, doFit, wantPureSMC, loadFitResult, inputFitDir, numCores, 
+                                 useSPlot, doFit, wantPureSMC, applyCorr, applyJEC, loadFitResult, inputFitDir, numCores, 
                                  setLogScale, incSS, binWidth
                                  ) 
          ) { return false; }
@@ -191,7 +191,7 @@ bool fitCharmonia( const RooWorkspace&  inputWorkspace,  // Workspace with all t
     if ( !fitCharmoniaCtauResModel( myws, inputWorkspace, cut, parIni, opt, outputDir, 
                                     DSTAG, isPbPb, importDS, 
                                     incJpsi, incPsi2S, useTotctauErrPdf,
-                                    doFit, wantPureSMC, loadFitResult, inputFitDir, numCores, 
+                                    doFit, wantPureSMC, applyCorr, applyJEC, loadFitResult, inputFitDir, numCores, 
                                     setLogScale, incSS, binWidth
                                     ) 
          ) { return false; }
@@ -208,7 +208,7 @@ bool fitCharmonia( const RooWorkspace&  inputWorkspace,  // Workspace with all t
     if ( !fitCharmoniaCtauResDataModel( myws, inputWorkspace, cut, parIni, opt, outputDir,
                                         DSTAG, isPbPb, importDS,
                                         incJpsi, incPsi2S, incBkg, useSPlot, useTotctauErrPdf,
-                                        doFit, loadFitResult, inputFitDir, numCores,
+                                        doFit, applyCorr, applyJEC, loadFitResult, inputFitDir, numCores,
                                         setLogScale, incSS, binWidth
                                         )
          ) { return false; }
@@ -221,7 +221,7 @@ bool fitCharmonia( const RooWorkspace&  inputWorkspace,  // Workspace with all t
     if ( !fitCharmoniaCtauMassModel( myws, inputWorkspace, cut, parIni, opt, outputDir, 
                                      DSTAG, isPbPb,
                                      incJpsi, incPsi2S, useTotctauErrPdf, usectauBkgTemplate, useCtauRecoPdf,
-                                     inputFitDir, numCores,
+				     applyCorr, applyJEC, inputFitDir, numCores,
                                      setLogScale, incSS, binWidth
                                      ) 
          ) { return false; }

@@ -28,6 +28,8 @@ bool fitCharmoniaCtauTrueModel( RooWorkspace& myws,             // Local Workspa
                                 // Select the fitting options
                                 bool doFit         = true,      // Flag to indicate if we want to perform the fit
                                 bool wantPureSMC   = false,     // Flag to indicate if we want to fit pure signal MC
+				const char* applyCorr = "",     // Name of the corrections we are appluing on J/psi
+				bool applyJEC      = false,          // Flag to indicate if we are applying the Jet Energy Correction
                                 bool loadFitResult = false,     // Load previous fit results
                                 string inputFitDir = "",        // Location of the fit results
                                 int  numCores      = 2,         // Number of cores used for fitting
@@ -62,6 +64,8 @@ bool fitCharmoniaCtauTrueModel( RooWorkspace& myws,             // Local Workspa
   double numEntries = 1000000;
   string label = ((DSTAG.find(COLL.c_str())!=std::string::npos) ? DSTAG.c_str() : Form("%s_%s", DSTAG.c_str(), COLL.c_str()));
   if (wantPureSMC) label = Form("%s_NoBkg", label.c_str());
+  if (strcmp(applyCorr,"")) label = label + "_" + applyCorr;
+  if (applyJEC) label = label + "_JEC";
   string dsName = Form("dOS_%s", label.c_str());
   if (importDS) {
     if ( !(myws.data(dsName.c_str())) ) {
@@ -85,7 +89,8 @@ bool fitCharmoniaCtauTrueModel( RooWorkspace& myws,             // Local Workspa
   if (incJpsi || incPsi2S) { plotLabel = plotLabel + Form("_CtauTrue_%s", parIni[Form("Model_CtauTrue_%s", COLL.c_str())].c_str());        }
   if (incResol)            { plotLabel = plotLabel + Form("_CtauTrueRes_%s", parIni[Form("Model_CtauTrueRes_%s", COLL.c_str())].c_str()) ; }
   if (wantPureSMC)         { plotLabel = plotLabel + "_NoBkg"; }
-
+  if (strcmp(applyCorr,"")){ plotLabel = plotLabel + "_" + applyCorr;}
+  if (applyJEC)            { plotLabel = plotLabel + "_JEC";}
   // check if we have already done this fit. If yes, do nothing and return true.
   string FileName = "";
   setCtauTrueFileName(FileName, (inputFitDir=="" ? outputDir : inputFitDir), DSTAG, plotLabel, cut, isPbPb);
@@ -195,7 +200,7 @@ void setCtauTrueGlobalParameterRange(RooWorkspace& myws, map<string, string>& pa
 void setCtauTrueFileName(string& FileName, string outputDir, string TAG, string plotLabel, struct KinCuts cut, bool isPbPb)
 {
   if (TAG.find("_")!=std::string::npos) TAG.erase(TAG.find("_"));
-  FileName = Form("%sctauTrue/%s/result/FIT_%s_%s_%s%s_z%.0f%.0f_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.root", outputDir.c_str(), TAG.c_str(), "CTAUTRUE", TAG.c_str(), (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Zed.Min*10.0), (cut.dMuon.Zed.Max*10.0), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End);
+  FileName = Form("%sctauTrue/%s/result/FIT_%s_%s_%s%s_z%.0f%.0f_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.root", outputDir.c_str(), TAG.c_str(), "CTAUTRUE", TAG.c_str(), (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Zed.Min*100.0), (cut.dMuon.Zed.Max*100.0), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End);
   
   return;
 };

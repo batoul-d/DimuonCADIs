@@ -27,6 +27,8 @@ bool fitCharmoniaCtauRecoModel( RooWorkspace& myws,             // Local Workspa
                                 // Select the fitting options
                                 bool doCtauRecoPdf = true,      // Flag to indicate if we want to perform the fit
                                 bool wantPureSMC   = false,     // Flag to indicate if we want to fit pure signal MC
+				const char* applyCorr = "",     // Name of the corrections applied on J/psi
+				bool applyJEC      = false,     // Flag to indicate if we want to use Jet Energy Corrections
                                 bool loadCtauRecoPdf = false,     // Load previous fit results
                                 string inputFitDir = "",        // Location of the fit results
                                 int  numCores      = 2,         // Number of cores used for fitting
@@ -57,6 +59,7 @@ bool fitCharmoniaCtauRecoModel( RooWorkspace& myws,             // Local Workspa
   double numEntries = 1000000;
   string label = ((DSTAG.find(COLL.c_str())!=std::string::npos) ? DSTAG.c_str() : Form("%s_%s", DSTAG.c_str(), COLL.c_str()));
   if (wantPureSMC) label = Form("%s_NoBkg", label.c_str());
+  label = label + (strcmp(applyCorr,"")?Form("_%s",applyCorr):"") + (applyJEC?"_JEC":"");
   string dsName = Form("dOS_%s", label.c_str());
   if (importDS) {
     if ( !(myws.data(dsName.c_str())) ) {
@@ -76,7 +79,8 @@ bool fitCharmoniaCtauRecoModel( RooWorkspace& myws,             // Local Workspa
   string plotLabel = "";
   if (incJpsi || incPsi2S) { plotLabel = plotLabel + "_CtauReco";}// Form("_CtauReco_%s", parIni[Form("Model_CtauReco_%s", COLL.c_str())].c_str());        }
   if (wantPureSMC)         { plotLabel = plotLabel + "_NoBkg"; }
-
+  if (strcmp(applyCorr,"")) {plotLabel = plotLabel + "_" + applyCorr;}
+  if (applyJEC) {plotLabel = plotLabel + "_JEC";}
   // check if we have already done this fit. If yes, do nothing and return true.
   string FileName = "";
   setCtauRecoFileName(FileName, (inputFitDir=="" ? outputDir : inputFitDir), DSTAG, plotLabel, cut, isPbPb);
@@ -138,7 +142,7 @@ void setCtauRecoGlobalParameterRange(RooWorkspace& myws, map<string, string>& pa
 void setCtauRecoFileName(string& FileName, string outputDir, string TAG, string plotLabel, struct KinCuts cut, bool isPbPb)
 {
   if (TAG.find("_")!=std::string::npos) TAG.erase(TAG.find("_"));
-  FileName = Form("%sctauReco/%s/result/FIT_%s_%s_%s%s_z%.0f%.0f_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.root", outputDir.c_str(), TAG.c_str(), "CTAURECO", TAG.c_str(), (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Zed.Min*10.0), (cut.dMuon.Zed.Max*10.0) , (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End);
+  FileName = Form("%sctauReco/%s/result/FIT_%s_%s_%s%s_z%.0f%.0f_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.root", outputDir.c_str(), TAG.c_str(), "CTAURECO", TAG.c_str(), (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Zed.Min*100.0), (cut.dMuon.Zed.Max*100.0) , (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End);
   
   return;
 };

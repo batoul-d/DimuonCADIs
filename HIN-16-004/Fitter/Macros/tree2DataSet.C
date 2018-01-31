@@ -23,8 +23,8 @@ double             fCentBinning[200];
 int                fCentBins;
 TObjArray*         fcorrArray = NULL; // Array with the 2D correction for weighting
 TH2F*              corrHist = NULL;
-double drmin = 1000;
-
+double drmin = 0.5;
+int matchGR= 0;
 string  findMyTree(string FileName);
 string  findJetTree(string FileName);
 bool    getTChain(TChain* fChain, TChain* jChain, vector<string> FileNames);
@@ -36,7 +36,7 @@ double  getNColl(int centr, bool isPP);
 double  getCorr(Double_t rapidity, Double_t pt, Double_t mass, bool isPP);
 bool    readCorrection(const char* file);
 void    setCentralityMap(const char* file);
-double  jecCorr(double jtPt, double rawPt, double jpsiPt);
+float  jecCorr(double jtPt, double rawPt, double jpsiPt);
 
 bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string DSName, string OutputFileName, bool UpdateDS=false)
 {
@@ -70,7 +70,7 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
   TString corrFileName = "";
   if (OutputFileName.find("_AccEff")!=std::string::npos)
   {
-    corrFileName = "correction_AccEff.root";
+    corrFileName = "pr_correction_AccEff.root";
     corrName = "AccEff";
   }
   else if (OutputFileName.find("_lJpsiEff")!=std::string::npos)
@@ -120,7 +120,7 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
     if(!getTChain(theTree, jetTree, InputFileNames)){ return false; }     // Import files to TChain
     initTree(theTree);                         // Initialize the Tree
     iniBranch(theTree,isMC);                   // Initialize the Branches
-    
+
     RooRealVar* mass    = new RooRealVar("invMass","#mu#mu mass", 1.0, 6.0, "GeV/c^{2}");
     RooRealVar* zed     = new RooRealVar("zed", "z_{J/#psi}", -0.1, 2);
     RooRealVar* ctau    = new RooRealVar("ctau","c_{#tau}", -100000.0, 100000.0, "mm");
@@ -197,9 +197,10 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
       if (isMC && isPureSDataset) dataOSNoBkg = new RooDataSet(Form("dOS_%s_NoBkg%s", DSName.c_str(),(applyJEC?"_JEC":"")), "dOSNoBkg", *cols, StoreAsymError(*mass));
     }
 
+
+    ////////////////////////////////////
     Long64_t nentries = theTree->GetEntries();
     //nentries = 2000000;
-    
     float normF = 0.;
     if (isMC && isPbPb)
     {
@@ -222,6 +223,37 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
       
       normF = nentries/normF;
     }
+
+    // creating the tree to use in the unfolding
+    string trUnfFileName = Form("TreesForUnfolding/tree_%s%s%s%s.root", DSName.c_str(), (isPureSDataset?"_NoBkg":""), (applyWeight_Corr?Form("_%s",corrName.Data()):""), (applyJEC?"_JEC":""));
+    TFile * trUnfFile = new TFile (trUnfFileName.c_str(),"RECREATE");
+    trUnfFile->cd();
+    TTree* trUnf = new TTree ("trUnf","tree used for the unfolding");
+    Float_t jp_pt; Float_t jp_rap; Float_t jp_eta; Float_t jp_mass; Float_t jp_phi; Float_t jp_gen_pt; Float_t jp_gen_rap; Float_t jp_gen_eta; Float_t jp_gen_phi; Float_t jt_pt; Float_t jt_rap; Float_t jt_eta; Float_t jt_phi; Float_t jt_ref_pt; Float_t jt_ref_rap; Float_t jt_ref_eta; Float_t jt_ref_phi; Float_t z; Float_t gen_z; Float_t corr_AccEff;
+
+    cout<< "[INFO] Creating the tree to use in the unfolding" << endl;
+    trUnf->Branch("jp_pt", &jp_pt, "jp_pt/F");
+    trUnf->Branch("jp_rap", &jp_rap, "jp_rap/F");
+    trUnf->Branch("jp_eta", &jp_eta, "jp_eta/F");
+    trUnf->Branch("jp_phi", &jp_phi, "jp_phi/F");
+    trUnf->Branch("jp_mass", &jp_mass, "jp_mass/F");
+    trUnf->Branch("jt_pt", &jt_pt, "jt_pt/F");
+    trUnf->Branch("jt_rap", &jt_rap, "jt_rap/F");
+    trUnf->Branch("jt_eta", &jt_eta, "jt_eta/F");
+    trUnf->Branch("jt_phi", &jt_phi, "jt_phi/F");
+    trUnf->Branch("z", &z, "z/F");
+    trUnf->Branch("corr_AccEff", &corr_AccEff, "corr_AccEff/F");
+    if (isMC) {
+	trUnf->Branch("jp_gen_pt", &jp_gen_pt, "jp_gen_pt/F");
+	trUnf->Branch("jp_gen_rap", &jp_gen_rap, "jp_gen_rap/F");
+	trUnf->Branch("jp_gen_eta", &jp_gen_eta, "jp_gen_eta/F");
+	trUnf->Branch("jp_gen_phi", &jp_gen_phi, "jp_gen_phi/F");
+	trUnf->Branch("jt_ref_pt", &jt_ref_pt, "jt_ref_pt/F");
+	trUnf->Branch("jt_ref_rap", &jt_ref_rap, "jt_ref_rap/F");
+	trUnf->Branch("jt_ref_eta", &jt_ref_eta, "jt_ref_eta/F");
+	trUnf->Branch("jt_ref_phi", &jt_ref_phi, "jt_ref_phi/F");
+	trUnf->Branch("gen_z", &gen_z, "gen_z/F");
+      }
     
     cout << "[INFO] Starting to process " << nentries << " nentries" << endl;
     for (Long64_t jentry=0; jentry<nentries;jentry++) {
@@ -243,8 +275,9 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
       theTree->GetEntry(jentry);
       
       for (int iQQ=0; iQQ<Reco_QQ_size; iQQ++) {
-	drmin= 1000;
+	drmin= 0.5;
 	zed->setVal(-1);
+	z=-1;
         TLorentzVector *RecoQQ4mom = (TLorentzVector*) Reco_QQ_4mom->At(iQQ);
         mass->setVal(RecoQQ4mom->M());
         if (theTree->GetBranch("Reco_QQ_ctau3D")) { ctau->setVal(Reco_QQ_ctau3D[iQQ]); }
@@ -258,6 +291,11 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
         ptQQ->setVal(RecoQQ4mom->Pt());
         rapQQ->setVal(RecoQQ4mom->Rapidity());
         cent->setVal(Centrality*CentFactor);
+	jp_pt = RecoQQ4mom->Pt();
+	jp_rap = RecoQQ4mom->Rapidity();
+	jp_eta = RecoQQ4mom->Eta();
+	jp_phi = RecoQQ4mom->Phi();
+	jp_mass = RecoQQ4mom->M();
 	for (Long64_t ijet=0; ijet<nref; ijet++)
 	  {
 	    TLorentzVector v_jet;
@@ -268,12 +306,26 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
 		if (applyJEC){
 		  zed->setVal(RecoQQ4mom->Pt()/jecCorr(jtpt[ijet], rawpt[ijet], RecoQQ4mom->Pt()));
 		  ptJet->setVal(jecCorr(jtpt[ijet], rawpt[ijet], RecoQQ4mom->Pt()));
+		  jt_pt = jecCorr(jtpt[ijet], rawpt[ijet], RecoQQ4mom->Pt());
+		  z = jp_pt/jt_pt;
+		  //if (z < 0.2) cout<<"z = "<< z << " jp_pt/jt_pt = " << jp_pt/jt_pt << " RecoQQ4mom->Pt()/jecCorr() = " <<RecoQQ4mom->Pt()/jecCorr(jtpt[ijet], rawpt[ijet], RecoQQ4mom->Pt())<< endl;
 		}
-		else{
+		else {
 		  zed->setVal(RecoQQ4mom->Pt()/jtpt[ijet]);
 		  ptJet->setVal(jtpt[ijet]);
+		  jt_pt = jtpt[ijet];
+		  z = RecoQQ4mom->Pt()/jt_pt;
 		}
 		rapJet->setVal(jty[ijet]);
+		jt_rap = jty[ijet];
+		jt_eta = jteta[ijet];
+		jt_phi = jtphi[ijet];
+		if (isMC) {
+		  jt_ref_pt = refpt[ijet];
+		  jt_ref_rap = refy[ijet];
+		  jt_ref_eta = refeta[ijet];
+		  jt_ref_phi = refphi[ijet];
+		}
 	      }
 	  }
 
@@ -292,10 +344,10 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
         }
         else if (applyWeight_Corr)
 	  { double Corr = 1;
-	    //if (abs(RecoQQ4mom->Rapidity())<2.4 && RecoQQ4mom->Pt()>3 && RecoQQ4mom->Pt()<50)
 	    Corr = getCorr(RecoQQ4mom->Rapidity(),RecoQQ4mom->Pt(),RecoQQ4mom->M(),!isPbPb);
 	  double wCorr = 1/Corr;
 	  weightCorr->setVal(wCorr);
+	  corr_AccEff = Corr;
 	  }
         
         if (
@@ -304,36 +356,55 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
             ( isPbPb ? (RecoQQ::isTriggerMatch(iQQ,triggerIndex_PbPb) || (usePeriPD ? RecoQQ::isTriggerMatch(iQQ,HI::HLT_HIL1DoubleMu0_2HF0_Cent30100_v1) : (RecoQQ::isTriggerMatch(iQQ,HI::HLT_HIL1DoubleMu0_2HF_v1) || RecoQQ::isTriggerMatch(iQQ,HI::HLT_HIL1DoubleMu0_2HF0_v1)))) :
               RecoQQ::isTriggerMatch(iQQ, triggerIndex_PP) )     // if PbPb && !periPD then (HLT_HIL1DoubleMu0_v1 || HLT_HIL1DoubleMu0_2HF_v1)
             )
-
+	  
 	  {
-          if (Reco_QQ_sign[iQQ]==0) { // Opposite-Sign dimuons
-            if (isMC && isPureSDataset && isMatchedRecoDiMuon(iQQ)) {
-	      if (applyWeight_Corr)
-		dataOSNoBkg->add(*cols, weightCorr->getVal()); //Signal-only dimuons
-	      else 
-		dataOSNoBkg->add(*cols, (applyWeight ? weight->getVal() : 1.0)); // Signal-only dimuons
+	    if (Reco_QQ_sign[iQQ]==0) { // Opposite-Sign dimuons
+
+	      //if (zed->getValV() != ptQQ->getValV()/ptJet->getValV()){ cout<<"[ERROR] zed = "<< zed->getValV() <<" while jpsi pt = "<< ptQQ->getValV() <<" and jet pt = "<< ptJet->getValV() << endl;
+	      //}
+
+	      if (isMC && isPureSDataset && isMatchedRecoDiMuon(iQQ)) {
+		if (applyWeight_Corr)
+		  dataOSNoBkg->add(*cols, weightCorr->getVal()); //Signal-only dimuons
+		else 
+		  dataOSNoBkg->add(*cols, (applyWeight ? weight->getVal() : 1.0)); // Signal-only dimuons
+		TLorentzVector *GenQQ4mom = (TLorentzVector*) Gen_QQ_4mom->At(matchGR);
+		jp_gen_pt = GenQQ4mom->Pt();
+		jp_gen_rap = GenQQ4mom->Rapidity();
+		jp_gen_eta = GenQQ4mom->Eta();
+		jp_gen_phi = GenQQ4mom->Phi();
+		gen_z = jp_gen_pt/jt_ref_pt;
+		if (gen_z < 0.2 && z > 0.8) cout<< "evt " << jentry <<" z = "<< z << " jp_pt/jt_pt = " << jp_pt/jt_pt << " gen_z = " << gen_z << endl;
+	      }
+	      else if (applyWeight_Corr) dataOS->add(*cols,weightCorr->getVal()); //Signal and background dimuons
+	      else dataOS->add(*cols, ( applyWeight ? weight->getVal() : 1.0)); //Signal and background dimuons
+	      trUnf->Fill();
 	    }
-            else if (applyWeight_Corr) dataOS->add(*cols,weightCorr->getVal()); //Signal and background dimuons
-            else dataOS->add(*cols, ( applyWeight ? weight->getVal() : 1.0)); //Signal and background dimuons            
-          }
-          else { // Like-Sign dimuons
-            if (!isPureSDataset && !applyWeight_Corr ) dataSS->add(*cols, ( applyWeight  ? weight->getVal() : 1.0));
-          }
-        }
+	    else { // Like-Sign dimuons
+	      if (!isPureSDataset && !applyWeight_Corr ) dataSS->add(*cols, ( applyWeight  ? weight->getVal() : 1.0));
+	    }
+	  }
       }
     }
     // Close the TChain and all its pointers
     delete Reco_QQ_4mom; delete Reco_QQ_mumi_4mom; delete Reco_QQ_mupl_4mom; delete Gen_QQ_mumi_4mom; delete Gen_QQ_mupl_4mom;
     theTree->Reset(); delete theTree;
-    
+    // Save the tree for the unfolding
+    cout<<"[INFO] Saving the tree for the unfolding" << endl;
+    trUnf->Write("treeForUnfolding");
+    trUnfFile->Write(); trUnfFile->Close(); delete trUnfFile;
     // Save all the datasets
     TFile *DBFile = TFile::Open(OutputFileName.c_str(),"RECREATE");
     DBFile->cd();
-    if (isMC && isPureSDataset &&  applyWeight_Corr)
+    if (isMC && isPureSDataset &&  applyWeight_Corr) {
       dataOSNoBkg->Write(Form("dOS_%s_NoBkg_%s%s", DSName.c_str(),corrName.Data(),(applyJEC?"_JEC":"")));
-    else if (isMC && isPureSDataset && !applyWeight_Corr)
+    }
+    else if (isMC && isPureSDataset && !applyWeight_Corr) {
       dataOSNoBkg->Write(Form("dOS_%s_NoBkg%s", DSName.c_str(),(applyJEC?"_JEC":"")));
-    else if (!isPureSDataset && applyWeight_Corr) dataOS->Write(Form("dOS_%s_%s%s", DSName.c_str(),corrName.Data(),(applyJEC?"_JEC":"")));
+    }
+    else if (!isPureSDataset && applyWeight_Corr) {
+      dataOS->Write(Form("dOS_%s_%s%s", DSName.c_str(),corrName.Data(),(applyJEC?"_JEC":"")));
+    }
     else 
     {
       dataOS->Write(Form("dOS_%s%s", DSName.c_str(),(applyJEC?"_JEC":"")));
@@ -439,17 +510,18 @@ void iniBranch(TChain* fChain, bool isMC)
 
   if (isMC)
   {
+    if (fChain->GetBranch("Gen_QQ_4mom")) { fChain->SetBranchStatus("Gen_QQ_4mom",1); }
     if (fChain->GetBranch("Gen_QQ_size"))      { fChain->SetBranchStatus("Gen_QQ_size",1);      }
     if (fChain->GetBranch("Gen_QQ_mupl_4mom")) { fChain->SetBranchStatus("Gen_QQ_mupl_4mom",1); }
     if (fChain->GetBranch("Gen_QQ_mumi_4mom")) { fChain->SetBranchStatus("Gen_QQ_mumi_4mom",1); }
     if (fChain->GetBranch("Reco_QQ_ctauTrue3D")) { fChain->SetBranchStatus("Reco_QQ_ctauTrue3D",1); }
     if (fChain->GetBranch("Reco_QQ_ctauTrue")) { fChain->SetBranchStatus("Reco_QQ_ctauTrue",1); }
-    if (fChain->GetBranch("ngen"))             { fChain->SetBranchStatus("ngen",1);             }
-    if (fChain->GetBranch("genpt"))            { fChain->SetBranchStatus("genpt",1);            }
-    if (fChain->GetBranch("geneta"))           { fChain->SetBranchStatus("geneta",1);           }
-    if (fChain->GetBranch("geny"))             { fChain->SetBranchStatus("geny",1);             }
-    if (fChain->GetBranch("genphi"))           { fChain->SetBranchStatus("genphi",1);           }
-    if (fChain->GetBranch("genm"))             { fChain->SetBranchStatus("genm",1);             }
+    //if (fChain->GetBranch("nref"))             { fChain->SetBranchStatus("nref",1);             }
+    if (fChain->GetBranch("refpt"))            { fChain->SetBranchStatus("refpt",1);            }
+    if (fChain->GetBranch("refeta"))           { fChain->SetBranchStatus("refeta",1);           }
+    if (fChain->GetBranch("refy"))             { fChain->SetBranchStatus("refy",1);             }
+    if (fChain->GetBranch("refphi"))           { fChain->SetBranchStatus("refphi",1);           }
+    if (fChain->GetBranch("refm"))             { fChain->SetBranchStatus("refm",1);             }
   }
 };
 
@@ -499,9 +571,9 @@ bool isMatchedRecoDiMuon(int iRecoDiMuon, double maxDeltaR)
     double dRpl = deltaR(GenMuonpl,RecoMuonpl);
     double dRmi = deltaR(GenMuonmi,RecoMuonmi);
     if ( (dRpl < maxDeltaR) && (dRmi < maxDeltaR)  ) isMatched = true;
+    matchGR = iGenMuon;
     iGenMuon++;
   }
-  
   return isMatched;
 };
 
@@ -637,7 +709,7 @@ double getCorr(Double_t rapidity, Double_t pt, Double_t mass, bool isPP)
     TEfficiency* corrHisto = static_cast<TEfficiency*>(fcorrArray->FindObject(Form("hcorr_Jpsi_%s",collName)));
     if (!corrHisto)
       {
-	std::cout << "[Error] No histogram provided for correction of " << collName << " " << massName << ". Weight set to 1." << std::endl;
+	//std::cout << "[Error] No histogram provided for correction of " << collName << " " << massName << ". Weight set to 1." << std::endl;
 	return 1.;
       }
     //cout<< "[INFO] pt = "<<pt<<" rap = "<< rapidity <<endl;
@@ -652,7 +724,7 @@ double getCorr(Double_t rapidity, Double_t pt, Double_t mass, bool isPP)
   return corr;
 };
 
-double  jecCorr(double jtPt, double rawPt, double jpsiPt)
+float jecCorr(double jtPt, double rawPt, double jpsiPt)
 {
   return ( (1-(jpsiPt/rawPt))*jtPt + ((jpsiPt/rawPt)/(jtPt/rawPt))*jtPt );
 }

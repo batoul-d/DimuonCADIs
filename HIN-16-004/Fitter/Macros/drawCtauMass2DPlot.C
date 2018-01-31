@@ -15,10 +15,24 @@ void drawCtauMass2DPlot(RooWorkspace& myws,   // Local workspace
                         map<string, double> binWidth={} // User-defined Location of the fit results
                         ) 
 {
-
+  cout << "start of the drawing function" << endl;
   gStyle->SetOptStat(0);
 
   if (DSTAG.find("_")!=std::string::npos) DSTAG.erase(DSTAG.find("_"));
+
+  bool applyCorr = false;
+  if ( (plotLabel.find("AccEff")!=std::string::npos) || (plotLabel.find("_lJpsiEff")!=std::string::npos) ) applyCorr = true;
+  else applyCorr = false;
+
+  bool applyJEC = false;
+  if (plotLabel.find("_JEC")!=std::string::npos) applyJEC = true;
+  else applyJEC = false;
+  TString corrName = "";
+  if (applyCorr){
+    if (plotLabel.find("AccEff")!=std::string::npos) corrName = "AccEff";
+    else if (plotLabel.find("_lJpsiEff")!=std::string::npos) corrName = "lJpsiEff";
+  }
+
 
   double minRangeCtau = -0.5;
   double maxRangeCtau = 2.0;
@@ -32,7 +46,7 @@ void drawCtauMass2DPlot(RooWorkspace& myws,   // Local workspace
   string pdfTotName  = Form("pdfCTAUMASS_Tot_%s", (isPbPb?"PbPb":"PP"));
   TH1* hPDF = ((RooAbsReal*)myws.pdf(pdfTotName.c_str()))->createHistogram("PDF 2D",*myws.var("ctau"), Extended(kTRUE), Binning(nBinsCtau, minRangeCtau, maxRangeCtau), YVar(*myws.var("invMass"), Binning(nBinsMass, minRangeMass, maxRangeMass)));
 
-  string dsOSName = Form("dOS_%s_%s", DSTAG.c_str(), (isPbPb?"PbPb":"PP"));
+  string dsOSName = Form("dOS_%s_%s%s%s", DSTAG.c_str(), (isPbPb?"PbPb":"PP"), (applyCorr?Form("_%s", corrName.Data()):""), (applyJEC?"_JEC":""));
   TH1* hDATA = ((RooDataSet*)myws.data(dsOSName.c_str()))->createHistogram("DATA 2D",*myws.var("ctau"), Binning(nBinsCtau, minRangeCtau, maxRangeCtau), YVar(*myws.var("invMass"), Binning(nBinsMass, minRangeMass, maxRangeMass)));
   
   // Create the main canvas
@@ -59,7 +73,7 @@ void drawCtauMass2DPlot(RooWorkspace& myws,   // Local workspace
   hPDF->Draw("LEGO2");
 
   gSystem->mkdir(Form("%sctauMass/%s/plot/pdf2D/", outputDir.c_str(), DSTAG.c_str()), kTRUE); 
-  cFigPDF->SaveAs(Form("%sctauMass/%s/plot/pdf2D/PLOT_%s_%s_%s%s_z%.0f%.0f_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.pdf", outputDir.c_str(), DSTAG.c_str(), "CTAUMASSPDF", DSTAG.c_str(), (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Zed.Min*10.0), (cut.dMuon.Zed.Max*10.0), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End));
+  cFigPDF->SaveAs(Form("%sctauMass/%s/plot/pdf2D/PLOT_%s_%s_%s%s_z%.0f%.0f_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.pdf", outputDir.c_str(), DSTAG.c_str(), "CTAUMASSPDF", DSTAG.c_str(), (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Zed.Min*100.0), (cut.dMuon.Zed.Max*100.0), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End));
 
   cFigPDF->Clear();
   cFigPDF->Close();
@@ -88,7 +102,7 @@ void drawCtauMass2DPlot(RooWorkspace& myws,   // Local workspace
   hDATA->Draw("LEGO2");
 
   gSystem->mkdir(Form("%sctauMass/%s/plot/pdf2D/", outputDir.c_str(), DSTAG.c_str()), kTRUE); 
-  cFigDATA->SaveAs(Form("%sctauMass/%s/plot/pdf2D/PLOT_%s_%s_%s%s_z%.0f%.0f_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.pdf", outputDir.c_str(), DSTAG.c_str(), "CTAUMASSDATA", DSTAG.c_str(), (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Zed.Min*10.0), (cut.dMuon.Zed.Max*10.0), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End));
+  cFigDATA->SaveAs(Form("%sctauMass/%s/plot/pdf2D/PLOT_%s_%s_%s%s_z%.0f%.0f_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.pdf", outputDir.c_str(), DSTAG.c_str(), "CTAUMASSDATA", DSTAG.c_str(), (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Zed.Min*100.0), (cut.dMuon.Zed.Max*100.0), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End));
 
   cFigDATA->Clear();
   cFigDATA->Close();

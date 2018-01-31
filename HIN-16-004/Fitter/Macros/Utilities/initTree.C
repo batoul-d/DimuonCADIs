@@ -71,6 +71,8 @@ Float_t         Reco_QQ_dca[99];   //[Reco_QQ_size]
 Float_t         Reco_QQ_MassErr[99];   //[Reco_QQ_size]
 TClonesArray    *Reco_QQ_vtx;
 Int_t           Reco_QQ_Ntrk[99];   //[Reco_QQ_size]
+Int_t           Reco_QQ_mupl_SelectionType[99];   //[Reco_QQ_size]
+Int_t           Reco_QQ_mumi_SelectionType[99];   //[Reco_QQ_size]
 Bool_t          Reco_QQ_mupl_isGoodMuon[99];   //[Reco_QQ_size]
 Bool_t          Reco_QQ_mumi_isGoodMuon[99];   //[Reco_QQ_size]
 Bool_t          Reco_QQ_mupl_highPurity[99];   //[Reco_QQ_size]
@@ -324,6 +326,8 @@ TBranch        *b_Reco_QQ_dca;   //!
 TBranch        *b_Reco_QQ_MassErr;   //!
 TBranch        *b_Reco_QQ_vtx;   //!
 TBranch        *b_Reco_QQ_Ntrk;   //!
+TBranch        *b_Reco_QQ_mupl_SelectionType; //!
+TBranch        *b_Reco_QQ_mumi_SelectionType; //!
 TBranch        *b_Reco_QQ_mupl_isGoodMuon;   //!
 TBranch        *b_Reco_QQ_mumi_isGoodMuon;   //!
 TBranch        *b_Reco_QQ_mupl_highPurity;   //!
@@ -612,6 +616,8 @@ void initTree(TChain *tree)
   if (fChain->GetBranch("Reco_QQ_MassErr")) fChain->SetBranchAddress("Reco_QQ_MassErr", Reco_QQ_MassErr, &b_Reco_QQ_MassErr);
   if (fChain->GetBranch("Reco_QQ_vtx")) fChain->SetBranchAddress("Reco_QQ_vtx", &Reco_QQ_vtx, &b_Reco_QQ_vtx);
   if (fChain->GetBranch("Reco_QQ_Ntrk")) fChain->SetBranchAddress("Reco_QQ_Ntrk", Reco_QQ_Ntrk, &b_Reco_QQ_Ntrk);
+  if (fChain->GetBranch("Reco_QQ_mupl_SelectionType")) fChain->SetBranchAddress("Reco_QQ_mupl_SelectionType", Reco_QQ_mupl_SelectionType, &b_Reco_QQ_mupl_SelectionType);
+  if (fChain->GetBranch("Reco_QQ_mumi_SelectionType")) fChain->SetBranchAddress("Reco_QQ_mumi_SelectionType", Reco_QQ_mumi_SelectionType, &b_Reco_QQ_mumi_SelectionType);
   if (fChain->GetBranch("Reco_QQ_mupl_isGoodMuon")) fChain->SetBranchAddress("Reco_QQ_mupl_isGoodMuon", Reco_QQ_mupl_isGoodMuon, &b_Reco_QQ_mupl_isGoodMuon);
   if (fChain->GetBranch("Reco_QQ_mumi_isGoodMuon")) fChain->SetBranchAddress("Reco_QQ_mumi_isGoodMuon", Reco_QQ_mumi_isGoodMuon, &b_Reco_QQ_mumi_isGoodMuon);
   if (fChain->GetBranch("Reco_QQ_mupl_highPurity")) fChain->SetBranchAddress("Reco_QQ_mupl_highPurity", Reco_QQ_mupl_highPurity, &b_Reco_QQ_mupl_highPurity);
@@ -771,8 +777,8 @@ void initTree(TChain *tree)
   //if (fChain->GetBranch("svtxmcorr")) fChain->SetBranchAddress("svtxmcorr", svtxmcorr, &b_svtxmcorr);
   //if (fChain->GetBranch("nIPtrk")) fChain->SetBranchAddress("nIPtrk", nIPtrk, &b_nIPtrk);
   //if (fChain->GetBranch("nselIPtrk")) fChain->SetBranchAddress("nselIPtrk", nselIPtrk, &b_nselIPtrk);
-  //if (fChain->GetBranch("mue")) fChain->SetBranchAddress("mue", mue, &b_mue);
-  //if (fChain->GetBranch("mupt")) fChain->SetBranchAddress("mupt", mupt, &b_mupt);
+  if (fChain->GetBranch("mue")) fChain->SetBranchAddress("mue", mue, &b_mue);
+  if (fChain->GetBranch("mupt")) fChain->SetBranchAddress("mupt", mupt, &b_mupt);
   if (fChain->GetBranch("mueta")) fChain->SetBranchAddress("mueta", mueta, &b_mueta);
   if (fChain->GetBranch("muphi")) fChain->SetBranchAddress("muphi", muphi, &b_muphi);
   if (fChain->GetBranch("mudr")) fChain->SetBranchAddress("mudr", mudr, &b_mudr);

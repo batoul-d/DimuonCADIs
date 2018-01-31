@@ -205,7 +205,7 @@ void plotRap(string workDirName, string poiname) {
 void plotAll(string workDirName, string poiname) {
 //  if (dononprompt) nameTag_base = "_nonprompt";
   if (!doprompt && !dononprompt) nameTag_base = "";
-  workDirName= workDirName+"/mass/DATA";
+  //workDirName= workDirName+"/mass/DATA";
   
   if (is18XXX)
   {
@@ -249,7 +249,8 @@ void plotNJJ(vector<anabin> thecats, string xaxis, string outputDir){
   TTree *tr = (TTree*) f->Get("fitresults");
   if (!tr) return;
 
-  TH1F * res = new TH1F ("res", ";z(J/#psi);N(J/#psi-jet)",10,0,1);
+  TH1F * nprRes = new TH1F ("npRres", ";z(J/#psi);N(J/#psi-jet)",4,0.2,1);
+  TH1F * prRes = new TH1F ("prRes", ";z(J/#psi);N(J/#psi-jet)",4,0.2,1);
   
   TString sTag("16025");
   if (is18XXX) sTag = "18XXX";
@@ -318,28 +319,54 @@ void plotNJJ(vector<anabin> thecats, string xaxis, string outputDir){
       theVars_inputs[thebin].lumipp = lumi;
       theVars_inputs[thebin].correlpp = correl;
       cout<<"Njj = "<<val<<"  dNjj = "<<errL<<endl;
-      if (zmin!=0 && zmax!=1) {
-      res->SetBinContent(res->FindBin(zmin+0.03),val);
-      res->SetBinError(res->FindBin(zmin+0.03),errL);
+      if (i!=0) {
+	prRes->SetBinContent(prRes->FindBin(zmin+0.03),val*(1-bfrac));
+	prRes->SetBinError(prRes->FindBin(zmin+0.03),(errL*(1-bfrac)-bfrac_errL*val));
+        nprRes->SetBinContent(nprRes->FindBin(zmin+0.03),val*bfrac);
+        nprRes->SetBinError(nprRes->FindBin(zmin+0.03),(errL*bfrac+bfrac_errL*val));
+	//prRes->SetBinContent(prRes->FindBin(zmin+0.03),val);
+	//prRes->SetBinError(prRes->FindBin(zmin+0.03),errL);
+
       }
     }
   }
 
-  //res->Scale(1.0/(res->Integral()));
-  res->SetMarkerColor(2);
-  res->SetMarkerStyle(33);
-  TPaveText* tb = new TPaveText(0.15,0.6,0.4,0.8,"BRNDC");
-  tb->AddText("Data");
+  nprRes->Scale(1.0/(nprRes->Integral()));
+  nprRes->SetMarkerColor(2);
+  nprRes->SetMarkerStyle(33);
+  prRes->Scale(1.0/(prRes->Integral()));
+  prRes->SetMarkerColor(2);
+  prRes->SetMarkerStyle(33);
+  TPaveText* tb = new TPaveText(0.65,0.6,0.9,0.8,"BRNDC");
+  tb->AddText("Nonprompt J/#psi");
   tb->AddText("1.6 < |y| < 2.4");
-  tb->AddText("3 < p_{T}(J/#psi) < 50 GeV/c");
-  tb->AddText("20 < p_{T}(jet) < 50 GeV/c");
+  tb->AddText("6.5 < p_{T}(J/#psi) < 35 GeV/c");
+  tb->AddText("25 < p_{T}(jet) < 35 GeV/c");
   tb->SetBorderSize(0);
   tb->SetFillColor(0);
+
+  TPaveText* tb1 = new TPaveText(0.65,0.6,0.9,0.8,"BRNDC");
+  tb1->AddText("Prompt J/#psi");
+  tb1->AddText("1.6 < |y| < 2.4");
+  tb1->AddText("3 < p_{T}(J/#psi) < 35 GeV/c");
+  tb1->AddText("25 < p_{T}(jet) < 35 GeV/c");
+  tb1->SetBorderSize(0);
+  tb1->SetFillColor(0);
+
+  gSystem->mkdir("Results");
   TCanvas *cres = new TCanvas ("cres","",1000,800);
   cres->cd();
-  res->Draw();
+  nprRes->Draw();
   tb->Draw("same");
-  cres->SaveAs("resultDataInc1624.root");
+  cres->SaveAs("Results/resultDataNPr1624_highJtPt.root");
+
+  prRes->Draw();
+  tb1->Draw("same");
+  cres->SaveAs("Results/resultDataPr1624_highJtPt.root");
+
+  //TFile *fsave = new TFile ("Results/PrMC1624.root","RECREATE");
+  //prRes->Write("results");
+  //fsave->Close();
   map<anabin, vector<anabin> > theBins;
   map<anabin, vector<double> > theVarsBinned_pp;
   map<anabin, vector<double> > theVarsBinned_stat_pp;;

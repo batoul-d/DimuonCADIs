@@ -16,31 +16,33 @@ bool createSignalCtauDSUsingSPLOT(RooWorkspace& ws, string dsName, map<string, s
 
 
 bool fitCharmoniaCtauResDataModel( RooWorkspace& myws,             // Local Workspace
-                               const RooWorkspace& inputWorkspace,   // Workspace with all the input RooDatasets
-                               struct KinCuts& cut,            // Variable containing all kinematic cuts
-                               map<string, string>&  parIni,   // Variable containing all initial parameters
-                               struct InputOpt& opt,           // Variable with run information (kept for legacy purpose)
-                               string outputDir,               // Path to output directory
-                               // Select the type of datasets to fit
-                               string DSTAG,                   // Specifies the type of datasets: i.e, DATA, MCJPSINP, ...
-                               bool isPbPb        = false,     // isPbPb = false for pp, true for PbPb
-                               bool importDS      = true,      // Select if the dataset is imported in the local workspace
-                               // Select the type of object to fit
-                               bool incJpsi       = true,      // Includes Jpsi model
-                               bool incPsi2S      = true,      // Includes Psi(2S) model
-                               bool incBkg        = true,      // Includes Bkg model
-                               // Select the fitting options
-                               bool useSPlot      = true,      // If yes, then use SPlot technique, if no, use mass range
-                               bool useTotctauErrPdf = false,  // If yes use the total ctauErr PDF instead of Jpsi and bkg ones
-                               bool doFit         = true,      // Flag to indicate if we want to perform the fit
-                               bool loadFitResult = false,     // Load previous fit results
-                               map<string, string> inputFitDir={},// User-defined Location of the fit results
-                               int  numCores      = 2,         // Number of cores used for fitting
-                               // Select the drawing options
-                               bool setLogScale   = true,      // Draw plot with log scale
-                               bool incSS         = false,     // Include Same Sign data
-                               map<string, double> binWidth={} // User-defined Location of the fit results
-                               )  
+				   const RooWorkspace& inputWorkspace,   // Workspace with all the input RooDatasets
+				   struct KinCuts& cut,            // Variable containing all kinematic cuts
+				   map<string, string>&  parIni,   // Variable containing all initial parameters
+				   struct InputOpt& opt,           // Variable with run information (kept for legacy purpose)
+				   string outputDir,               // Path to output directory
+				   // Select the type of datasets to fit
+				   string DSTAG,                   // Specifies the type of datasets: i.e, DATA, MCJPSINP, ...
+				   bool isPbPb        = false,     // isPbPb = false for pp, true for PbPb
+				   bool importDS      = true,      // Select if the dataset is imported in the local workspace
+				   // Select the type of object to fit
+				   bool incJpsi       = true,      // Includes Jpsi model
+				   bool incPsi2S      = true,      // Includes Psi(2S) model
+				   bool incBkg        = true,      // Includes Bkg model
+				   // Select the fitting options
+				   bool useSPlot      = true,      // If yes, then use SPlot technique, if no, use mass range
+				   bool useTotctauErrPdf = false,  // If yes use the total ctauErr PDF instead of Jpsi and bkg ones
+				   bool doFit         = true,      // Flag to indicate if we want to perform the fit
+				   const char* applyCorr = "",     // Name of the corrections applied for J/psi
+				   bool applyJEC      = false,     // Flag to indicate if we want to apply the Jet Energy Corrections 
+				   bool loadFitResult = false,     // Load previous fit results
+				   map<string, string> inputFitDir={},// User-defined Location of the fit results
+				   int  numCores      = 2,         // Number of cores used for fitting
+				   // Select the drawing options
+				   bool setLogScale   = true,      // Draw plot with log scale
+				   bool incSS         = false,     // Include Same Sign data
+				   map<string, double> binWidth={} // User-defined Location of the fit results
+				   )  
 {
 
   bool usePerEventError = true;
@@ -56,7 +58,7 @@ bool fitCharmoniaCtauResDataModel( RooWorkspace& myws,             // Local Work
   }
   
   string COLL = (isPbPb ? "PbPb" : "PP" );
-  string label = ((DSTAG.find(COLL.c_str())!=std::string::npos) ? DSTAG.c_str() : Form("%s_%s", DSTAG.c_str(), COLL.c_str()));
+  string label = ((DSTAG.find(COLL.c_str())!=std::string::npos) ? DSTAG.c_str() : Form("%s_%s%s%s", DSTAG.c_str(), COLL.c_str(), (strcmp(applyCorr,"")?Form("_%s", applyCorr):""), (applyJEC?"_JEC":"")));
 
   if (importDS) {
     setMassCutParameters(cut, incJpsi, incPsi2S, false, false);
@@ -70,7 +72,8 @@ bool fitCharmoniaCtauResDataModel( RooWorkspace& myws,             // Local Work
       bool fitSideBand = false;
       if (incJpsi)  { plotLabel = plotLabel + "_Jpsi";     }
       if (incPsi2S) { plotLabel = plotLabel + "_Psi2S";    }
-      plotLabel = plotLabel + "_Bkg";
+      plotLabel = plotLabel + "_Bkg" + (strcmp(applyCorr,"")?Form("_%s", applyCorr):"")+ (applyJEC?"_JEC":"");
+
       setCtauErrFileName(FileName, (inputFitDir["CTAUERR"]=="" ? outputDir : inputFitDir["CTAUERR"]), "DATA", plotLabel, cut, isPbPb, fitSideBand);
       bool foundFit = false;
       if ( loadCtauErrRange(FileName, cut) ) { foundFit = true; }
@@ -128,8 +131,6 @@ bool fitCharmoniaCtauResDataModel( RooWorkspace& myws,             // Local Work
     bool importDS = false;
     bool getMeanPT = false;
     bool zoomPsi = false;
-    const char* applyCorr = "";
-    bool applyJEC = false;
     bool doSimulFit = false;
     bool cutCtau = false;
     bool doConstrFit = false;
@@ -182,7 +183,7 @@ bool fitCharmoniaCtauResDataModel( RooWorkspace& myws,             // Local Work
       if ( !fitCharmoniaCtauErrModel( myws, inputWorkspace, cut, parIni, opt, outputDir, 
                                       DSTAG, isPbPb, importDS, 
                                       incJpsi, incPsi2S, incBkg, 
-                                      doCtauErrFit, false, loadCtauErrFitResult, inputFitDir, numCores,
+                                      doCtauErrFit, false, applyCorr, applyJEC, loadCtauErrFitResult, inputFitDir, numCores,
                                       setLogScale, incSS, binWidth
                                       ) 
            ) { return false; }
@@ -306,7 +307,7 @@ void setCtauResDataGlobalParameterRange(RooWorkspace& myws, map<string, string>&
 void setCtauResDataFileName(string& FileName, string outputDir, string TAG, string plotLabel, struct KinCuts cut, bool isPbPb)
 {
   if (TAG.find("_")!=std::string::npos) TAG.erase(TAG.find("_"));
-  FileName = Form("%sctauRes/%s/result/FIT_%s_%s_%s%s_z%.0f%.0f_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.root", outputDir.c_str(), TAG.c_str(), "CTAURES", TAG.c_str(), (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Zed.Min*10.0), (cut.dMuon.Zed.Max*10.0), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End);
+  FileName = Form("%sctauRes/%s/result/FIT_%s_%s_%s%s_z%.0f%.0f_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.root", outputDir.c_str(), TAG.c_str(), "CTAURES", TAG.c_str(), (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Zed.Min*100.0), (cut.dMuon.Zed.Max*100.0), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End);
   
   return;
 };

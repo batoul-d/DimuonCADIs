@@ -462,6 +462,8 @@ namespace RecoQQ {
     if (fChain->GetBranch("HLTriggers")) fChain->SetBranchStatus("HLTriggers",1);
     if (fChain->GetBranch("Reco_QQ_trig")) fChain->SetBranchStatus("Reco_QQ_trig",1);
     if (fChain->GetBranch("Reco_QQ_VtxProb")) fChain->SetBranchStatus("Reco_QQ_VtxProb",1);
+    if (fChain->GetBranch("Reco_QQ_mupl_SelectionType")) fChain->SetBranchStatus("Reco_QQ_mupl_SelectionType",1);
+    if (fChain->GetBranch("Reco_QQ_mumi_SelectionType")) fChain->SetBranchStatus("Reco_QQ_mumi_SelectionType",1);
     if (fChain->GetBranch("Reco_QQ_mupl_isGoodMuon")) fChain->SetBranchStatus("Reco_QQ_mupl_isGoodMuon",1);
     if (fChain->GetBranch("Reco_QQ_mumi_isGoodMuon")) fChain->SetBranchStatus("Reco_QQ_mumi_isGoodMuon",1);
     if (fChain->GetBranch("Reco_QQ_mupl_nTrkWMea")) fChain->SetBranchStatus("Reco_QQ_mupl_nTrkWMea",1);
@@ -525,7 +527,9 @@ namespace RecoQQ {
   Bool_t passQualityCuts2015 (Int_t iRecoQQ)
   {
     Bool_t cond = true;
-    
+
+    cond = cond && (Reco_QQ_mumi_SelectionType[iRecoQQ]&((ULong64_t)pow(2, 1))); // require the muons to be global muons
+    cond = cond && (Reco_QQ_mumi_SelectionType[iRecoQQ]&((ULong64_t)pow(2, 3))); // require the muons to be tracker muons
     // cond = cond && (Reco_QQ_mumi_highPurity[iRecoQQ]);
     cond = cond && (Reco_QQ_mumi_isGoodMuon[iRecoQQ]==1);
     cond = cond && (Reco_QQ_mumi_nTrkWMea[iRecoQQ] > 5);
@@ -533,6 +537,8 @@ namespace RecoQQ {
     cond = cond && (fabs(Reco_QQ_mumi_dxy[iRecoQQ]) < 0.3);
     cond = cond && (fabs(Reco_QQ_mumi_dz[iRecoQQ]) < 20.);
     
+    cond = cond && (Reco_QQ_mupl_SelectionType[iRecoQQ]&((ULong64_t)pow(2, 1))); // require the muons to be global muons
+    cond = cond && (Reco_QQ_mupl_SelectionType[iRecoQQ]&((ULong64_t)pow(2, 3))); // require the muons to be tracker muons
     // cond = cond && (Reco_QQ_mupl_highPurity[iRecoQQ]);
     cond = cond && (Reco_QQ_mupl_isGoodMuon[iRecoQQ]==1);
     cond = cond && (Reco_QQ_mupl_nTrkWMea[iRecoQQ] > 5);

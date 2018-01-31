@@ -73,7 +73,7 @@ void results2tree(
   Char_t collSystem[8];
   // goodness of fit
   float nll, chi2_invMass, chi2_ctau, chi2prob, chi2prob_invMass, chi2prob_ctau, normchi2_invMass,normchi2_ctau;
-  int npar, nparbkg,ndof_invMass, ndof_ctau;
+  int npar, nparbkg, ndof_invMass, ndof_ctau;
   // parameters to store: make it a vector
   vector<poi> thePois;
   TString thePoiNamesStr(thePoiNames);
@@ -187,8 +187,9 @@ void results2tree(
       
       // get the dataset
       const char* token = (strcmp(DSTag,"DATA") && wantPureSMC) ? Form("_%s_NoBkg%s",collSystem, (applyJEC?"_JEC":"")) : Form("_%s%s",collSystem,(applyJEC?"_JEC":""));
-      if (!strcmp(applyCorr,""))
+      if (strcmp(applyCorr,""))
 	token = (strcmp(DSTag,"DATA") && wantPureSMC) ? Form("_%s_NoBkg_%s%s",collSystem, applyCorr, (applyJEC?"_JEC":"")) : Form("_%s_%s%s",collSystem,applyCorr, (applyJEC?"_JEC":""));
+
       RooAbsData *dat = dataFromWS(ws, token, Form("dOS_%s", DSTag));
       
       if (dat) {
@@ -201,13 +202,21 @@ void results2tree(
           RooRealVar *ndofvar_invMass = ws->var("ndof_invMass");
           RooRealVar *chi2var_ctau = ws->var("chi2_ctau");
           RooRealVar *ndofvar_ctau = ws->var("ndof_ctau");
+	  if (!strcmp(fitType, "mass")) {
+	    chi2var_invMass = ws->var("chi2");
+	    ndofvar_invMass = ws->var("ndof");
+	  }
+          if (!strcmp(fitType, "ctau")) {
+            chi2var_ctau = ws->var("chi2");
+            ndofvar_ctau = ws->var("ndof");
+          }
           if (chi2var_invMass && ndofvar_invMass) {
             chi2_invMass = chi2var_invMass->getVal();
             ndof_invMass = ndofvar_invMass->getVal();
             normchi2_invMass = chi2_invMass/ndof_invMass;
             chi2prob_invMass = TMath::Prob(chi2_invMass,ndof_invMass);
           }
-          else {
+	  else {
             cout << "[WARNING]: chi2 or ndof for mass not found" << endl;
           }
           if (chi2var_ctau && ndofvar_ctau) {
