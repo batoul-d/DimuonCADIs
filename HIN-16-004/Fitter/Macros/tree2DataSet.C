@@ -305,16 +305,19 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
 		drmin = RecoQQ4mom->DeltaR (v_jet);
 		if (applyJEC){
 		  zed->setVal(RecoQQ4mom->Pt()/jecCorr(jtpt[ijet], rawpt[ijet], RecoQQ4mom->Pt()));
+		  if (zed->getVal() > 1 && zed->getVal() <= 1.000001) zed->setVal (0.9999999);
 		  ptJet->setVal(jecCorr(jtpt[ijet], rawpt[ijet], RecoQQ4mom->Pt()));
 		  jt_pt = jecCorr(jtpt[ijet], rawpt[ijet], RecoQQ4mom->Pt());
 		  z = jp_pt/jt_pt;
-		  //if (z < 0.2) cout<<"z = "<< z << " jp_pt/jt_pt = " << jp_pt/jt_pt << " RecoQQ4mom->Pt()/jecCorr() = " <<RecoQQ4mom->Pt()/jecCorr(jtpt[ijet], rawpt[ijet], RecoQQ4mom->Pt())<< endl;
+		  if (z > 1 && z <= 1.000001) z = 0.9999999;
 		}
 		else {
 		  zed->setVal(RecoQQ4mom->Pt()/jtpt[ijet]);
+		  if (zed->getVal() > 1 && zed->getVal() <= 1.000001) zed->setVal(0.9999999);
 		  ptJet->setVal(jtpt[ijet]);
 		  jt_pt = jtpt[ijet];
 		  z = RecoQQ4mom->Pt()/jt_pt;
+		  if (z > 1 && z <= 1.000001) z = 0.9999999;
 		}
 		rapJet->setVal(jty[ijet]);
 		jt_rap = jty[ijet];
@@ -359,10 +362,6 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
 	  
 	  {
 	    if (Reco_QQ_sign[iQQ]==0) { // Opposite-Sign dimuons
-
-	      //if (zed->getValV() != ptQQ->getValV()/ptJet->getValV()){ cout<<"[ERROR] zed = "<< zed->getValV() <<" while jpsi pt = "<< ptQQ->getValV() <<" and jet pt = "<< ptJet->getValV() << endl;
-	      //}
-
 	      if (isMC && isPureSDataset && isMatchedRecoDiMuon(iQQ)) {
 		if (applyWeight_Corr)
 		  dataOSNoBkg->add(*cols, weightCorr->getVal()); //Signal-only dimuons
@@ -374,7 +373,7 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
 		jp_gen_eta = GenQQ4mom->Eta();
 		jp_gen_phi = GenQQ4mom->Phi();
 		gen_z = jp_gen_pt/jt_ref_pt;
-		if (gen_z < 0.2 && z > 0.8) cout<< "evt " << jentry <<" z = "<< z << " jp_pt/jt_pt = " << jp_pt/jt_pt << " gen_z = " << gen_z << endl;
+		if (gen_z > 1 && gen_z <= 1.000001) gen_z = 0.9999999;
 	      }
 	      else if (applyWeight_Corr) dataOS->add(*cols,weightCorr->getVal()); //Signal and background dimuons
 	      else dataOS->add(*cols, ( applyWeight ? weight->getVal() : 1.0)); //Signal and background dimuons
@@ -392,7 +391,7 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
     // Save the tree for the unfolding
     cout<<"[INFO] Saving the tree for the unfolding" << endl;
     trUnf->Write("treeForUnfolding");
-    trUnfFile->Write(); trUnfFile->Close(); delete trUnfFile;
+    trUnfFile->Close(); delete trUnfFile;
     // Save all the datasets
     TFile *DBFile = TFile::Open(OutputFileName.c_str(),"RECREATE");
     DBFile->cd();
@@ -435,8 +434,7 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
   delete dataSS; delete dataOS; delete dataOSNoBkg;
   
   // delete the correction array
-  //if (fcorrArray) delete fcorrArray;
-  
+  if (fcorrArray) delete fcorrArray; delete corrHist;
   return true;
 };
 
