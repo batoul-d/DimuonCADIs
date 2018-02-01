@@ -235,11 +235,15 @@ void plotNJJ(vector<anabin> thecats, string xaxis, string outputDir){
     cout << "ERROR you can't set both doprompt and dononprompt to true." << endl;
     return;
   }
-  
+  float jtptmin=0, jtptmax=0;
+  if (outputDir.find("mid")!=std::string::npos) {jtptmin = 25; jtptmax=35;}
+  if (outputDir.find("low")!=std::string::npos) {jtptmin = 15; jtptmax=25;}
+  if (outputDir.find("high")!=std::string::npos) {jtptmin = 35; jtptmax=45;}
   TString poi("NJpsi");
   if (doprompt) poi = "NJpsi_prompt";
   if (dononprompt) poi = "NJpsi_nonprompt";
   
+  string plotLabel = "";
   TFile *f = new TFile(treeFileName(outputDir.c_str(),""));
   if (!f || !f->IsOpen()) {
     results2tree(outputDir.c_str(),"");
@@ -249,9 +253,12 @@ void plotNJJ(vector<anabin> thecats, string xaxis, string outputDir){
   TTree *tr = (TTree*) f->Get("fitresults");
   if (!tr) return;
 
-  TH1F * nprRes = new TH1F ("npRres", ";z(J/#psi);N(J/#psi-jet)",4,0.2,1);
-  TH1F * prRes = new TH1F ("prRes", ";z(J/#psi);N(J/#psi-jet)",4,0.2,1);
-  
+  TH1F * nprRes = new TH1F ("npRres", ";z(J/#psi);dN(J/#psi-jet)/N", 5, 0.0, 1);
+  TH1F * prRes = new TH1F ("prRes", ";z(J/#psi);dN(J/#psi-jet)/N", 5, 0.0, 1);
+
+  nprRes->GetYaxis()->SetLimits(0, 1);
+  prRes->GetYaxis()->SetLimits(0, 1);
+
   TString sTag("16025");
   if (is18XXX) sTag = "18XXX";
   map<anabin, njj_input> theVars_inputs;
@@ -300,8 +307,6 @@ void plotNJJ(vector<anabin> thecats, string xaxis, string outputDir){
   for (int i=0; i<ntr; i++) {
     tr->GetEntry(i);
     
-    //if (xaxis=="rap" && ((ymin==0 && ymax<=0.61 && ymax>=0.59 ) || (ymin>=0.59 && ymin<=0.61 && ymax>=1.19 && ymax <=1.21) || (ymin>=1.19 && ymin<=1.21 && ymax>=1.79 && ymax <=1.81) || (ymin>=1.79 && ymin<=1.81 && ymax>=2.39 && ymax <=2.41))) continue;
-    
     anabin thebin(zmin, zmax, ymin, ymax, ptmin, ptmax, centmin, centmax);
     
     bool ispp = (TString(collSystem)=="PP");
@@ -319,14 +324,15 @@ void plotNJJ(vector<anabin> thecats, string xaxis, string outputDir){
       theVars_inputs[thebin].lumipp = lumi;
       theVars_inputs[thebin].correlpp = correl;
       cout<<"Njj = "<<val<<"  dNjj = "<<errL<<endl;
+      if (i==0)
+	{
+	  plotLabel = Form("_rap%.0f%.0f_pt%.0f%.f",(ymin*10.0), (ymax*10.0), (ptmin*10.0), (ptmax*10.0));
+	}
       if (i!=0) {
 	prRes->SetBinContent(prRes->FindBin(zmin+0.03),val*(1-bfrac));
 	prRes->SetBinError(prRes->FindBin(zmin+0.03),(errL*(1-bfrac)-bfrac_errL*val));
         nprRes->SetBinContent(nprRes->FindBin(zmin+0.03),val*bfrac);
         nprRes->SetBinError(nprRes->FindBin(zmin+0.03),(errL*bfrac+bfrac_errL*val));
-	//prRes->SetBinContent(prRes->FindBin(zmin+0.03),val);
-	//prRes->SetBinError(prRes->FindBin(zmin+0.03),errL);
-
       }
     }
   }
@@ -337,19 +343,25 @@ void plotNJJ(vector<anabin> thecats, string xaxis, string outputDir){
   prRes->Scale(1.0/(prRes->Integral()));
   prRes->SetMarkerColor(2);
   prRes->SetMarkerStyle(33);
-  TPaveText* tb = new TPaveText(0.65,0.6,0.9,0.8,"BRNDC");
+  TPaveText* tb = new TPaveText(0.15,0.6,0.4,0.8,"BRNDC");
   tb->AddText("Nonprompt J/#psi");
-  tb->AddText("1.6 < |y| < 2.4");
-  tb->AddText("6.5 < p_{T}(J/#psi) < 35 GeV/c");
-  tb->AddText("25 < p_{T}(jet) < 35 GeV/c");
+  if (ymin ==0)
+    tb->AddText(Form("|y| < %.1f",ymax));
+  else 
+    tb->AddText(Form("%.1f < |y| < %.1f", ymin, ymax));
+  tb->AddText(Form("%.1f < p_{T}(J/#psi) < %.1f GeV/c", ptmin, ptmax));
+  tb->AddText(Form("%.1f < p_{T}(jet) < %.1f GeV/c", jtptmin, jtptmax));
   tb->SetBorderSize(0);
   tb->SetFillColor(0);
 
-  TPaveText* tb1 = new TPaveText(0.65,0.6,0.9,0.8,"BRNDC");
+  TPaveText* tb1 = new TPaveText(0.15,0.6,0.4,0.8,"BRNDC");
   tb1->AddText("Prompt J/#psi");
-  tb1->AddText("1.6 < |y| < 2.4");
-  tb1->AddText("3 < p_{T}(J/#psi) < 35 GeV/c");
-  tb1->AddText("25 < p_{T}(jet) < 35 GeV/c");
+  if (ymin ==0)
+    tb1->AddText(Form("|y| < %.1f",ymax));
+  else 
+    tb1->AddText(Form("%.1f < |y| < %.1f", ymin, ymax));
+  tb1->AddText(Form("%.1f < p_{T}(J/#psi) < %.1f GeV/c", ptmin, ptmax));
+  tb1->AddText(Form("%.1f < p_{T}(jet) < %.1f GeV/c", jtptmin, jtptmax));
   tb1->SetBorderSize(0);
   tb1->SetFillColor(0);
 
@@ -358,15 +370,16 @@ void plotNJJ(vector<anabin> thecats, string xaxis, string outputDir){
   cres->cd();
   nprRes->Draw();
   tb->Draw("same");
-  cres->SaveAs("Results/resultDataNPr1624_highJtPt.root");
+  cres->SaveAs(Form("Results/plot_DATA_NPr%s_jtpt%.0f%.0f.root", plotLabel.c_str(), jtptmin, jtptmax));
 
   prRes->Draw();
   tb1->Draw("same");
-  cres->SaveAs("Results/resultDataPr1624_highJtPt.root");
+  cres->SaveAs(Form("Results/plot_DATA_Pr%s_jtpt%.0f%.0f.root", plotLabel.c_str(), jtptmin, jtptmax));
 
-  //TFile *fsave = new TFile ("Results/PrMC1624.root","RECREATE");
-  //prRes->Write("results");
-  //fsave->Close();
+  TFile *fsave = new TFile (Form("Results/histo_DATA%s_jtpt%.0f%.0f.root", plotLabel.c_str(), jtptmin, jtptmax),"RECREATE");
+  prRes->Write("PRHist");
+  nprRes->Write("NPRHist");
+  fsave->Close();
   map<anabin, vector<anabin> > theBins;
   map<anabin, vector<double> > theVarsBinned_pp;
   map<anabin, vector<double> > theVarsBinned_stat_pp;;
