@@ -330,9 +330,9 @@ void plotNJJ(vector<anabin> thecats, string xaxis, string outputDir){
 	}
       if (i!=0) {
 	prRes->SetBinContent(prRes->FindBin(zmin+0.03),val*(1-bfrac));
-	prRes->SetBinError(prRes->FindBin(zmin+0.03),(errL*(1-bfrac)-bfrac_errL*val));
+	prRes->SetBinError(prRes->FindBin(zmin+0.03),(val*(1-bfrac)*sqrt(pow((errL/val),2) - 2*correl*errL*bfrac_errL/(val*bfrac) + pow(bfrac_errL/bfrac,2))));
         nprRes->SetBinContent(nprRes->FindBin(zmin+0.03),val*bfrac);
-        nprRes->SetBinError(nprRes->FindBin(zmin+0.03),(errL*bfrac+bfrac_errL*val));
+        nprRes->SetBinError(nprRes->FindBin(zmin+0.03),(val*(1-bfrac)*sqrt(pow((errL/val),2) + 2*correl*errL*bfrac_errL/(val*bfrac) + pow(bfrac_errL/bfrac,2))));
       }
     }
   }
