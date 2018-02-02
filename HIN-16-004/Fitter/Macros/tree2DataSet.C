@@ -229,9 +229,10 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
     TFile * trUnfFile = new TFile (trUnfFileName.c_str(),"RECREATE");
     trUnfFile->cd();
     TTree* trUnf = new TTree ("trUnf","tree used for the unfolding");
-    Float_t jp_pt; Float_t jp_rap; Float_t jp_eta; Float_t jp_mass; Float_t jp_phi; Float_t jp_gen_pt; Float_t jp_gen_rap; Float_t jp_gen_eta; Float_t jp_gen_phi; Float_t jt_pt; Float_t jt_rap; Float_t jt_eta; Float_t jt_phi; Float_t jt_ref_pt; Float_t jt_ref_rap; Float_t jt_ref_eta; Float_t jt_ref_phi; Float_t z; Float_t gen_z; Float_t corr_AccEff;
+    Int_t evtNb; Float_t jp_pt; Float_t jp_rap; Float_t jp_eta; Float_t jp_mass; Float_t jp_phi; Float_t jp_gen_pt; Float_t jp_gen_rap; Float_t jp_gen_eta; Float_t jp_gen_phi; Float_t jt_pt; Float_t jt_rap; Float_t jt_eta; Float_t jt_phi; Float_t jt_ref_pt; Float_t jt_ref_rap; Float_t jt_ref_eta; Float_t jt_ref_phi; Float_t z; Float_t gen_z; Float_t corr_AccEff;
 
     cout<< "[INFO] Creating the tree to use in the unfolding" << endl;
+    trUnf->Branch("evtNb", &evtNb, "evtNb/I");
     trUnf->Branch("jp_pt", &jp_pt, "jp_pt/F");
     trUnf->Branch("jp_rap", &jp_rap, "jp_rap/F");
     trUnf->Branch("jp_eta", &jp_eta, "jp_eta/F");
@@ -375,9 +376,24 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
 		gen_z = jp_gen_pt/jt_ref_pt;
 		if (gen_z > 1 && gen_z <= 1.000001) gen_z = 0.9999999;
 	      }
+	      else if (isMC && isPureSDataset && !isMatchedRecoDiMuon(iQQ))
+		{
+		  gen_z = -1;
+		}
 	      else if (applyWeight_Corr) dataOS->add(*cols,weightCorr->getVal()); //Signal and background dimuons
 	      else dataOS->add(*cols, ( applyWeight ? weight->getVal() : 1.0)); //Signal and background dimuons
-	      trUnf->Fill();
+	      evtNb = jentry;
+	      if (isMC && isPureSDataset && gen_z >= 0 && z > -1)
+		{
+		  //if (gen_z != jp_gen_pt/jt_ref_pt) cout << "[ERROR] in event " << jentry << ": gen_z = " << gen_z << " jp_gen_pt = " << jp_gen_pt << " jt_ref_pt = " << jt_ref_pt << endl;
+		  //if (z != jp_pt/jt_pt) cout << "[ERROR] z = " << z << " jp_pt = " << jp_pt << " jt_pt = " << jt_pt << endl;
+		  trUnf->Fill();
+		}
+	      else if (!isPureSDataset && z > -1)
+		{
+		  //if (z != jp_pt/jt_pt) cout << "[ERROR] z = " << z << " jp_pt = " << jp_pt << " jt_pt = " << jt_pt << endl;
+		  trUnf->Fill();
+		}
 	    }
 	    else { // Like-Sign dimuons
 	      if (!isPureSDataset && !applyWeight_Corr ) dataSS->add(*cols, ( applyWeight  ? weight->getVal() : 1.0));
