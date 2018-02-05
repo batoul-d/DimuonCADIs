@@ -46,7 +46,7 @@ anabin binFromFile(const char* filename);
 bool binok(vector<anabin> thecats, string xaxis, anabin &tocheck, bool override=true);
 bool binok(anabin thecat, string xaxis, anabin &tocheck, bool override=true);
 bool isSameBinPPPbPb(const char* filenamePbPb, const char* filenamePP);
-TString treeFileName(const char* workDirName, const char* DSTag="DATA", const char* prependPath="", const char* fitType = "");
+TString treeFileName(const char* workDirName, const char* DSTag="DATA", const char* prependPath="", const char* fitType = "ctauMass");
 double poiFromBin(const char* workDirName, const char* collSystem, const char* thepoiname, anabin thebin, const char* DSTag="DATA", const char* prependPath="");
 double poiErrFromBin(const char* workDirName, const char* collSystem, const char* thepoiname, anabin thebin, const char* DSTag="DATA", const char* prependPath="");
 void prune(vector<anabin> &v, bool keepshortest=true);

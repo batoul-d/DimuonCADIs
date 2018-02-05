@@ -9,50 +9,94 @@
 
 using namespace std;
 
-void results2tree_all(bool is16004 = false)
-{
-  TString app("");
-  if (is16004) app = "16004";
-  else app = "16025";
-  
+void results2tree_all()
+{ 
   TString workdir("");
-  // Nominal
-  workdir = Form("DataFits_%s_2D_2CB_polBkg_nominal",app.Data());
-//  results2tree(workdir.Data());
+  ///////////////////////////////
+  //        Nominal            //
+  ///////////////////////////////
+  workdir = "DataFits/DataFits_midJtPt/DataFits_016";
+  //results2tree(workdir.Data(), "DATA", "", "ctauMass", 0, "AccEff", 1);
+  workdir = Form("DataFits/DataFits_midJtPt/DataFits_1624");
+  // results2tree(workdir.Data(), "DATA", "", "ctauMass", 0, "AccEff", 1);
+  //low and high Jt pt
+  workdir = "DataFits/DataFits_lowJtPt/DataFits_016";
+  //results2tree(workdir.Data(), "DATA", "", "ctauMass", 0, "AccEff", 1);
+  workdir = Form("DataFits/DataFits_lowJtPt/DataFits_1624");
+  // results2tree(workdir.Data(), "DATA", "", "ctauMass", 0, "AccEff", 1);
+  workdir = "DataFits/DataFits_highJtPt/DataFits_016";
+  //results2tree(workdir.Data(), "DATA", "", "ctauMass", 0, "AccEff", 1); 
+  workdir = Form("DataFits/DataFits_highJtPt/DataFits_1624");
+  // results2tree(workdir.Data(), "DATA", "", "ctauMass", 0, "AccEff", 1);
+
+  ///////////////////////////////
+  //   Background variations   //
+  ///////////////////////////////
+  workdir = "DataFits_bkgExp/DataFits_midJtPt/DataFits_016";
+  results2tree(workdir.Data(), "DATA", "", "ctauMass", 0, "AccEff", 1);
+  workdir = "DataFits_bkgExp/DataFits_midJtPt/DataFits_1624";
+  results2tree(workdir.Data(), "DATA", "", "ctauMass", 0, "AccEff", 1);
+  workdir = "DataFits_pval25/DataFits_midJtPt/DataFits_016";
+  results2tree(workdir.Data(), "DATA", "", "ctauMass", 0, "AccEff", 1);
+  workdir = "DataFits_pval25/DataFits_midJtPt/DataFits_1624";
+  results2tree(workdir.Data(), "DATA", "", "ctauMass", 0, "AccEff", 1);
+  workdir = "DataFits_pval100/DataFits_midJtPt/DataFits_016";
+  results2tree(workdir.Data(), "DATA", "", "ctauMass", 0, "AccEff", 1);
+  workdir = "DataFits_pval100/DataFits_midJtPt/DataFits_1624";
+  results2tree(workdir.Data(), "DATA", "", "ctauMass", 0, "AccEff", 1);
+  //workdir = "";
+  //results2tree(workdir.Data(), "DATA", "", "ctauMass", 0, "AccEff", 1);
+  //workdir = "";
+  //results2tree(workdir.Data(), "DATA", "", "ctauMass", 0, "AccEff", 1);
+
+  ///////////////////////////////
+  //    Signal variations      //
+  ///////////////////////////////
+  workdir = "DataFits_constrained/DataFits_midJtPt/DataFits_016";
+  results2tree(workdir.Data(), "DATA", "", "ctauMass", 0, "AccEff", 1);
+  workdir = "DataFits_constrained/DataFits_midJtPt/DataFits_1624";
+  results2tree(workdir.Data(), "DATA", "", "ctauMass", 0, "AccEff", 1);
+  workdir = "DataFits_CBGauss/DataFits_midJtPt/DataFits_016";
+  results2tree(workdir.Data(), "DATA", "", "ctauMass", 0, "AccEff", 1);
+  workdir = "DataFits_CBGauss/DataFits_midJtPt/DataFits_1624";
+  results2tree(workdir.Data(), "DATA", "", "ctauMass", 0, "AccEff", 1);
+
+  ///////////////////////////////
+  //    CtauErr variations     //
+  ///////////////////////////////
+  workdir = "DataFits_ctauErrTot/DataFits_midJtPt/DataFits_016";
+  results2tree(workdir.Data(), "DATA", "", "ctauMass", 0, "AccEff", 1);
+  workdir = "DataFits_ctauErrTot/DataFits_midJtPt/DataFits_1624";
+  results2tree(workdir.Data(), "DATA", "", "ctauMass", 0, "AccEff", 1);
+
+  ///////////////////////////////
+  //   CtauTrue variations     //
+  ///////////////////////////////
+  workdir = "DataFits_ctauReco/DataFits_midJtPt/DataFits_016";
+  results2tree(workdir.Data(), "DATA", "", "ctauMass", 0, "AccEff", 1);
+  workdir = "DataFits_ctauReco/DataFits_midJtPt/DataFits_1624";
+  results2tree(workdir.Data(), "DATA", "", "ctauMass", 0, "AccEff", 1);
   
-  // Background variations
-  //workdir = Form("DataFits_%s_2D_2CB_polBkg_minvRange",app.Data());
-  //results2tree(workdir.Data());
-  workdir = Form("DataFits_%s_2D_2CB_polBkg_LLR25",app.Data());
- // results2tree(workdir.Data());
-  workdir = Form("DataFits_%s_2D_2CB_polBkg_LLR10",app.Data());
-  //results2tree(workdir.Data());
-  workdir = Form("DataFits_%s_2D_2CB_expBkg",app.Data());
-  //results2tree(workdir.Data());
-  
-  // Signal variations
-  workdir = Form("DataFits_%s_2D_2CB_polBkg_constrained",app.Data());
-  results2tree(workdir.Data());
-return;  
-workdir = Form("DataFits_%s_2D_CBG_polBkg",app.Data());
-  results2tree(workdir.Data());
-  
-  // CtauErr variations
-  workdir = Form("DataFits_%s_2D_2CB_polBkg_ctauErrTot",app.Data());
-  results2tree(workdir.Data());
-  
-  // CtauTrue variations
-  workdir = Form("DataFits_%s_2D_2CB_polBkg_ctauRecoTemp",app.Data());
-  results2tree(workdir.Data());
-  
-  // CtauRes variations
-  workdir = Form("DataFits_%s_2D_2CB_polBkg_ctauResPromptMC",app.Data());
-  results2tree(workdir.Data());
-  
-  // CtauBkg variations
-  workdir = Form("DataFits_%s_2D_2CB_polBkg_ctauBkgTemp",app.Data());
-  results2tree(workdir.Data());
-  
+  ///////////////////////////////
+  //   CtauRes variations      //
+  ///////////////////////////////
+  //workdir = "";
+  //results2tree(workdir.Data(), "DATA", "", "ctauMass", 0, "AccEff", 1);
+  //workdir = "";
+  //results2tree(workdir.Data(), "DATA", "", "ctauMass", 0, "AccEff", 1);
+  //workdir = "";
+  //results2tree(workdir.Data(), "DATA", "", "ctauMass", 0, "AccEff", 1);
+  //workdir = "";
+  //results2tree(workdir.Data(), "DATA", "", "ctauMass", 0, "AccEff", 1);
+
+  ///////////////////////////////
+  //   CtauBkg variations      //
+  ///////////////////////////////
+  workdir = "DataFits_ctauBkgTemplate/DataFits_midJtPt/DataFits_016";
+  results2tree(workdir.Data(), "DATA", "", "ctauMass", 0, "AccEff", 1);
+  workdir = "DataFits_ctauBkgTemplate/DataFits_midJtPt/DataFits_1624";
+  results2tree(workdir.Data(), "DATA", "", "ctauMass", 0, "AccEff", 1);
+
   return;
 }
 

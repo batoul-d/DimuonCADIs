@@ -256,8 +256,8 @@ void plotNJJ(vector<anabin> thecats, string xaxis, string outputDir){
   TH1F * nprRes = new TH1F ("npRres", ";z(J/#psi);dN(J/#psi-jet)/N", 5, 0.0, 1);
   TH1F * prRes = new TH1F ("prRes", ";z(J/#psi);dN(J/#psi-jet)/N", 5, 0.0, 1);
 
-  nprRes->GetYaxis()->SetLimits(0, 1);
-  prRes->GetYaxis()->SetLimits(0, 1);
+  //nprRes->GetYaxis()->SetLimits(0, 1);
+  //prRes->GetYaxis()->SetLimits(0, 1);
 
   TString sTag("16025");
   if (is18XXX) sTag = "18XXX";
@@ -337,10 +337,10 @@ void plotNJJ(vector<anabin> thecats, string xaxis, string outputDir){
     }
   }
 
-  nprRes->Scale(1.0/(nprRes->Integral()));
+  //nprRes->Scale(1.0/(nprRes->Integral()));
   nprRes->SetMarkerColor(2);
   nprRes->SetMarkerStyle(33);
-  prRes->Scale(1.0/(prRes->Integral()));
+  //prRes->Scale(1.0/(prRes->Integral()));
   prRes->SetMarkerColor(2);
   prRes->SetMarkerStyle(33);
   TPaveText* tb = new TPaveText(0.15,0.6,0.4,0.8,"BRNDC");

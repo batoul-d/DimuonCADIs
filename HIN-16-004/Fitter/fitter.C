@@ -75,7 +75,8 @@ void fitter(
   binWidth["CTAUTRUE"] = 0.025;
   binWidth["CTAURECO"] = 0.100;
   binWidth["CTAURES"]  = 0.25;
-  binWidth["CTAUSB"]   = 0.0150;
+  //binWidth["CTAUSB"]   = 0.0150;
+  binWidth["CTAUSB"]   = 0.100;
 
   if (workDirName.find("Peri")!=std::string::npos) { usePeriPD = true; }
 

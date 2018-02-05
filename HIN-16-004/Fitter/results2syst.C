@@ -41,7 +41,7 @@ void printTex(map<anabin, vector<double> > mapvals,
 // MAIN FUNCTION //
 ///////////////////
 
-void results2syst(const char* workDirNames, const char* systFileName, const char* systHeader, int method, const char* collTag="", bool relativeSyst=true, const char* poiname = "N_Jpsi", bool testChi2 = true, bool is16004 = false) {
+void results2syst(const char* workDirNames, const char* systFileName, const char* systHeader, int method, const char* collTag="", bool relativeSyst=true, const char* poiname = "N_Jpsi", bool testChi2 = true, bool isMid = true) {
   // workDirNames: of the form "dir1,dir2,dir3,..."
   // systFileName: "syst_blabla.csv" (do NOT specify the full path, it will be assigned automatically to Systematics/csv/)
   // systHeader:   this will be the header of the systematics file. A few words describing what this systematic is.
@@ -58,8 +58,13 @@ void results2syst(const char* workDirNames, const char* systFileName, const char
   TString workDirName; Int_t from = 0;
   int cnt=0;
   set<anabin> thebins;
+  bool is16004 = false;
   if (is16004) thebins = allbins16004();
   else thebins = allbins();
+
+  thebins = allbinsXXXXX();
+  if (isMid) thebins = midbinsXXXXX();
+  else thebins = forbinsXXXXX();
   
   TString spoiname(poiname);
   bool isPrompt = spoiname.Contains("_prompt");
@@ -88,12 +93,14 @@ void results2syst(const char* workDirNames, const char* systFileName, const char
       if (!(TString(poiname).Contains("eff")) && (ndof==-999 || TMath::Prob(chi2,ndof)<1e-10) && testChi2) {
         double ymin = trbin.rapbin().low();
         double ymax = trbin.rapbin().high();
+	double zmin = trbin.zbin().low();
+	double zmax = trbin.zbin().high();
         double ptmin = trbin.ptbin().low();
         double ptmax = trbin.ptbin().high();
         int centmin = trbin.centbin().low();
         int centmax = trbin.centbin().high();
         cout << "Warning, bad chi2: ";
-        cout << " for " << workDirName.Data() << ", " << collTag << ", " << ymin << "<|y|<" << ymax << ", " << ptmin << "<pt<" << ptmax << ", " << centmin/2 << "-" << centmax/2 << "%. ";
+        cout << " for " << workDirName.Data() << ", " << collTag << ", " << ymin << "<|y|<" << ymax << ", " << ptmin << "<pt<" << ptmax << ", " << zmin << "<z<" << zmax << ", " << centmin/2 << "-" << centmax/2 << "%. ";
         cout << "p(" << chi2 << "," << ndof << ")=" << TMath::Prob(chi2,ndof) << endl;
         mapvals[trbin].push_back(-999);
       } else {
@@ -152,9 +159,10 @@ void results2syst(const char* workDirNames, const char* systFileName, const char
     else if (method==1) value=maxdiff(v, relativeSyst);
     else value=0;
     file << thebin.rapbin().low() << ", " << thebin.rapbin().high() << ", "
-    << thebin.ptbin().low() << ", " << thebin.ptbin().high() << ", "
-    << thebin.centbin().low() << ", " << thebin.centbin().high() << ", "
-    << value << endl;
+	 << thebin.ptbin().low() << ", " << thebin.ptbin().high() << ", "
+	 << thebin.zbin().low() << ", " << thebin.zbin().high() << ", "
+	 << thebin.centbin().low() << ", " << thebin.centbin().high() << ", "
+	 << value << endl;
     mapsyst[thebin] = value;
   }
   file.close();
@@ -166,13 +174,13 @@ void results2syst(const char* workDirNames, const char* systFileName, const char
   myReplace(texName,"csv","tex");
   gSystem->mkdir("Systematics/tex", kTRUE);
   
-  printTex(mapvals, mapchi2, mapndof, mapsyst, maperr, vnames, TString(texName).ReplaceAll(".tex","_cent.tex").Data(), anabin(0,2.4,6.5,50,0,0));
-  printTex(mapvals, mapchi2, mapndof, mapsyst, maperr, vnames, TString(texName).ReplaceAll(".tex","_pt.tex").Data(), anabin(0,2.4,0,0,0,200));
-  printTex(mapvals, mapchi2, mapndof, mapsyst, maperr, vnames, TString(texName).ReplaceAll(".tex","_rap.tex").Data(), anabin(0,0,6.5,50,0,200));
-  printTex(mapvals, mapchi2, mapndof, mapsyst, maperr, vnames, TString(texName).ReplaceAll(".tex","_ptrap.tex").Data(), anabin(0,-2.4,-6.5,-50,0,200));
-  printTex(mapvals, mapchi2, mapndof, mapsyst, maperr, vnames, TString(texName).ReplaceAll(".tex","_centrap.tex").Data(), anabin(0,-2.4,6.5,50,0,-200));
-  printTex(mapvals, mapchi2, mapndof, mapsyst, maperr, vnames, TString(texName).ReplaceAll(".tex","_ptcent.tex").Data(), anabin(0,2.4,-6.5,-50,0,-200));
-  printTex(mapvals, mapchi2, mapndof, mapsyst, maperr, vnames, TString(texName).ReplaceAll(".tex","_fwd.tex").Data(), anabin(1.8,2.4,0,0,0,-200));
+  //printTex(mapvals, mapchi2, mapndof, mapsyst, maperr, vnames, TString(texName).ReplaceAll(".tex","_cent.tex").Data(), anabin(0,2.4,6.5,50,0,0));
+  //printTex(mapvals, mapchi2, mapndof, mapsyst, maperr, vnames, TString(texName).ReplaceAll(".tex","_pt.tex").Data(), anabin(0,2.4,0,0,0,200));
+  //printTex(mapvals, mapchi2, mapndof, mapsyst, maperr, vnames, TString(texName).ReplaceAll(".tex","_rap.tex").Data(), anabin(0,0,6.5,50,0,200));
+  //printTex(mapvals, mapchi2, mapndof, mapsyst, maperr, vnames, TString(texName).ReplaceAll(".tex","_ptrap.tex").Data(), anabin(0,-2.4,-6.5,-50,0,200));
+  //printTex(mapvals, mapchi2, mapndof, mapsyst, maperr, vnames, TString(texName).ReplaceAll(".tex","_centrap.tex").Data(), anabin(0,-2.4,6.5,50,0,-200));
+  //printTex(mapvals, mapchi2, mapndof, mapsyst, maperr, vnames, TString(texName).ReplaceAll(".tex","_ptcent.tex").Data(), anabin(0,2.4,-6.5,-50,0,-200));
+  //printTex(mapvals, mapchi2, mapndof, mapsyst, maperr, vnames, TString(texName).ReplaceAll(".tex","_fwd.tex").Data(), anabin(1.8,2.4,0,0,0,-200));
 }
 
 double rms(vector<double> v, bool isrelative) {
@@ -209,20 +217,20 @@ void printTex(map<anabin, vector<double> > mapvals,
               string texName,
               anabin mask) {
   ofstream texfile(texName.c_str());
-  texfile << "\\begin{tabular}{|ccc|";
+  texfile << "\\begin{tabular}{|cccc|";
   for (unsigned int i=0; i<vnames.size()+1; i++) {
     if (i==vnames.size()) texfile << "|";
     texfile << "c|";
   }
   texfile << "}" << endl;
   texfile << "\\hline" << endl;
-  texfile << "$|y|$ & \\pt & Centrality";
+  texfile << "$|y|$ & \\pt & \\z & Centrality";
   for (unsigned int i=0; i<vnames.size(); i++) texfile << " & " << latexSafe(vnames[i]);
   texfile << " & Systematic";
   texfile<< "\\\\" << endl;
   texfile << "\\hline" << endl;
   
-  anabin oldbin(0,0,0,0,0,0);
+  anabin oldbin(0,0,0,0,0,0,0,0);
   map<anabin, vector<double> >::const_iterator itm;
   for (itm=mapvals.begin(); itm!=mapvals.end(); itm++) {
     anabin thebin = itm->first;
@@ -232,6 +240,8 @@ void printTex(map<anabin, vector<double> > mapvals,
     if ((mask.rapbin().low()<0 || mask.rapbin().high()<0) && (thebin.rapbin() == binF(-mask.rapbin().low(),-mask.rapbin().high()))) continue;
     if ((mask.ptbin().low()>0 || mask.ptbin().high()>0) && (thebin.ptbin() != mask.ptbin())) continue;
     if ((mask.ptbin().low()<0 || mask.ptbin().high()<0) && (thebin.ptbin() == binF(-mask.ptbin().low(),-mask.ptbin().high()))) continue;
+    if ((mask.zbin().low()>0 || mask.zbin().high()>0) && (thebin.zbin() != mask.zbin())) continue;
+    if ((mask.zbin().low()<0 || mask.zbin().high()<0) && (thebin.zbin() == binF(-mask.zbin().low(),-mask.zbin().high()))) continue;
     if ((mask.centbin().low()>0 || mask.centbin().high()>0) && (thebin.centbin() != mask.centbin())) continue;
     if ((mask.centbin().low()<0 || mask.centbin().high()<0) && (thebin.centbin() == binI(-mask.centbin().low(),-mask.centbin().high()))) continue;
     
@@ -256,6 +266,13 @@ void printTex(map<anabin, vector<double> > mapvals,
     } else {
       texfile.precision(1); texfile.setf(ios::fixed);
       texfile << thebin.ptbin().low() << " $< \\pt < $ " << thebin.ptbin().high();
+    }
+    texfile << " & ";
+    if (thebin.zbin() == oldbin.zbin()) {
+      texfile << " - ";
+    } else {
+      texfile.precision(1); texfile.setf(ios::fixed);
+      texfile << thebin.zbin().low() << " $< \\z < $ " << thebin.zbin().high();
     }
     texfile << " & ";
     texfile.unsetf(ios::fixed);

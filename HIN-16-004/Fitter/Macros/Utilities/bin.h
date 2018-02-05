@@ -46,45 +46,47 @@ class anabin : public tuple<binF,binF,binF,binI> {
 set<anabin> allbinsXXXXX() {
   set<anabin> ans;
   // JPsiJet analysis 
-  ans.insert(anabin(0.0,1.0,0,1.6,6.5,30,0,200));
-  ans.insert(anabin(0.0,0.1,0,1.6,6.5,30,0,200));
-  ans.insert(anabin(0.1,0.2,0,1.6,6.5,30,0,200));
-  ans.insert(anabin(0.2,0.3,0,1.6,6.5,30,0,200));
-  ans.insert(anabin(0.3,0.4,0,1.6,6.5,30,0,200));
-  ans.insert(anabin(0.4,0.5,0,1.6,6.5,30,0,200));
-  ans.insert(anabin(0.5,0.6,0,1.6,6.5,30,0,200));
-  ans.insert(anabin(0.6,0.7,0,1.6,6.5,30,0,200));
-  ans.insert(anabin(0.7,0.8,0,1.6,6.5,30,0,200));
-  ans.insert(anabin(0.8,0.9,0,1.6,6.5,30,0,200));
-  ans.insert(anabin(0.9,1.0,0,1.6,6.5,30,0,200));
+  ans.insert(anabin(0.4,1.0,0,1.6,6.5,35,0,200));
+  ans.insert(anabin(0.4,0.6,0,1.6,6.5,35,0,200));
+  ans.insert(anabin(0.6,0.8,0,1.6,6.5,35,0,200));
+  ans.insert(anabin(0.8,1.0,0,1.6,6.5,35,0,200));
 
-  ans.insert(anabin(0.0,1.0,1.6,2.4,3,30,0,200));
-  ans.insert(anabin(0.0,0.1,1.6,2.4,3,30,0,200));
-  ans.insert(anabin(0.1,0.2,1.6,2.4,3,30,0,200));
-  ans.insert(anabin(0.2,0.3,1.6,2.4,3,30,0,200));
-  ans.insert(anabin(0.3,0.4,1.6,2.4,3,30,0,200));
-  ans.insert(anabin(0.4,0.5,1.6,2.4,3,30,0,200));
-  ans.insert(anabin(0.5,0.6,1.6,2.4,3,30,0,200));
-  ans.insert(anabin(0.6,0.7,1.6,2.4,3,30,0,200));
-  ans.insert(anabin(0.7,0.8,1.6,2.4,3,30,0,200));
-  ans.insert(anabin(0.8,0.9,1.6,2.4,3,30,0,200));
-  ans.insert(anabin(0.9,1.0,1.6,2.4,3,30,0,200));
+  ans.insert(anabin(0.2,1.0,1.6,2.4,3,35,0,200));
+  ans.insert(anabin(0.2,0.4,1.6,2.4,3,35,0,200));
+  ans.insert(anabin(0.4,0.6,1.6,2.4,3,35,0,200));
+  ans.insert(anabin(0.6,0.8,1.6,2.4,3,35,0,200));
+  ans.insert(anabin(0.8,1.0,1.6,2.4,3,35,0,200));
 
-  ans.insert(anabin(0.0,1.0,0,2.4,6.5,30,0,200));
-  ans.insert(anabin(0.0,0.1,0,2.4,6.5,30,0,200));
-  ans.insert(anabin(0.1,0.2,0,2.4,6.5,30,0,200));
-  ans.insert(anabin(0.2,0.3,0,2.4,6.5,30,0,200));
-  ans.insert(anabin(0.3,0.4,0,2.4,6.5,30,0,200));
-  ans.insert(anabin(0.4,0.5,0,2.4,6.5,30,0,200));
-  ans.insert(anabin(0.5,0.6,0,2.4,6.5,30,0,200));
-  ans.insert(anabin(0.6,0.7,0,2.4,6.5,30,0,200));
-  ans.insert(anabin(0.7,0.8,0,2.4,6.5,30,0,200));
-  ans.insert(anabin(0.8,0.9,0,2.4,6.5,30,0,200));
-  ans.insert(anabin(0.9,1.0,0,2.4,6.5,30,0,200));
+  ans.insert(anabin(0.0,1.0,0,2.4,6.5,35,0,200));
+  ans.insert(anabin(0.4,0.6,0,2.4,6.5,35,0,200));
+  ans.insert(anabin(0.6,0.8,0,2.4,6.5,35,0,200));
+  ans.insert(anabin(0.8,1.0,0,2.4,6.5,35,0,200));
 
   return ans;
 }
 
+set<anabin> midbinsXXXXX() {
+  set<anabin> ans;
+  // JPsiJet analysis in mid rapidity                                                                                                                                                       
+  ans.insert(anabin(0.4,1.0,0,1.6,6.5,35,0,200));
+  ans.insert(anabin(0.4,0.6,0,1.6,6.5,35,0,200));
+  ans.insert(anabin(0.6,0.8,0,1.6,6.5,35,0,200));
+  ans.insert(anabin(0.8,1.0,0,1.6,6.5,35,0,200));
+
+  return ans;
+}
+
+set<anabin> forbinsXXXXX() {
+  set<anabin> ans;
+  // JPsiJet analysis in forward rapidity
+  ans.insert(anabin(0.2,1.0,1.6,2.4,3,35,0,200));
+  ans.insert(anabin(0.2,0.4,1.6,2.4,3,35,0,200));
+  ans.insert(anabin(0.4,0.6,1.6,2.4,3,35,0,200));
+  ans.insert(anabin(0.6,0.8,1.6,2.4,3,35,0,200));
+  ans.insert(anabin(0.8,1.0,1.6,2.4,3,35,0,200));
+
+  return ans;
+}
 
 set<anabin> allbins16004() {
 set<anabin> ans;
