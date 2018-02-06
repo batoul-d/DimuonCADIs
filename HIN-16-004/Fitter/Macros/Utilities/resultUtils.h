@@ -262,8 +262,8 @@ bool binok(vector<anabin> thecats, string xaxis, anabin &tocheck, bool override)
    bool ok=false;
 
    for (vector<anabin>::const_iterator it=thecats.begin(); it!=thecats.end(); it++) {
-      if (xaxis=="zed" && it->zbin()==tocheck.zbin() && it->rapbin()==tocheck.rapbin() && it->centbin()==tocheck.centbin()
-            && ! (it->ptbin()==tocheck.ptbin())) {
+      if (xaxis=="z" && it->ptbin()==tocheck.ptbin() && it->rapbin()==tocheck.rapbin() && it->centbin()==tocheck.centbin()
+            && ! (it->zbin()==tocheck.zbin())) {
          ok=true;
          if (override) tocheck.setzbin(it->zbin());
          break;
