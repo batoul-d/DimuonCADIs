@@ -79,12 +79,27 @@ void myTree::EffCalc()
 {
   if (isMc)
     {
-      TH1F* ptg= new TH1F ("ptg", "N_{gen} vs p_{T}; p_{T}; N_{total}", nptbins, ptbins);
-      TH1F* ptr= new TH1F ("ptr", "N_{reco} vs p_{T}; p_{T}; N_{reco}", nptbins, ptbins);
-      TH1F* rapr= new TH1F ("rapr","N_{reco} vs #eta; #eta; N_{reco}", netabins, etabins);
-      TH1F* rapg= new TH1F ("rapg","N_{gen} vs #eta; #eta; N_{total}", netabins, etabins);
-      TH2F* ptrapg= new TH2F ("ptrapg", "N_{gen} vs p_{T} and y; y; p_{T}; N_{total}", netabins, etabins, nptbins, ptbins);
-      TH2F* ptrapr= new TH2F ("ptrapr", "N_{reco} vs p_{T} and y; y; p_{T}; N_{reco}", netabins, etabins, nptbins, ptbins);
+      TH1F* ptg = new TH1F ("ptg", "N_{gen} vs p_{T}; p_{T}; N_{total}", nptbins, ptbins);
+      TH1F* ptr = new TH1F ("ptr", "N_{reco} vs p_{T}; p_{T}; N_{reco}", nptbins, ptbins);
+      TH1F* rapr = new TH1F ("rapr","N_{reco} vs #eta; #eta; N_{reco}", netabins, etabins);
+      TH1F* rapg = new TH1F ("rapg","N_{gen} vs #eta; #eta; N_{total}", netabins, etabins);
+      TH2F* ptrapg = new TH2F ("ptrapg", "N_{gen} vs p_{T} and y; y; p_{T}; N_{total}", netabins, etabins, nptbins, ptbins);
+      TH2F* ptrapr = new TH2F ("ptrapr", "N_{reco} vs p_{T} and y; y; p_{T}; N_{reco}", netabins, etabins, nptbins, ptbins);
+
+      TH2F* num_binned = new TH2F ("num_", "N_{reco} vs p_{T} and y; y; p_{T}; N_{reco}", netabins, etabins, nptbins, ptbins);
+      TH2F* num_plus1sig = new TH2F ("num_plus1sig", "N_{reco} vs p_{T} and y; y; p_{T}; N_{reco}", netabins, etabins, nptbins, ptbins);
+      TH2F* num_minus1sig = new TH2F ("num_minus1sig", "N_{reco} vs p_{T} and y; y; p_{T}; N_{reco}", netabins, etabins, nptbins, ptbins);
+      TH2F* num_muid_sta = new TH2F ("num_muid_sta", "N_{reco} vs p_{T} and y; y; p_{T}; N_{reco}", netabins, etabins, nptbins, ptbins);
+      TH2F* num_muid = new TH2F ("num_muid", "N_{reco} vs p_{T} and y; y; p_{T}; N_{reco}", netabins, etabins, nptbins, ptbins);
+      TH2F* num_muid_plus1sig = new TH2F ("num_muid_plus1sig", "N_{reco} vs p_{T} and y; y; p_{T}; N_{reco}", netabins, etabins, nptbins, ptbins);
+      TH2F* num_muid_minus1sig = new TH2F ("num_muid_minus1sig", "N_{reco} vs p_{T} and y; y; p_{T}; N_{reco}", netabins, etabins, nptbins, ptbins);
+      TH2F* num_sta = new TH2F ("num_sta", "N_{reco} vs p_{T} and y; y; p_{T}; N_{reco}", netabins, etabins, nptbins, ptbins);
+      TH2F* num_sta_plus1sig = new TH2F ("num_sta_plus1sig", "N_{reco} vs p_{T} and y; y; p_{T}; N_{reco}", netabins, etabins, nptbins, ptbins);
+      TH2F* num_sta_minus1sig = new TH2F ("num_sta_minus1sig", "N_{reco} vs p_{T} and y; y; p_{T}; N_{reco}", netabins, etabins, nptbins, ptbins);
+      TH2F* num_trk_plus1sig = new TH2F ("num_trk_plus1sig", "N_{reco} vs p_{T} and y; y; p_{T}; N_{reco}", netabins, etabins, nptbins, ptbins);
+      TH2F* num_trk_minus1sig = new TH2F ("num_trk_minus1sig", "N_{reco} vs p_{T} and y; y; p_{T}; N_{reco}", netabins, etabins, nptbins, ptbins);
+
+      ptg->Sumw2(); ptr->Sumw2(); rapr->Sumw2(); rapg->Sumw2(); ptrapg->Sumw2(); ptrapr->Sumw2(); num_binned->Sumw2(); num_plus1sig->Sumw2(); num_minus1sig->Sumw2(); num_muid_sta->Sumw2(); num_muid->Sumw2(); num_muid_plus1sig->Sumw2(); num_muid_minus1sig->Sumw2(); num_sta->Sumw2(); num_sta_plus1sig->Sumw2(); num_sta_minus1sig->Sumw2(); num_trk_plus1sig->Sumw2(); num_trk_minus1sig->Sumw2();
 
       Long64_t nentries =fChain->GetEntries();
       //nentries = 2000000;
@@ -129,51 +144,191 @@ void myTree::EffCalc()
 		    {
 		      if (Reco_QQ_sign[iQQ]==0 && abs(jpsi_rap)<2.4 && jpsi_m>2.6 && jpsi_m<3.5) 
 			{
-			  tnp_weight = tnp_weight_trg_pp(RecoQQmupl4mom->Pt(),RecoQQmupl4mom->Eta(),0) * tnp_weight_trg_pp(RecoQQmumi4mom->Pt(),RecoQQmumi4mom->Eta(),0) * tnp_weight_trk_pp(0) * tnp_weight_trk_pp(0);
-			  //if ((isPr && Reco_QQ_ctau[iQQ] < lcut->Eval(jpsi_pt))
-			  //|| (!isPr && Reco_QQ_ctau[iQQ] > lcut->Eval(jpsi_pt)))			  
-			  //{  
+			  /////nominal
+			  tnp_weight = tnp_weight_trg_pp(RecoQQmupl4mom->Pt(),RecoQQmupl4mom->Eta(),0) * tnp_weight_trg_pp(RecoQQmumi4mom->Pt(),RecoQQmumi4mom->Eta(),0) * 
+			    tnp_weight_trk_pp(0) * tnp_weight_trk_pp(0);
 			  ptr->Fill(jpsi_pt,tnp_weight);
 			  rapr->Fill(jpsi_rap,tnp_weight);
 			  ptrapr->Fill(jpsi_rap, jpsi_pt, tnp_weight);
-			  //}
+
+			  /////systematics
+			  tnp_weight = tnp_weight_trg_pp(RecoQQmupl4mom->Pt(),RecoQQmupl4mom->Eta(),-10) * tnp_weight_trg_pp(RecoQQmumi4mom->Pt(),RecoQQmumi4mom->Eta(),-10) * 
+			    tnp_weight_trk_pp(0) * tnp_weight_trk_pp(0);
+			  num_binned->Fill(jpsi_rap, jpsi_pt, tnp_weight);
+
+			  tnp_weight = tnp_weight_trg_pp(RecoQQmupl4mom->Pt(),RecoQQmupl4mom->Eta(),-1) * tnp_weight_trg_pp(RecoQQmumi4mom->Pt(),RecoQQmumi4mom->Eta(),-1) * 
+			    tnp_weight_trk_pp(0) * tnp_weight_trk_pp(0);
+			  num_plus1sig->Fill(jpsi_rap, jpsi_pt, tnp_weight); 
+
+			  tnp_weight = tnp_weight_trg_pp(RecoQQmupl4mom->Pt(),RecoQQmupl4mom->Eta(),-2) * tnp_weight_trg_pp(RecoQQmumi4mom->Pt(),RecoQQmumi4mom->Eta(),-2) * 
+			    tnp_weight_trk_pp(0) * tnp_weight_trk_pp(0);
+			  num_minus1sig->Fill(jpsi_rap, jpsi_pt, tnp_weight); 
+
+			  tnp_weight = tnp_weight_sta_pp(RecoQQmupl4mom->Pt(),RecoQQmupl4mom->Eta(),0) * tnp_weight_sta_pp(RecoQQmumi4mom->Pt(),RecoQQmumi4mom->Eta(),0) * 
+			    tnp_weight_trg_pp(RecoQQmupl4mom->Pt(),RecoQQmupl4mom->Eta(),0) * tnp_weight_trg_pp(RecoQQmumi4mom->Pt(),RecoQQmumi4mom->Eta(),0) * 
+			    tnp_weight_muid_pp(RecoQQmupl4mom->Pt(),RecoQQmupl4mom->Eta(),0) * tnp_weight_muid_pp(RecoQQmumi4mom->Pt(),RecoQQmumi4mom->Eta(),0) * 
+			    tnp_weight_trk_pp(0) * tnp_weight_trk_pp(0);
+			  num_muid_sta->Fill(jpsi_rap, jpsi_pt, tnp_weight);
+ 
+			  tnp_weight = tnp_weight_trg_pp(RecoQQmupl4mom->Pt(),RecoQQmupl4mom->Eta(),0) * tnp_weight_trg_pp(RecoQQmumi4mom->Pt(),RecoQQmumi4mom->Eta(),0) *
+			    tnp_weight_muid_pp(RecoQQmupl4mom->Pt(),RecoQQmupl4mom->Eta(),0) * tnp_weight_muid_pp(RecoQQmumi4mom->Pt(),RecoQQmumi4mom->Eta(),0) *
+			    tnp_weight_trk_pp(0) * tnp_weight_trk_pp(0);
+			  num_muid->Fill(jpsi_rap, jpsi_pt, tnp_weight); 
+
+			  tnp_weight = tnp_weight_trg_pp(RecoQQmupl4mom->Pt(),RecoQQmupl4mom->Eta(),0) * tnp_weight_trg_pp(RecoQQmumi4mom->Pt(),RecoQQmumi4mom->Eta(),0) *
+			    tnp_weight_muid_pp(RecoQQmupl4mom->Pt(),RecoQQmupl4mom->Eta(),-1) * tnp_weight_muid_pp(RecoQQmumi4mom->Pt(),RecoQQmumi4mom->Eta(),-1) *
+			    tnp_weight_trk_pp(0) * tnp_weight_trk_pp(0);
+			  num_muid_plus1sig->Fill(jpsi_rap, jpsi_pt, tnp_weight); 
+
+			  tnp_weight = tnp_weight_trg_pp(RecoQQmupl4mom->Pt(),RecoQQmupl4mom->Eta(),0) * tnp_weight_trg_pp(RecoQQmumi4mom->Pt(),RecoQQmumi4mom->Eta(),0) *
+			    tnp_weight_muid_pp(RecoQQmupl4mom->Pt(),RecoQQmupl4mom->Eta(),-2) * tnp_weight_muid_pp(RecoQQmumi4mom->Pt(),RecoQQmumi4mom->Eta(),-2) *
+			    tnp_weight_trk_pp(0) * tnp_weight_trk_pp(0);
+			  num_muid_minus1sig->Fill(jpsi_rap, jpsi_pt, tnp_weight); 
+
+			  tnp_weight = tnp_weight_trg_pp(RecoQQmupl4mom->Pt(),RecoQQmupl4mom->Eta(),0) * tnp_weight_trg_pp(RecoQQmumi4mom->Pt(),RecoQQmumi4mom->Eta(),0) *
+			    tnp_weight_sta_pp(RecoQQmupl4mom->Pt(),RecoQQmupl4mom->Eta(),0) * tnp_weight_sta_pp(RecoQQmumi4mom->Pt(),RecoQQmumi4mom->Eta(),0) *
+			    tnp_weight_trk_pp(0) * tnp_weight_trk_pp(0);
+			  num_sta->Fill(jpsi_rap, jpsi_pt, tnp_weight); 
+
+			  tnp_weight = tnp_weight_trg_pp(RecoQQmupl4mom->Pt(),RecoQQmupl4mom->Eta(),0) * tnp_weight_trg_pp(RecoQQmumi4mom->Pt(),RecoQQmumi4mom->Eta(),0) *
+			    tnp_weight_sta_pp(RecoQQmupl4mom->Pt(),RecoQQmupl4mom->Eta(),-1) * tnp_weight_sta_pp(RecoQQmumi4mom->Pt(),RecoQQmumi4mom->Eta(),-1) *
+			    tnp_weight_trk_pp(0) * tnp_weight_trk_pp(0);
+			  num_sta_plus1sig->Fill(jpsi_rap, jpsi_pt, tnp_weight); 
+
+			  tnp_weight = tnp_weight_trg_pp(RecoQQmupl4mom->Pt(),RecoQQmupl4mom->Eta(),0) * tnp_weight_trg_pp(RecoQQmumi4mom->Pt(),RecoQQmumi4mom->Eta(),0) *
+			    tnp_weight_sta_pp(RecoQQmupl4mom->Pt(),RecoQQmupl4mom->Eta(),-2) * tnp_weight_sta_pp(RecoQQmumi4mom->Pt(),RecoQQmumi4mom->Eta(),-2) *
+			    tnp_weight_trk_pp(0) * tnp_weight_trk_pp(0);
+			  num_sta_minus1sig->Fill(jpsi_rap, jpsi_pt, tnp_weight); 
+
+			  tnp_weight = tnp_weight_trg_pp(RecoQQmupl4mom->Pt(),RecoQQmupl4mom->Eta(),0) * tnp_weight_trg_pp(RecoQQmumi4mom->Pt(),RecoQQmumi4mom->Eta(),0) *
+			    tnp_weight_trk_pp(-1) * tnp_weight_trk_pp(-1);
+			  num_trk_plus1sig->Fill(jpsi_rap, jpsi_pt, tnp_weight); 
+
+			  tnp_weight = tnp_weight_trg_pp(RecoQQmupl4mom->Pt(),RecoQQmupl4mom->Eta(),0) * tnp_weight_trg_pp(RecoQQmumi4mom->Pt(),RecoQQmumi4mom->Eta(),0) *
+			    tnp_weight_trk_pp(-2) * tnp_weight_trk_pp(-2);
+			  num_trk_minus1sig->Fill(jpsi_rap, jpsi_pt, tnp_weight);
 			}
 		    }
 		}
 	    }
 	}
-      TEfficiency* gptef = new TEfficiency("gptef", "reconstruction efficiency fct of pt", nptbins, ptbins);
-      //if(TEfficiency::CheckConsistency(*ptr,*ptg))
-      //gptef = new TEfficiency (*ptr,*ptg);
+      TEfficiency* gptef = new TEfficiency("gptef", "AccxEff(pt)", nptbins, ptbins);
       gptef->SetStatisticOption(TEfficiency::kBBayesian);
       gptef->SetPassedHistogram(*ptr,"f");
       gptef->SetTotalHistogram(*ptg,"f");
-      TEfficiency* grapef = new TEfficiency("grapef", "reconstruction efficiency fct of rapidity", netabins, etabins);
-      //if(TEfficiency::CheckConsistency(*rapr,*rapg))
-      //grapef = new TEfficiency (*rapr,*rapg);
+
+      TEfficiency* grapef = new TEfficiency("grapef", "AccxEff(y)", netabins, etabins);
       grapef->SetStatisticOption(TEfficiency::kBBayesian);
       grapef->SetPassedHistogram(*rapr,"f");
       grapef->SetTotalHistogram(*rapg,"f");
-      TEfficiency* gptrapef = new TEfficiency("gptetaef", "reconstruction efficiency fct of pt and rapidity; y; pt; eff", netabins, etabins, nptbins, ptbins);
-      //if(TEfficiency::CheckConsistency(*ptrapr, *ptrapg))
-      //gptrapef = new TEfficiency (*ptrapr, *ptrapg);
-      gptrapef->SetStatisticOption(TEfficiency::kBBayesian);
-      gptrapef->SetPassedHistogram(*ptrapr,"f");
-      gptrapef->SetTotalHistogram(*ptrapg,"f");
-      gptrapef->SetName("hcorr_Jpsi_PP");
+
+      /////nominal 2D
+      TEfficiency* eff_nom = new TEfficiency("eff_nom", "AccxEff(y,pt); y; pt; eff", netabins, etabins, nptbins, ptbins);
+      eff_nom->SetStatisticOption(TEfficiency::kBBayesian);
+      eff_nom->SetPassedHistogram(*ptrapr,"f");
+      eff_nom->SetTotalHistogram(*ptrapg,"f");
+      eff_nom->SetName("hcorr_Jpsi_PP");
+
+      ////systematics
+      TEfficiency* eff_binned = new TEfficiency("eff_binned", "AccxEff(y,pt); y; pt; eff", netabins, etabins, nptbins, ptbins);
+      eff_binned->SetStatisticOption(TEfficiency::kBBayesian);
+      eff_binned->SetPassedHistogram(*num_binned,"f");
+      eff_binned->SetTotalHistogram(*ptrapg,"f");
+      eff_binned->SetName("hcorr_binned");
+
+      TEfficiency* eff_plus1sig = new TEfficiency("eff_plus1sig", "AccxEff(y,pt); y; pt; eff", netabins, etabins, nptbins, ptbins);
+      eff_plus1sig->SetStatisticOption(TEfficiency::kBBayesian);
+      eff_plus1sig->SetPassedHistogram(*num_plus1sig,"f");
+      eff_plus1sig->SetTotalHistogram(*ptrapg,"f");
+      eff_plus1sig->SetName("hcorr_plus1sig");
+
+      TEfficiency* eff_minus1sig = new TEfficiency("eff_minus1sig", "AccxEff(y,pt); y; pt; eff", netabins, etabins, nptbins, ptbins);
+      eff_minus1sig->SetStatisticOption(TEfficiency::kBBayesian);
+      eff_minus1sig->SetPassedHistogram(*num_minus1sig,"f");
+      eff_minus1sig->SetTotalHistogram(*ptrapg,"f");
+      eff_minus1sig->SetName("hcorr_minus1sig");
+
+      TEfficiency* eff_muid_sta = new TEfficiency("eff_muid_sta", "AccxEff(y,pt); y; pt; eff", netabins, etabins, nptbins, ptbins);
+      eff_muid_sta->SetStatisticOption(TEfficiency::kBBayesian);
+      eff_muid_sta->SetPassedHistogram(*num_muid_sta,"f");
+      eff_muid_sta->SetTotalHistogram(*ptrapg,"f");
+      eff_muid_sta->SetName("hcorr_muid_sta");
+
+      TEfficiency* eff_muid = new TEfficiency("eff_muid", "AccxEff(y,pt); y; pt; eff", netabins, etabins, nptbins, ptbins);
+      eff_muid->SetStatisticOption(TEfficiency::kBBayesian);
+      eff_muid->SetPassedHistogram(*num_muid,"f");
+      eff_muid->SetTotalHistogram(*ptrapg,"f");
+      eff_muid->SetName("hcorr_muid");
+
+      TEfficiency* eff_muid_plus1sig = new TEfficiency("eff_muid_plus1sig", "AccxEff(y,pt); y; pt; eff", netabins, etabins, nptbins, ptbins);
+      eff_muid_plus1sig->SetStatisticOption(TEfficiency::kBBayesian);
+      eff_muid_plus1sig->SetPassedHistogram(*num_muid_plus1sig,"f");
+      eff_muid_plus1sig->SetTotalHistogram(*ptrapg,"f");
+      eff_muid_plus1sig->SetName("hcorr_muid_plus1sig");
+
+      TEfficiency* eff_muid_minus1sig = new TEfficiency("eff_muid_minus1sig", "AccxEff(y,pt); y; pt; eff", netabins, etabins, nptbins, ptbins);
+      eff_muid_minus1sig->SetStatisticOption(TEfficiency::kBBayesian);
+      eff_muid_minus1sig->SetPassedHistogram(*num_muid_minus1sig,"f");
+      eff_muid_minus1sig->SetTotalHistogram(*ptrapg,"f");
+      eff_muid_minus1sig->SetName("hcorr_muid_minus1sig");
+
+      TEfficiency* eff_sta = new TEfficiency("eff_sta", "AccxEff(y,pt); y; pt; eff", netabins, etabins, nptbins, ptbins);
+      eff_sta->SetStatisticOption(TEfficiency::kBBayesian);
+      eff_sta->SetPassedHistogram(*num_sta,"f");
+      eff_sta->SetTotalHistogram(*ptrapg,"f");
+      eff_sta->SetName("hcorr_sta");
+
+      TEfficiency* eff_sta_plus1sig = new TEfficiency("eff_sta_plus1sig", "AccxEff(y,pt); y; pt; eff", netabins, etabins, nptbins, ptbins);
+      eff_sta_plus1sig->SetStatisticOption(TEfficiency::kBBayesian);
+      eff_sta_plus1sig->SetPassedHistogram(*num_sta_plus1sig,"f");
+      eff_sta_plus1sig->SetTotalHistogram(*ptrapg,"f");
+      eff_sta_plus1sig->SetName("hcorr_sta_plus1sig");
+
+      TEfficiency* eff_sta_minus1sig = new TEfficiency("eff_sta_minus1sig", "AccxEff(y,pt); y; pt; eff", netabins, etabins, nptbins, ptbins);
+      eff_sta_minus1sig->SetStatisticOption(TEfficiency::kBBayesian);
+      eff_sta_minus1sig->SetPassedHistogram(*num_sta_minus1sig,"f");
+      eff_sta_minus1sig->SetTotalHistogram(*ptrapg,"f");
+      eff_sta_minus1sig->SetName("hcorr_sta_minus1sig");
+
+      TEfficiency* eff_trk_plus1sig = new TEfficiency("eff_trk_plus1sig", "AccxEff(y,pt); y; pt; eff", netabins, etabins, nptbins, ptbins);
+      eff_trk_plus1sig->SetStatisticOption(TEfficiency::kBBayesian);
+      eff_trk_plus1sig->SetPassedHistogram(*num_trk_plus1sig,"f");
+      eff_trk_plus1sig->SetTotalHistogram(*ptrapg,"f");
+      eff_trk_plus1sig->SetName("hcorr_trk_plus1sig");
+
+      TEfficiency* eff_trk_minus1sig = new TEfficiency("eff_trk_minus1sig", "AccxEff(y,pt); y; pt; eff", netabins, etabins, nptbins, ptbins);
+      eff_trk_minus1sig->SetStatisticOption(TEfficiency::kBBayesian);
+      eff_trk_minus1sig->SetPassedHistogram(*num_trk_minus1sig,"f");
+      eff_trk_minus1sig->SetTotalHistogram(*ptrapg,"f");
+      eff_trk_minus1sig->SetName("hcorr_trk_minus1sig");
+
 
       TFile* ef (0x0);
       if (isPr)
 	ef = new TFile ("../Fitter/Input/pr_correction_AccEff.root", "RECREATE");
       else
 	ef = new TFile ("../Fitter/Input/npr_correction_AccEff.root", "RECREATE");
-      gptef->Write("pteff");
+
+
+      gptef->Write("effVsPt");
+      grapef->Write("effVsRap");
       ptrapg->Write("hcorr_his_deno");
       ptrapr->Write("hcorr_his_num");
-      ptrapr->Divide(ptrapg);
-      ptrapg->Write("hcorr_his");
-      gptrapef->Write("hcorr_Jpsi_PP");
-      grapef->Write("rapeff");
+      eff_nom->Write("hcorr_Jpsi_PP");
+
+      eff_binned->Write("hcorr_binned"); 
+      eff_plus1sig->Write("hcorr_plus1sig"); 
+      eff_minus1sig->Write("hcorr_minus1sig"); 
+      eff_muid_sta->Write("hcorr_muid_sta"); 
+      eff_muid->Write("hcorr_muid"); 
+      eff_muid_plus1sig->Write("hcorr_muid_plus1sig"); 
+      eff_muid_minus1sig->Write("hcorr_muid_minus1sig"); 
+      eff_sta->Write("hcorr_sta"); 
+      eff_sta_plus1sig->Write("hcorr_sta_plus1sig"); 
+      eff_sta_minus1sig->Write("hcorr_sta_minus1sig"); 
+      eff_trk_plus1sig->Write("hcorr_trk_plus1sig"); 
+      eff_trk_minus1sig->Write("hcorr_trk_minus1sig");
+
       ef->Close();
     }
   else 
