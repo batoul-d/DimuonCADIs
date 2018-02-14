@@ -20,12 +20,7 @@ using namespace  RooFit;
 
 TLorentzVector* matchReco;
 TLorentzVector* matchGen;
-int nj=0;
-int nt=0;
-int np=0;
-int nn=0;
-int ntp=0;
-int ntn=0;
+
 Float_t jpsi_m;
 Float_t jpsi_pt;
 Float_t jpsi_eta;
@@ -49,31 +44,6 @@ int netabins = ((sizeof(etabins)/sizeof(double))-1);
 Double_t ybins []={0, 0.4, 0.8, 1.2, 1.6, 2, 2.4};
 int nybins = ((sizeof(ybins)/sizeof(double))-1);
 
-RooRealVar* mass = new RooRealVar("Mass","#mu#mu mass", 2.6, 3.4, "GeV/c^{2}");
-RooRealVar* genmass = new RooRealVar("genMass","#mu#mu mass", 2.6, 3.4, "GeV/c^{2}");
-RooRealVar* ctau = new RooRealVar("ctau","c_{#tau}", -2.0, 5.0, "mm");
-RooRealVar* genctau = new RooRealVar("genctau","gen c_{#tau}", -2.0, 5.0, "mm");
-RooRealVar* zed = new RooRealVar("z", "z_{J/#psi}", 0, 1);
-RooRealVar* r = new RooRealVar("r", "#DeltaR", 0, 0.5);
-RooRealVar* genzed = new RooRealVar("genz", "genz_{J/#psi}", 0, 1);
-RooRealVar* w = new RooRealVar("w","MC weight", 0.0, 10000000.0);
-RooRealVar* genr = new RooRealVar("genr", "#genDeltaR", 0, 0.5);
-RooRealVar* pt = new RooRealVar("pt", "pt", 6.5, 25.5);
-RooRealVar* rap = new RooRealVar("rap", "rapidity", -2.4, 2.4);
-RooRealVar* gen_pt = new RooRealVar("gen_pt", "pt for gen j/psi", 6.5, 25.5);
-RooRealVar* gen_rap = new RooRealVar("gen_rap", "rapidity for gen j/psi", -2.4, 2.4);
-
-RooArgSet* recoset = new RooArgSet(*mass, *ctau, *zed, *r, *pt, *rap, *w);
-RooArgSet*  unwset = new RooArgSet(*mass, *ctau, *zed, *r, *pt, *rap);
-RooArgSet*  genset = new RooArgSet (*genmass, *genctau, *genzed, *genr, *gen_pt, *gen_rap);
-RooArgSet* prset = new RooArgSet(*mass, *ctau, *zed, *r, *pt, *rap, *w);
-RooArgSet* nprset = new RooArgSet(*mass, *ctau, *zed, *r, *pt, *rap, *w);
-
-RooDataSet* data = new RooDataSet ("data", "data for reconstructed J/#psi", *recoset, WeightVar(*w));
-RooDataSet* unwdata = new RooDataSet ("unwdata", "unweighted data", *unwset);
-RooDataSet* gendata = new RooDataSet ("gendata", "data for generated J/#psi", *genset);
-RooDataSet* prdata = new RooDataSet ("prdata", "data for prompt J/#psi", *prset, WeightVar(*w));
-RooDataSet* nprdata = new RooDataSet ("nprdata", "data for non prompt J/#psi", *nprset, WeightVar(*w));
 
 void myTree::EffCalc()
 {
@@ -335,6 +305,104 @@ void myTree::EffCalc()
     cout<< "[ERROR] this is data and not MC"<<endl;
 }
 
+void myTree::EffSyst() {
+
+  cout<<"[INFO] Loading the tree"<<endl;
+  TFile* trFile = TFile::Open(Form("../Fitter/TreesForUnfolding/tree_%s_PP_NoBkg_AccEff_JEC.root", isPr?"MCJPSIPR":"MCJPSINOPR"),"READ");
+  TTree* trNom = (TTree*) trFile->Get("treeForUnfolding");
+  float z; float jp_pt; float jp_rap; float jp_mass; float jt_pt; float jt_rap;
+  trNom->SetBranchAddress("z",&z);
+  trNom->SetBranchAddress("jp_pt",&jp_pt);
+  trNom->SetBranchAddress("jp_rap",&jp_rap);
+  trNom->SetBranchAddress("jp_mass",&jp_mass);
+  trNom->SetBranchAddress("jt_pt",&jt_pt);
+  trNom->SetBranchAddress("jt_rap",&jt_rap);
+
+  cout<<"[INFO] Loading the corrections"<<endl;
+  TFile* corrFile = TFile::Open("../Fitter/Input/pr_correction_AccEff.root","READ"); //always use the prompt
+
+  string corrName [] = 
+    {
+      "Jpsi_PP", //nominal
+      "binned",
+      "plus1sig",
+      "minus1sig",
+      "muid_sta",
+      "muid",
+      "muid_plus1sig",
+      "muid_minus1sig",
+      "sta",
+      "sta_plus1sig",
+      "sta_minus1sig",
+      "trk_plus1sig",
+      "trk_minus1sig"
+    };
+  TObjArray *corrHis = new TObjArray(15);
+  TObjArray *countHis016 = new TObjArray(15);
+  TObjArray *countHis1624 = new TObjArray(15);
+  TEfficiency *corrTemp = NULL; TH1F* countTemp = NULL;
+  for(int i=0; i<13; i++) {
+    corrTemp = (TEfficiency*) corrFile->Get(Form("hcorr_%s",corrName[i].c_str()));
+    corrHis->Add(corrTemp);
+    countTemp = new TH1F (Form("his_016_%s",corrName[i].c_str()), Form("mid,  tnp %s",corrName[i].c_str()), 5, 0, 1);
+    countHis016->Add(countTemp);
+    countTemp = new TH1F (Form("his_1624_%s",corrName[i].c_str()), Form("fwd,  tnp %s",corrName[i].c_str()), 5, 0, 1);
+    countHis1624->Add(countTemp);
+  }
+  //filling the histograms
+  cout<<"[INFO] Filling the histograms"<<endl;
+  int nentries = trNom->GetEntries();
+  for (int jentry=0; jentry<nentries; jentry++) {
+    if (jentry%1000000==0) cout<<"[INFO] Processing entry "<<jentry<<"/"<<nentries<<endl;
+    trNom->GetEntry(jentry);
+    
+    if (jt_pt > 25 && jt_pt < 35 && abs(jt_rap) < 2.4 && jp_mass > 2.6 && jp_mass < 3.5) {
+	if (abs(jp_rap) < 1.6 && jp_pt > 6.5 && jp_pt < 35) {
+	  for (int i=0; i<13; i++) {
+	    corrTemp = (TEfficiency*) corrHis->At(i);
+	    countTemp = (TH1F*) countHis016->At(i);
+	    countTemp->Fill(z,1.0/corrTemp->GetEfficiency(corrTemp->FindFixBin(jp_rap,jp_pt)));
+	  }
+	}
+	else if (abs(jp_rap) > 1.6 && abs(jp_rap) < 2.4 && jp_pt > 3 && jp_pt < 35) {
+	  for (int i=0; i<13; i++) {
+	    corrTemp = (TEfficiency*) corrHis->At(i);
+	    countTemp = (TH1F*) countHis1624->At(i);
+	    countTemp->Fill(z,1.0/corrTemp->GetEfficiency(corrTemp->FindFixBin(jp_rap,jp_pt)));
+	  }
+	}
+      }
+      };
+ 
+    cout<<"[INFO] Getting the ratios and filling the csv files"<<endl;
+    countTemp = (TH1F*) countHis016->At(0);
+    TH1F* countTemp2 = (TH1F*) countHis1624->At(0);
+
+    float initval016 [] = {(float)countTemp->GetBinContent(countTemp->FindBin(0.1)), (float)countTemp->GetBinContent(countTemp->FindBin(0.3)), (float)countTemp->GetBinContent(countTemp->FindBin(0.5)), (float)countTemp->GetBinContent(countTemp->FindBin(0.7)), (float)countTemp->GetBinContent(countTemp->FindBin(0.9))};
+    float initval1624 [] = {(float)countTemp2->GetBinContent(countTemp2->FindBin(0.1)), (float)countTemp2->GetBinContent(countTemp2->FindBin(0.3)), (float)countTemp2->GetBinContent(countTemp2->FindBin(0.5)), (float)countTemp2->GetBinContent(countTemp2->FindBin(0.7)), (float)countTemp2->GetBinContent(countTemp2->FindBin(0.9))};
+
+    TFile *systSave = new TFile (Form("%sEffSystHist.root",isPr?"pr":"npr"),"RECREATE");
+    countTemp->Write(Form("hist_016_%s","nominal"));
+    countTemp2->Write(Form("hist_1624_%s","nominal"));
+    for(int i=1; i<13; i++) {
+      ofstream file016(Form("../Fitter/Systematics/csv/syst_016_NJpsi_%s_PP_tnp%s.csv",isPr?"prompt":"nonprompt",corrName[i].c_str()));
+      ofstream file1624(Form("../Fitter/Systematics/csv/syst_1624_NJpsi_%s_PP_tnp%s.csv",isPr?"prompt":"nonprompt",corrName[i].c_str()));
+      file016 << "tnp " << corrName[i] << endl;
+      file1624 << "tnp " << corrName[i] << endl;
+      countTemp = (TH1F*) countHis016->At(i);
+      countTemp2 = (TH1F*) countHis1624->At(i);
+      countTemp->Write(Form("hist_016_%s",corrName[i].c_str()));
+      countTemp2->Write(Form("hist_1624_%s",corrName[i].c_str()));
+      for (int j=1; j<5; j++){
+	file016 << "0, 1.6, 6.5, 35, "<<j*0.2<<", "<< j*0.2+0.2 <<", 0, 100, "<< abs(countTemp->GetBinContent(countTemp->FindBin(j*0.2+0.1))-initval016[j])*1.0/initval016[j]<< endl; 
+	file1624 << "1.6, 2.4, 3, 35, "<<j*0.2<<", "<< j*0.2+0.2 <<", 0, 100, "<< abs(countTemp2->GetBinContent(countTemp2->FindBin(j*0.2+0.1))-initval1624[j])*1.0/initval1624[j]<< endl;
+      }
+      file016.close();
+      file1624.close();
+    }
+    systSave->Close();
+  }
+  
 void myTree::ANEffPlots()
 {
   if (isMc)
@@ -720,851 +788,9 @@ void myTree::ClosureTest()
     cout<< "this is data and not MC"<<endl;
 }
 
-void myTree::Loop()
-{
-  gStyle->SetOptStat(0);
-  TCanvas *c1 = new TCanvas ("c1", "", 1000, 800);
-  TH1F* tot = new TH1F ("tot", ";p_{t}(#mu#mu)(GeV/c);Events", 25, ptbins);
-  TH1F* jpjt = new TH1F ("jpjt", ";p_{t}(#mu#mu/jet)(GeV/c);Events", 25, ptbins);
-  TH1F* ptot = new TH1F ("ptot", ";p_{t}(pr #mu#mu)(GeV/c);Events", 25, ptbins);
-  TH1F* ntot = new TH1F ("ntot", ";p_{t}(npr #mu#mu)(GeV/c);Events", 25, ptbins);
-  TH1F* pjpjt = new TH1F ("pjpjt", ";p_{t}(pr #mu#mu/jet)(GeV/c);Events", 25, ptbins);
-  TH1F* njpjt = new TH1F ("njpjt", ";p_{t}(npr #mu#mu/jet)(GeV/c);Events", 25, ptbins);
-  TF1* lcut = new TF1 ("lcut", "0.013+0.25/x", 6.5, 50);
-  if (fChain == 0) return;
-  //genzed->setBins(10);
-  //mass->setBins(40);
-  //zed->setBins(10);
-  //rap->setBins(12);
-  //gen_rap->setBins(12);
-  Bool_t ismatch;
-  TFile* f (0x0);
-  TFile* prf = TFile::Open("prEff.root");
-  TFile* nprf = TFile::Open ("nprEff.root");
+void myTree::Loop() {cout << "[INFO] This function is empty at the moment!!"<< endl;}
 
-  TEfficiency* preff = (TEfficiency*) prf->Get("ptrap");
-  TEfficiency* npreff = (TEfficiency*) prf->Get("ptrap");
-  TEfficiency* eff(0x0);
-  if (isPr)
-    eff=preff;
-  else
-    eff=npreff;
-
-  Long64_t nentries = fChain->GetEntries();
-  Long64_t nbytes = 0, nb = 0;
-  if (isMc)
-    {
-      for (Long64_t jentry=0; jentry<nentries;jentry++) 
-	{
-	  ismatch=false;
-	  Long64_t ientry = LoadTree(jentry);
-	  if (ientry < 0) break;
-	  nb = fChain->GetEntry(jentry);   nbytes += nb;
-
-
-	  for (int iQQ=0; iQQ<Gen_QQ_size; iQQ++)
-	    {
-	      TLorentzVector *GenQQ4mom = (TLorentzVector*) Gen_QQ_4mom->At(iQQ);
-	      jpsi_m=GenQQ4mom->M();
-	      jpsi_pt = GenQQ4mom->Pt();
-	      jpsi_rap = GenQQ4mom->Rapidity();
-	      drmin = 1000;
-
-	      if (jpsi_pt>6.5 && abs(jpsi_rap)<2.4 && jpsi_m>2.6 && jpsi_m<3.5)
-		{
-  
-		  for (Long64_t ijet=0; ijet<ngen; ijet++)
-		    {
-		      if (abs(geny[ijet])<2.4 && genpt[ijet]>20)
-			{
-			  TLorentzVector v_jet;
-			  v_jet.SetPtEtaPhiM(genpt[ijet], geneta[ijet], genphi[ijet], genm[ijet]);
-			  dphi= GenQQ4mom->DeltaPhi(v_jet);
-			  dr = GenQQ4mom->DeltaR (v_jet);
-			  if (dr<=drmin)
-			    {
-			      drmin=dr;
-			      dphimin=dphi;
-			      deta=(jpsi_eta-geneta[ijet]);
-			      z= jpsi_pt/genpt[ijet];
-			    }
-			}
-		    }
-		  if (drmin<0.5)
-		    {
-		      genmass->setVal(jpsi_m);
-		      gen_pt->setVal(jpsi_pt);
-		      gen_rap->setVal(jpsi_rap);  
-		      genzed->setVal(z);
-		      genr->setVal(drmin);
-		      genctau->setVal(Gen_QQ_ctau[iQQ]);
-		      gendata->add(*genset);
-		      ismatch=true;
-		    }
-		}
-	    }
-	  if (!ismatch) continue;
-	  if ( HLT_HIL1DoubleMu0ForPPRef_v1 && pPAprimaryVertexFilter)
-	    {
-	      for (int iQQ=0; iQQ<Reco_QQ_size; iQQ++) 
-		{
-		  TLorentzVector *RecoQQ4mom = (TLorentzVector*) Reco_QQ_4mom->At(iQQ);
-		  jpsi_pt = RecoQQ4mom->Pt();
-		  jpsi_eta = RecoQQ4mom->Eta();
-		  jpsi_rap = RecoQQ4mom->Rapidity();
-		  jpsi_m = RecoQQ4mom->M();
-		  drmin = 1000;
-
-		  if (
-		      jpsi_pt > 6.5  &&
-		      (areMuonsInAcceptance2015(iQQ))&&  // 2015 Global Muon Acceptance Cuts
-		      (passQualityCuts2015(iQQ)) &&  // 2015 Soft Global Muon Quality Cuts
-		      (isTriggerMatch(iQQ, triggerIndex_PP)) //&&// if it matches the trigger 
-		      )
-		    {
-		      if (Reco_QQ_sign[iQQ]==0 && abs(jpsi_rap)<2.4 && jpsi_m>2.6 && jpsi_m<3.5) 
-			{
-			  nt++;
-			  tot->Fill(jpsi_pt, (1.0/(eff->GetEfficiency(eff->FindFixBin(jpsi_rap, jpsi_pt)))));
-			  for (Long64_t ijet=0; ijet<nref; ijet++)
-			    {
-			      if ((isPr && Reco_QQ_ctau[iQQ] < lcut->Eval(jpsi_pt))
-			      || (!isPr && Reco_QQ_ctau[iQQ] > lcut->Eval(jpsi_pt)))
-				{
-				  if (abs(jty[ijet])<2.4 && jtpt[ijet]>50)
-				    {
-				      TLorentzVector v_jet;
-				      v_jet.SetPtEtaPhiM(jtpt[ijet], jteta[ijet], jtphi[ijet], jtm[ijet]);
-				      dphi= RecoQQ4mom->DeltaPhi(v_jet);
-				      dr = RecoQQ4mom->DeltaR (v_jet);
-				      if (dr<=drmin)
-					{
-					  drmin=dr;
-					  dphimin=dphi;
-					  deta=(jpsi_eta-jteta[ijet]);
-					  z= jpsi_pt/jtpt[ijet];
-					}
-				    }
-				}
-			    }
-			  if (drmin<0.5)
-			    {
-			      nj++;
-			      jpjt->Fill(jpsi_pt, (1.0/(eff->GetEfficiency(eff->FindFixBin(jpsi_rap, jpsi_pt)))));
-			      mass->setVal(jpsi_m);
-			      pt->setVal(jpsi_pt);
-			      rap->setVal(jpsi_rap);
-			      zed->setVal(z);
-			      r->setVal(drmin);
-			      ctau->setVal(Reco_QQ_ctau[iQQ]);
-			      weight=(eff->GetEfficiency(eff->FindFixBin(jpsi_rap, jpsi_pt)));
-			      if (weight==0)
-				cout <<"rap= "<<jpsi_rap<<"  pt= "<<jpsi_pt<< "  e= "<<weight<<endl;
-			      w->setVal(1.0/weight);
-			      data->add(*recoset, w->getVal());
-			      unwdata->add(*unwset);
-			    }
-			}
-		    }
-		}
-	    }
-	}
-      cout<<"[INFO} N_{#mu#mu/Jets} = "<<nj<<endl<<"[INFO] N_{total} = "<<nt<<endl;
-      for (int ibin=0; ibin <25; ibin++)
-	{
-	  tot->SetBinContent(ibin, ((tot->GetBinContent(ibin)*1.0)/tot->GetBinWidth(ibin)));
-	  jpjt->SetBinContent(ibin, ((jpjt->GetBinContent(ibin)*1.0)/jpjt->GetBinWidth(ibin)));
-	}
-      gSystem->cd("ptdist");
-      c1->cd();
-      tot->SetMarkerColor(6);
-      tot->SetMarkerStyle(33);
-      jpjt->SetMarkerColor(kBlue);
-      jpjt->SetMarkerStyle(33);
-
-      TLegend* l1 = new TLegend (0.6, 0.6, 0.8, 0.7);
-      l1->AddEntry(tot, "N_{#mu#mu tot}", "lep");
-      l1->AddEntry(jpjt, "N_{#mu#mu in jets}", "lep");
-      l1->SetBorderSize(0);
-
-      TPaveText* tbox = new TPaveText(0.6,0.4,0.8,0.5, "BRNDC");
-      tbox->AddText(Form("N_{#mu#mu tot} = %f", tot->GetEntries()));
-      tbox->AddText(Form("N_{#mu#mu in jets} = %f", jpjt->GetEntries()));
-      tbox->AddText(Form("N_{in jets}/N_{tot} = %f ", (nj*1.0)/nt));
-      tbox->SetBorderSize(0);
-      tbox->SetFillColor(0);
-
-      tot->Draw();
-      if (isPr)
-	{
-	  c1->SaveAs("prMcNtot.png");
-	  c1->SaveAs("prMcNtot.C");
-	}
-      else
-	{
-	  c1->SaveAs("nprMcNtot.png");
-	  c1->SaveAs("nprMcNtot.C");
-	}
-      jpjt->Draw();
-      if (isPr)
-	{
-	  c1->SaveAs("prMcNjet.png");
-	  c1->SaveAs("prMcNjet.C");
-	}
-      else
-	{
-	  c1->SaveAs("nprMcNjet.png");
-	  c1->SaveAs("nprMcNjet.C");
-	}
-      tot->Draw();
-      jpjt->Draw("same");
-      l1->Draw("same");
-      tbox->Draw("same");
-      if (isPr)
-	{
-	  c1->SaveAs("prMc.png");
-	  c1->SaveAs("prMc.C");
-	}
-      else
-	{
-	  c1->SaveAs("nprMc.png");
-	  c1->SaveAs("nprMc.C");
-	}
-      gSystem->cd("..");
-    }
-  else
-    {
-      for (Long64_t jentry=0; jentry<nentries;jentry++) 
-	{
-	  Long64_t ientry = LoadTree(jentry);
-	  if (ientry < 0) break;
-	  nb = fChain->GetEntry(jentry);   nbytes += nb;
-
-	  if ( HLT_HIL1DoubleMu0_v1 && pPAprimaryVertexFilter)
-	    {
-	      for (int iQQ=0; iQQ<Reco_QQ_size; iQQ++)
-		{
-		  TLorentzVector *RecoQQ4mom = (TLorentzVector*) Reco_QQ_4mom->At(iQQ);
-		  jpsi_pt = RecoQQ4mom->Pt();
-		  jpsi_eta = RecoQQ4mom->Eta();
-		  jpsi_rap = RecoQQ4mom->Rapidity();
-		  jpsi_m = RecoQQ4mom->M();
-		  drmin = 1000;
-
-		  if (
-		      jpsi_pt > 6.5  &&
-		      (areMuonsInAcceptance2015(iQQ))&&  // 2015 Global Muon Acceptance Cuts
-		      (passQualityCuts2015(iQQ)) &&  // 2015 Soft Global Muon Quality Cuts
-		      (isTriggerMatch(iQQ, triggerIndex_PP)) // if it matches the trigger 
-		      )
-		    {
-		      if (Reco_QQ_sign[iQQ]==0 && abs(jpsi_rap)<2.4 && jpsi_m>2.6 && jpsi_m<3.5) 
-			{
-			  nt++;
-			  tot->Fill(jpsi_pt, (1.0/eff->GetEfficiency(eff->FindFixBin(jpsi_rap, jpsi_pt))));
-			  if(Reco_QQ_ctau[iQQ] < lcut->Eval(jpsi_pt))
-			    {
-			      ntp++;
-			      ptot->Fill(jpsi_pt, (1.0/preff->GetEfficiency(eff->FindFixBin(jpsi_rap, jpsi_pt))));
-			    }
-			  else
-			    {
-			      ntn++;
-			      ntot->Fill(jpsi_pt, (1.0/npreff->GetEfficiency(eff->FindFixBin(jpsi_rap, jpsi_pt))));
-			    }
-			  for (Long64_t ijet=0; ijet<nref; ijet++)
-			    {
-	  
-			      if (abs(jty[ijet])<2.4 && jtpt[ijet]>50)
-				{
-				  TLorentzVector v_jet;
-				  v_jet.SetPtEtaPhiM(jtpt[ijet], jteta[ijet], jtphi[ijet], jtm[ijet]);
-				  dphi= RecoQQ4mom->DeltaPhi(v_jet);
-				  dr = RecoQQ4mom->DeltaR (v_jet);
-				  if (dr<=drmin)
-				    {
-				      drmin=dr;
-				      dphimin=dphi;
-				      deta=(jpsi_eta-jteta[ijet]);
-				      z= jpsi_pt/jtpt[ijet];
-				    }
-				}
-			    }
-			  if (drmin<0.5)
-			    {
-			      nj++;
-			      jpjt->Fill(jpsi_pt, (1.0/eff->GetEfficiency(eff->FindFixBin(jpsi_rap, jpsi_pt))));
-			      mass->setVal(jpsi_m);
-			      pt->setVal(jpsi_pt);
-			      rap->setVal(jpsi_rap);
-			      zed->setVal(z);
-			      r->setVal(drmin);
-			      weight=(eff->GetEfficiency(eff->FindFixBin(jpsi_rap, jpsi_pt)));
-			      if (weight==0)
-				{
-				  cout <<"rap= "<<jpsi_rap<<"  pt= "<<jpsi_pt<< "  e= "<<weight<<endl;
-				  weight=1;
-				}
-			      w->setVal(1.0/weight);
-			      data->add(*recoset, w->getVal());
-			      unwdata->add(*unwset);
-			      if(Reco_QQ_ctau[iQQ] < lcut->Eval(jpsi_pt))
-				{
-				  np++;
-				  pjpjt->Fill(jpsi_pt, (1.0/preff->GetEfficiency(eff->FindFixBin(jpsi_rap, jpsi_pt))));
-				  weight=preff->GetEfficiency(preff->FindFixBin(jpsi_rap, jpsi_pt));
-				  if (weight==0)
-				    weight=1;
-				  w->setVal(1.0/weight);
-				  prdata->add(*prset, w->getVal());
-				}
-			      else
-				{
-				  nn++;
-				  njpjt->Fill(jpsi_pt, (1.0/npreff->GetEfficiency(eff->FindFixBin(jpsi_rap, jpsi_pt))));
-				  weight=npreff->GetEfficiency(npreff->FindFixBin(jpsi_rap, jpsi_pt));
-				  if (weight==0)
-				    weight=1;
-				  w->setVal(1.0/weight);
-				  nprdata->add(*nprset, w->getVal());
-				}
-			    }
-			}
-		    }
-		}
-	    }
-	}
-      cout<<"[INFO} N_{#mu#mu/Jets} = "<<nj<<"   N_{pr/Jets} = "<<np<<"   N_{npr/Jets} = "<<nn<<endl<<"[INFO] N_{total} = "<<nt<<"   N_{pr} = "<<ntp<<"   N_{npr} = "<<ntn<<endl;
-
-      for (int ibin=0; ibin <25; ibin++)
-	{
-	  tot->SetBinContent(ibin, ((tot->GetBinContent(ibin)*1.0)/tot->GetBinWidth(ibin)));
-	  jpjt->SetBinContent(ibin, ((jpjt->GetBinContent(ibin)*1.0)/jpjt->GetBinWidth(ibin)));
-	  ptot->SetBinContent(ibin, ((ptot->GetBinContent(ibin)*1.0)/ptot->GetBinWidth(ibin)));
-	  pjpjt->SetBinContent(ibin, ((pjpjt->GetBinContent(ibin)*1.0)/pjpjt->GetBinWidth(ibin)));
-	  ntot->SetBinContent(ibin, ((ntot->GetBinContent(ibin)*1.0)/ntot->GetBinWidth(ibin)));
-	  njpjt->SetBinContent(ibin, ((njpjt->GetBinContent(ibin)*1.0)/njpjt->GetBinWidth(ibin)));
-	}
-
-      gSystem->cd("ptdist");
-      c1->cd();
-      tot->SetMarkerColor(6);
-      tot->SetMarkerStyle(33);
-      jpjt->SetMarkerColor(kBlue);
-      jpjt->SetMarkerStyle(33);
-
-      ptot->SetMarkerColor(6);
-      ptot->SetMarkerStyle(33);
-      pjpjt->SetMarkerColor(kBlue);
-      pjpjt->SetMarkerStyle(33);
-
-      ntot->SetMarkerColor(6);
-      ntot->SetMarkerStyle(33);
-      njpjt->SetMarkerColor(kBlue);
-      njpjt->SetMarkerStyle(33);
-
-      TLegend* l1 = new TLegend (0.6, 0.6, 0.8, 0.7);
-      l1->AddEntry(tot, "N_{#mu#mu tot}", "lep");
-      l1->AddEntry(jpjt, "N_{#mu#mu in jets}", "lep");
-      l1->SetBorderSize(0);
-
-      TLegend* l2 = new TLegend (0.6, 0.6, 0.8, 0.7);
-      l2->AddEntry(ptot, "N_{pr#mu#mu tot}", "lep");
-      l2->AddEntry(pjpjt, "N_{pr#mu#mu in jets}", "lep");
-      l2->SetBorderSize(0);
-
-      TLegend* l3 = new TLegend (0.6, 0.6, 0.8, 0.7);
-      l3->AddEntry(ntot, "N_{npr#mu#mu tot}", "lep");
-      l3->AddEntry(njpjt, "N_{npr#mu#mu in jets}", "lep");
-      l3->SetBorderSize(0);
-
-      TPaveText* tbox = new TPaveText(0.6,0.4,0.8,0.5, "BRNDC");
-      tbox->AddText(Form("N_{#mu#mu tot} = %f", tot->GetEntries()));
-      tbox->AddText(Form("N_{#mu#mu in jets} = %f", jpjt->GetEntries()));
-      tbox->AddText(Form("N_{in jets}/N_{tot} = %f ", jpjt->GetEntries()*1.0/tot->GetEntries()));
-      tbox->SetBorderSize(0);
-      tbox->SetFillColor(0);
-
-      TPaveText* tbox1 = new TPaveText(0.6,0.4,0.8,0.5, "BRNDC");
-      tbox1->AddText(Form("N_{pr#mu#mu tot} = %f", ptot->GetEntries()));
-      tbox1->AddText(Form("N_{pr#mu#mu in jets} = %f", pjpjt->GetEntries()));
-      tbox1->AddText(Form("N_{in jets}/N_{tot} = %f ", pjpjt->GetEntries()*1.0/ptot->GetEntries()));
-      tbox1->SetBorderSize(0);
-      tbox1->SetFillColor(0);
-
-      TPaveText* tbox2 = new TPaveText(0.6,0.4,0.8,0.5, "BRNDC");
-      tbox2->AddText(Form("N_{npr#mu#mu tot} = %f", ntot->GetEntries()));
-      tbox2->AddText(Form("N_{npr#mu#mu in jets} = %f", njpjt->GetEntries()));
-      tbox2->AddText(Form("N_{in jets}/N_{tot} = %f ", (njpjt->GetEntries()*1.0)/ntot->GetEntries()));
-      tbox2->SetBorderSize(0);
-      tbox2->SetFillColor(0);
-
-      tot->Draw();
-      c1->SaveAs("dataTot.png");
-      c1->SaveAs("dataTot.C");
-      jpjt->Draw();
-      c1->SaveAs("dataJet.png");
-      c1->SaveAs("dataJet.C");
-      tot->Draw();
-      jpjt->Draw("same");
-      l1->Draw("same");
-      tbox->Draw("same");
-      c1->SaveAs("data.png");
-      c1->SaveAs("data.C");
-
-      ptot->Draw();
-      c1->SaveAs("prdataTot.png");
-      c1->SaveAs("prdataTot.C");
-      pjpjt->Draw();
-      c1->SaveAs("prdataJet.png");
-      c1->SaveAs("prdataJet.C");
-      ptot->Draw();
-      pjpjt->Draw("same");
-      l2->Draw("same");
-      tbox1->Draw("same");
-      c1->SaveAs("prdata.png");
-      c1->SaveAs("prdata.C");
-
-      ntot->Draw();
-      c1->SaveAs("nprdataTot.png");
-      c1->SaveAs("nprdataTot.C");
-      njpjt->Draw();
-      c1->SaveAs("nprdataJet.png");
-      c1->SaveAs("nprdataJet.C");
-      ntot->Draw();
-      njpjt->Draw("same");
-      l3->Draw("same");
-      tbox2->Draw("same");
-      c1->SaveAs("nprdata.png");
-      c1->SaveAs("nprdata.C");
-
-      gSystem->cd("..");
-    }	    
-  TFile *datafile (0x0);
-  if (isMc)
-    {
-      if (isPr)
-	datafile = new TFile ("prMcDatasets","RECREATE");
-      else 
-	datafile = new TFile ("nprMcDatasets","RECREATE");
-      datafile->cd();
-      gendata->Write("genData");
-      data->Write("recoData");
-      unwdata->Write("unwData");
-    }
-  else
-    {
-      if (isPr)
-	datafile = new TFile ("datasets_pr","RECREATE");
-      else
-	datafile = new TFile ("datasets_npr","RECREATE");
-      datafile->cd();
-      data->Write("data");
-      unwdata->Write("unwData");
-      prdata->Write("prData");
-      nprdata->Write("nprData");
-    }
-      datafile->Write();
-      datafile->Close();
-      delete datafile;
-}
-
-void myTree::Plot()
-{
-  Float_t nv[12];
-  Float_t av[12];
-  Double_t zbins [] = {0, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1};
-  TFile* mcfile (0x0);
-  TFile* datafile (0x0);
-  TH1F* gn = new TH1F ("gn", "values of n from mc", 12, 0, 1.1);
-  TH1F* ga = new TH1F ("ga", "values of alpha from mc", 12, 0, 1.1);
-  TH1F* nz = new TH1F ("nz", "N_{J/#psi} in z bins", 7, zbins);
-  //TH1F* nz = new TH1F ("nz", "N_{J/#psi} in z bins", 10, 0, 1);
-  TH1F* np = new TH1F ("np", "N_{J/#psi} in z bins", 7, zbins);
-  TAxis* xaxis(0x0);
-  if (isPr)
-    {
-      mcfile = TFile::Open("prMcDatasets");
-      datafile = TFile::Open("datasets_pr");
-    }
-  else
-    {
-      mcfile = TFile::Open("nprMcDatasets");
-      datafile = TFile::Open("datasets_npr");
-    }
-  gendata= (RooDataSet*) mcfile->Get("genData");
-  prdata= (RooDataSet*) datafile->Get("prData");
-  nprdata= (RooDataSet*) datafile->Get("nprData");
-  if (isMc)
-    {
-      data= (RooDataSet*) mcfile->Get("recoData");
-      unwdata= (RooDataSet*) mcfile->Get("unwData");
-    }
-  else
-    {  
-      data= (RooDataSet*) datafile->Get("data");
-      unwdata= (RooDataSet*) datafile->Get("unwData");
-    }
-  genzed->setBins(10);
-  mass->setBins(40);
-  zed->setBins(10);
-  rap->setBins(12);
-  gen_rap->setBins(12);
-  pt->setBins(19);
-  gen_pt->setBins(19);
-  r->setMax(2);	
-  //r->setBins(10);
-  RooDataSet* d = (RooDataSet*) data->reduce("Mass>2.6 && Mass<3.5 && r<0.5");
-  RooDataSet* unwd = (RooDataSet*) unwdata->reduce("Mass>2.6 && Mass<3.5 && r<0.5");
-  RooDataSet* gend = (RooDataSet*) gendata->reduce("genMass>2.6 && genMass<3.5 && genr<0.5");
-
-  RooPlot* mframe = mass->frame();
-  RooPlot* comp = mass->frame();
-  RooPlot* zframe = zed->frame();
-  RooPlot* rframe = r->frame();
-  RooPlot* ptframe = pt->frame();
-  RooPlot* rapframe = rap->frame();
-
-  RooRealVar* mean = new RooRealVar ("mean", "mean", 3.096, 3, 3.2);
-  RooRealVar* sigma = new RooRealVar ("sigma", "sigma", 0.04, 0, 0.1);
-  RooRealVar* sigma1 = new RooRealVar("sigma1", "sigma1", 0.02, 0, 0.1);
-  RooRealVar* alpha (0x0);
-  RooRealVar* n (0x0);
-
-
-  if (isMc) 
-    {
-      alpha = new RooRealVar ("alpha", "alpha", 1.5, 0, 4);
-      n = new RooRealVar("n", "n", 1.5, 0.2, 4);
-    }
-  else
-    {
-      alpha = new RooRealVar ("alpha", "alpha", 1.94);
-      n = new RooRealVar("n", "n", 1.39);
-    }
-
-  RooCBShape cb ("cb", "cb", *mass, *mean, *sigma, *alpha, *n);
-  RooCBShape cb1 ("cb1", "cb1", *mass, *mean, *sigma1, *alpha, *n);
-
-  RooRealVar c0("c0","coefficient #0", -0.1, -5, 5);
-  RooRealVar c1("c1","coefficient #1", 0.1, -5, 5);
-  //RooRealVar c2("c2","coefficient #1", 0.1, -5, 5);
-  RooChebychev bkg("bkg","background p.d.f.", *mass, RooArgList(c0, c1)) ;
-
-  RooRealVar fb ("fb", "background nb", 1000, 0, data->numEntries());
-  RooRealVar fs ("fs", "signal nb", 10000, 0, data->numEntries());
-  RooRealVar fcb ("fcb", "cb", 0.1, 0, 1);
-
-  mass->setRange("window", 2.9, 3.2) ;
-
-  RooExtendPdf ecb ("ecb", "ecb", cb, fcb);
-
-  RooAddPdf masspeak ("masspeak", "fit of mass peak", RooArgList(cb, cb1), fcb);
-  RooExtendPdf es ("es", "es", masspeak, fs, "window");
-  RooExtendPdf eb ("eb", "eb", bkg, fb);
-  RooAddPdf* model;
-  if (isMc)
-    model = new RooAddPdf ("model", "model", RooArgList(cb, cb1), fcb);
-  else 
-    model = new RooAddPdf ("model", "model", RooArgList(es, eb));
-
-  d->plotOn(mframe,DataError(RooAbsData::SumW2));
-  d->plotOn(rframe);
-  //rframe->Draw();
-  d->plotOn(ptframe, DataError(RooAbsData::SumW2));
-  d->plotOn(rapframe, DataError(RooAbsData::SumW2));
-
-  model->fitTo(*d, Extended(!isMc), SumW2Error(kTRUE));
-  if (isMc)
-    {
-      xaxis=gn->GetXaxis();
-      gn->SetBinContent(xaxis->FindBin(1), n->getValV());
-      xaxis=ga->GetXaxis();
-      ga->SetBinContent(xaxis->FindBin(1), alpha->getValV());
-    }
-  model->plotOn(mframe, Name("background"), Components(RooArgSet(bkg)),DrawOption("F"), FillColor(kGray));
-  model->plotOn(mframe, Name("signal"), Components(RooArgSet(masspeak)), LineStyle(kDashed));
-  model->plotOn(mframe, Name("total"), LineColor(kRed));
-  //model->paramOn(mframe);
-
-
-  TFile* fsave (0x0);
-  if (isMc)
-    {
-      if (isPr)
-	fsave = new TFile ("prMcplots.root","RECREATE");
-      else
-	fsave = new TFile ("nprMcplots.root", "RECREATE");
-    }
-  else
-    {
-      if (isPr)
-	fsave = new TFile("prdataplots.root", "RECREATE");
-      else 
-	fsave = new TFile("nprdataplots.root", "RECREATE");
-    }
-
-  RooWorkspace* w (0x0);
-  if (isMc)
-    {
-      for (int i =2; i<9; i++)
-	{
-	  RooPlot* mzframe = mass->frame();
-	  w = new RooWorkspace(Form("w%d",i));
-	  RooDataSet* dz(0x0);
-	  if (i==2)
-	  dz = (RooDataSet*) d->reduce("z>0 && z<0.3");
-	  else if (i==8)
-	    dz = (RooDataSet*) d->reduce("z>0.8 && z<=1");
-	  else 
-	    dz = (RooDataSet*) d->reduce(Form("z >= %f && z<%f", i*0.1, (i+1)*0.1));
-	  w->import(*dz);
-	  w->import(*model);
-	  w->data("data")->plotOn(mzframe, DataError(RooAbsData::SumW2));
-	  w->pdf("model")->fitTo(*w->data("data"),  Extended(!isMc), SumW2Error(kTRUE));
-	  w->pdf("model")->plotOn(mzframe);
-	  if (isMc)
-	    {
-	      xaxis=gn->GetXaxis();
-	      gn->SetBinContent(xaxis->FindBin(i*0.1+0.05), w->var("n")->getValV());
-	      xaxis=ga->GetXaxis();
-	      ga->SetBinContent(xaxis->FindBin(i*0.1+0.05), w->var("alpha")->getValV());
-	      xaxis=nz->GetXaxis();
-	      nz->SetBinContent(xaxis->FindBin(i*0.1+0.05), w->data("data")->sumEntries());
-	      nz->SetBinError(xaxis->FindBin(i*0.1+0.05), sqrt(w->data("data")->sumEntries())); 
-	    }
-	  TPaveText* tbox = new TPaveText(0.15,0.6,0.4,0.8, "BRNDC");
-	  tbox->AddText("Monte Carlo");
-	  if (isPr)
-	    tbox->AddText("prompt J/#psi");
-	  else
-	    tbox->AddText("b-decay J/#psi");
-	  if (i==2)
-	  tbox-> AddText("0 #leq z < 0.3");
-	  else if (i==8)
-	  tbox->AddText("0.8 #leq z #leq 1");
-	  else 
-	    tbox-> AddText (Form("%.1f #leq z < %.1f", i*0.1, (i+1)*0.1));
-	  tbox->AddText("p_{t}(J/#psi)>6.5GeV");
-	  tbox->AddText("p_{t}(jets)>50GeV");
-	  tbox->AddText("|y|<2.4");
-	  mzframe->addObject(tbox);
-	  tbox->SetBorderSize(0);
-	  tbox->SetFillColor(0);
-	  //w->pdf("model")->paramOn(mzframe);
-	  mzframe->Write(Form("massframe%d%d",i,(i+1)));
-	}
-    }
-
-  else
-    {
-      for (int i =2; i<9; i++)
-	{
-	  w = new RooWorkspace(Form("prw%d",i));
-	  RooPlot* mzframe = mass->frame();
-	  RooDataSet* prdz (0x0);
-	  if (i==2)
-	    prdz=(RooDataSet*) prdata->reduce("z>=0 && z<0.3");
-	  else if (i==8)
-	    prdz=(RooDataSet*) prdata->reduce("z>=0.8 && z<=1");
-	  else 
-	    prdz= (RooDataSet*) prdata->reduce(Form("z >= %f && z<%f", i*0.1, (i+1)*0.1));
-	  w->import(*prdz);
-	  w->import(*model);
-	      if (i==3)
-		{
-		  w->var("c0")->setVal(0.5);
-		  w->var("c0")->setConstant(false);
-		  w->var("c0")->setRange(-3, 3);
-		  w->var("c1")->setVal(0.2);
-		  w->var("c1")->setConstant(false);
-		  w->var("c1")->setRange(-3, 3);
-		  w->var("fs")->setVal(15000);
-		  w->var("fs")->setConstant(false);
-		  w->var("fb")->setVal(1000);
-		  w->var("fb")->setConstant(false);
-		  w->var("fcb")->setVal(0.8);
-		  w->var("fcb")->setConstant(false);
-		  w->var("fcb")->setMin(0.3);
-		  //w->var("sigma")->setRange(0.0, 0.05);
-		  //w->var("sigma1")->setRange(0.01, 0.2);
-		  //w->var("c0")->setRange(-1, 1);
-		  //w->var("c1")->setRange(-1, 3);
-		  //w->var("fs")->setMax(50000);
-		  //w->var("fcb")->setRange(0.05, 0.6);
-		}
-
-	      //if  (i ==6)
-	      //{
-	      //}
-	  w->data("prdata")->plotOn(mzframe, DataError(RooAbsData::SumW2));
-	  w->pdf("model")->fitTo(*w->data("prdata"),  Extended(!isMc), SumW2Error(kTRUE));
-	  //w->pdf("model")->plotOn(mzframe);
-
-	  w->pdf("model")->plotOn(mzframe, Name("background"), Components(RooArgSet(bkg)),DrawOption("F"), FillColor(kGray));
-	  w->pdf("model")->plotOn(mzframe, Name("signal"), Components(RooArgSet(masspeak)), LineStyle(kDashed));
-	  w->pdf("model")->plotOn(mzframe, Name("total"), LineColor(kRed));
-	  w->data("prdata")->plotOn(mzframe, DataError(RooAbsData::SumW2));
-
-	  xaxis=nz->GetXaxis();
-	  nz->SetBinContent(xaxis->FindBin(i*0.1+0.05), w->var("fs")->getValV());
-	  nz->SetBinError(xaxis->FindBin(i*0.1+0.05), w->var("fs")->getError());
-
-	  TPaveText* tbox = new TPaveText(0.15,0.6,0.4,0.8, "BRNDC");
-	  tbox->AddText("prompt J/#psi");
-	  if(i==2)
-	    tbox->AddText("0 #leq z < 0.3");
-	  else if (i==8)
-	    tbox->AddText("0.8 #leq z #leq 1");
-	  else 
-	    tbox-> AddText (Form("%.1f #leq z < %.1f", i*0.1, (i+1)*0.1));
-	  tbox->AddText("p_{t}(J/#psi)>6.5GeV");
-	  tbox->AddText("p_{t}(jets)>50GeV");
-	  tbox->AddText("|y|<2.4");
-	  mzframe->addObject(tbox);
-	  tbox->SetBorderSize(0);
-	  tbox->SetFillColor(0);
-	  TLegend* l = new TLegend (0.7,0.6,1,0.8);
-	  l->AddEntry(mzframe->RooPlot::findObject("signal"), "J/#psi", "L");
-	  l->AddEntry(mzframe->RooPlot::findObject("background"), "background", "f");
-	  l->AddEntry(mzframe->RooPlot::findObject("total"), "Total fit", "L");
-	  l->SetBorderSize(0);
-	  mzframe->addObject(l);
-	  w->pdf("model")->paramOn(mzframe);
-	  mzframe->Write(Form("prmfr%d%d",i,(i+1)));
-	}
-
-      for (int i =2; i<9; i++)
-	{
-	  w = new RooWorkspace(Form("nprw%d",i));
-	  RooPlot* mzframe = mass->frame();
-	  RooDataSet* nprdz (0x0);
-	  if (i==2)
-	    nprdz=(RooDataSet*) nprdata->reduce("z>=0 && z<0.3");
-	  else if (i==8)
-	    nprdz=(RooDataSet*) nprdata->reduce("z>=0.8 && z<=1");
-	  else 
-	    nprdz=(RooDataSet*) nprdata->reduce(Form("z >= %f && z<%f", i*0.1, (i+1)*0.1));
-	  w->import(*nprdz);
-	      w->import(*model);
-	      if (i==2)
-		{
-		  //w->var("sigma")->setVal(0.08);
-		  //w->var("sigma1")->setVal(0.1);
-		  w->var("sigma")->setRange(0.0, 0.05);
-		  w->var("sigma1")->setRange(0.02, 0.1);
-		  //w->var("c0")->setVal(-0.003);
-		  w->var("c0")->setRange(-1, 1);
-		  //w->var("c1")->setVal(1);
-		  w->var("c1")->setRange(-1, 3);
-		  //w->var("fs")->setVal(20000);
-		  w->var("fs")->setMax(100000);
-		  //w->var("fb")->setVal(1500);
-		  //w->var("fcb")->setVal(0.4);
-		  w->var("fcb")->setMin(0.3);
-		 }
-	      if (i==8)
-		{
-		  w->var("sigma")->setRange(0.0, 0.05);
-		  w->var("sigma1")->setRange(0.02, 0.1);
-		  w->var("c0")->setRange(-1, 1);
-		  w->var("c1")->setRange(-1, 3);
-		  w->var("fs")->setMax(10000);
-		  w->var("fcb")->setMin(0.3);
-		}
-	      w->data("nprdata")->plotOn(mzframe, DataError(RooAbsData::SumW2));
-	      w->pdf("model")->fitTo(*w->data("nprdata"),  Extended(!isMc), SumW2Error(kTRUE));
-	      //w->pdf("model")->plotOn(mzframe);
-	      w->pdf("model")->plotOn(mzframe, Name("background"), Components(RooArgSet(bkg)),DrawOption("F"), FillColor(kGray));
-	      w->pdf("model")->plotOn(mzframe, Name("signal"), Components(RooArgSet(masspeak)), LineStyle(kDashed));
-	      w->pdf("model")->plotOn(mzframe, Name("total"), LineColor(kRed));
-	      w->data("nprdata")->plotOn(mzframe, DataError(RooAbsData::SumW2));
-
-	      xaxis=np->GetXaxis();
-	      np->SetBinContent(xaxis->FindBin(i*0.1+0.05), w->var("fs")->getValV());
-	      np->SetBinError(xaxis->FindBin(i*0.1+0.05), w->var("fs")->getError());
-	  TPaveText* tbox = new TPaveText(0.15,0.6,0.4,0.8, "BRNDC");
-	  tbox->AddText("b-decay J/#psi");
-	  if(i==2)
-	    tbox->AddText("0 #leq z < 0.3");
-	  else if (i==8)
-	    tbox->AddText("0.8 #leq z #leq 1");
-	  else 
-	    tbox-> AddText (Form("%.1f #leq z < %.1f", i*0.1, (i+1)*0.1));
-	  tbox->AddText("p_{t}(J/#psi)>6.5GeV");
-	  tbox->AddText("p_{t}(jets)>50GeV");
-	  tbox->AddText("|y|<2.4");
-	  mzframe->addObject(tbox);
-	  tbox->SetBorderSize(0);
-	  tbox->SetFillColor(0);
-	  TLegend* l = new TLegend (0.7,0.6,1,0.8);
-	  l->AddEntry(mzframe->RooPlot::findObject("signal"), "J/#psi", "L");
-	  l->AddEntry(mzframe->RooPlot::findObject("background"), "background", "f");
-	  l->AddEntry(mzframe->RooPlot::findObject("total"), "Total fit", "L");
-	  l->SetBorderSize(0);
-	  mzframe->addObject(l);
-	  w->pdf("model")->paramOn(mzframe);
-	  mzframe->Write(Form("nprmfr%d%d",i,(i+1)));
-	}
-    }
-
-
-
-  mframe->Write("massframe");
-  rframe->Write("rframe");
-  ptframe->Write("recopt");
-  rapframe->Write("recorap");
- if (isMc)
-   {
-     RooPlot* genzframe= genzed->frame();
-     gend->plotOn(genzframe, MarkerColor(kBlue), LineColor(kOrange+2), LineStyle(1));
-     //TLegend* l = new TLegend (0.2,0.6,0.4,0.8);
-     //l->AddEntry(zframe->RooPlot::findObject("recod"), "N_{reco J/#psi} with corrections", "L");
-     //l->AddEntry(genzframe->RooPlot::findObject("gend"), "N_{reco J/#psi} with corrections", "L");
-     //l->SetBorderSize(0);
-     //genzframe->addObject(l);
-     //genzframe->Write("genz");
-     gn->Write("nv");
-     ga->Write("av");
-   }
- else
-   {
-     RooPlot* prmass=mass->frame();
-     RooPlot* nprmass=mass->frame();
-     prdata->plotOn(prmass, DataError(RooAbsData::SumW2));
-     nprdata->plotOn(nprmass, DataError(RooAbsData::SumW2));
-     prmass->Write("prmassframe");
-     nprmass->Write("nprmassframe");
-   }
-
- nz->Scale(1.0/(nz->Integral()));
- //RooDataHist* zd = new RooDataHist ("zd", "N_{J/#psi} in z bins", *zed, nz);
- if (isMc)
-   {
-     //d->plotOn(zframe, Name("zmc"), MarkerStyle(kFullSquare), MarkerColor(kBlue));
-     //zframe->Draw();
-     //zframe->Write("zframe");
-     //zd= new RooDataHist ("nzd", "N_{J/#psi} in z bins", *zed, nz);
-     //zd->plotOn(zframe, Name("ze"), MarkerColor(kBlue));
-     //zframe->Write("nz");
-     nz->Write("nz");
-   }
- else
-   {
-     //RooPlot* nprzfr=zed->frame();
-     np->Scale(1.0/(np->Integral()));
-     //zd->plotOn(zframe, Name("prz"), MarkerColor(kRed));
-     //zd= new RooDataHist ("nzd", "N_{J/#psi} in z bins", *zed, np);
-     //zframe->Write("prz");
-     //zd->plotOn(nprzfr, Name("nprz"), MarkerColor(kRed));
-     //nprzfr->Write("nprz");
-     nz->Write("prz");
-     np->Write("nprz");
-   }
- fsave->Close();
-}
-
-
+void myTree::Plot() {cout << "[INFO] This function is empty at the moment!!"<< endl;}
 
 Bool_t myTree::isTriggerMatch (Int_t iRecoQQ, Int_t TriggerBit) 
   {
@@ -1678,163 +904,8 @@ Bool_t myTree::isMatchedGenDiMuon(int iGenDiMuon, double maxDeltaR)
   
   return isMatched;
 };
-void myTree::Unfolding()
-{
-  TH2D* mcpt = new TH2D ("mcpt","pt distribution in MC; gen pt; reco pt", 44, 6.5, 50.5, 44, 6.5, 50.5);
-  TH1D* datapt = new TH1D ("datapt","pt distribution in data ; pt",44, 6.5, 50.5);
-  TH1D* recopt = new TH1D ("recopt","reco pt distribution ; pt",44, 6.5, 50.5);
-  TH1D* genpt = new TH1D ("genpt","gen pt distribution; pt",44, 6.5, 50.5);
-  Float_t jet_pt;
-  TFile* f (0x0);
-  if (isPr)
-    f= TFile::Open("prEff.root");
-  else 
-    f= TFile::Open("nprEff.root");
 
-  TEfficiency* eff = (TEfficiency*) f->Get("ptrap");
-  f->Close();
-  if (isMc)
-    {
-      TFile* fsave(0x0);
-      if (isPr)
-	fsave = new TFile ("prMcunfold1.root","RECREATE");
-      else
-	fsave = new TFile ("nprMcunfold1.root", "Recreate");
-
-      TString filename;
-      if (isPr)
-	filename ="prTruthMeasured";
-      else
-	filename ="nprTruthMeasured";
-
-      ofstream file_out(filename);
-      file_out<< "gen      reco"<<endl;
-      Long64_t nentries = fChain->GetEntries();
-      Long64_t nbytes = 0, nb = 0;
-      for (Long64_t jentry=0; jentry<(nentries/2);jentry++) 
-	{
-	  Long64_t ientry = LoadTree(jentry);
-	  if (ientry < 0) break;
-	  nb = fChain->GetEntry(jentry);   nbytes += nb;
-
-
-	  for(int iQQ=0; iQQ<Reco_QQ_size; iQQ++)
-	    {
-	      TLorentzVector *RecoQQ4mom = (TLorentzVector*) Reco_QQ_4mom->At(iQQ);
-	      jpsi_pt = RecoQQ4mom->Pt();
-	      jpsi_eta = RecoQQ4mom->Eta();
-	      jpsi_rap = RecoQQ4mom->Rapidity();
-	      jpsi_m = RecoQQ4mom->M();
-	      drmin = 1000;
-
-	      if (
-		  jpsi_pt > 6.5  &&
-		  (areMuonsInAcceptance2015(iQQ))&&  // 2015 Global Muon Acceptance Cuts
-		  (passQualityCuts2015(iQQ)) &&  // 2015 Soft Global Muon Quality Cuts
-		  (isTriggerMatch(iQQ, triggerIndex_PP)) //&&// if it matches the trigger 
-		  )
-		{
-		  if (Reco_QQ_sign[iQQ]==0 && abs(jpsi_rap)<2.4 && jpsi_m>2.6 && jpsi_m<3.5) 
-		    {
-		      for (Long64_t ijet=0; ijet<nref; ijet++)
-			{
-	  
-			  if (abs(jty[ijet])<2.4 && jtpt[ijet]>15)
-			    {
-			      TLorentzVector v_jet;
-			      v_jet.SetPtEtaPhiM(jtpt[ijet], jteta[ijet], jtphi[ijet], jtm[ijet]);
-			      dphi= RecoQQ4mom->DeltaPhi(v_jet);
-			      dr = RecoQQ4mom->DeltaR (v_jet);
-			      if (dr<=drmin)
-				{
-				  drmin=dr;
-				  //z= jpsi_pt/jtpt[ijet];
-				  //jet_pt=jtpt[ijet];
-				}
-			    }
-			}
-		      if (drmin<0.5 && isMatchedRecoDiMuon(iQQ))
-			{
-			  weight=1.0/(eff->GetEfficiency(eff->FindFixBin(jpsi_rap, jpsi_pt)));
-			  mcpt->Fill(matchGen->Pt(), jpsi_pt, weight);
-			  recopt->Fill(jpsi_pt, weight);
-			  genpt->Fill(matchGen->Pt(), weight);
-			  file_out << matchGen->Pt()<<"  "<<jpsi_pt<< endl;
-			}
-		    }
-		}
-	    }
-	}
-      file_out.close();
-      mcpt->Write("ptdist2D");
-      recopt->Write("recopt1D");
-      genpt->Write("genpt1D");
-      fsave->Close();
-    }
-  else
-    {
-      Long64_t nentries =fChain->GetEntries();
-      Long64_t nbytes = 0, nb = 0;
-      for (Long64_t jentry=0; jentry<nentries;jentry++) 
-	{
-	  Long64_t ientry = LoadTree(jentry);
-	  if (ientry < 0) break;
-	  nb = fChain->GetEntry(jentry);   nbytes += nb;
-
-
-	  for(int iQQ=0; iQQ<Reco_QQ_size; iQQ++)
-	    {
-	      TLorentzVector *RecoQQ4mom = (TLorentzVector*) Reco_QQ_4mom->At(iQQ);
-	      jpsi_pt = RecoQQ4mom->Pt();
-	      jpsi_eta = RecoQQ4mom->Eta();
-	      jpsi_rap = RecoQQ4mom->Rapidity();
-	      jpsi_m = RecoQQ4mom->M();
-	      drmin = 1000;
-
-	      if (
-		  jpsi_pt > 6.5  &&
-		  (areMuonsInAcceptance2015(iQQ))&&  // 2015 Global Muon Acceptance Cuts
-		  (passQualityCuts2015(iQQ)) &&  // 2015 Soft Global Muon Quality Cuts
-		  (isTriggerMatch(iQQ, triggerIndex_PP)) //&&// if it matches the trigger 
-		  )
-		{
-		  if (Reco_QQ_sign[iQQ]==0 && abs(jpsi_rap)<2.4 && jpsi_m>2.6 && jpsi_m<3.5) 
-		    {
-		      for (Long64_t ijet=0; ijet<nref; ijet++)
-			{
-	  
-			  if (abs(jty[ijet])<2.4 && jtpt[ijet]>15)
-			    {
-			      TLorentzVector v_jet;
-			      v_jet.SetPtEtaPhiM(jtpt[ijet], jteta[ijet], jtphi[ijet], jtm[ijet]);
-			      dphi= RecoQQ4mom->DeltaPhi(v_jet);
-			      dr = RecoQQ4mom->DeltaR (v_jet);
-			      if (dr<=drmin)
-				{
-				  drmin=dr;
-				  //z= jpsi_pt/jtpt[ijet];
-				  //jet_pt=jtpt[ijet];
-				}
-			    }
-			}
-		      if (drmin<0.5)
-			{
-			  weight=1.0/(eff->GetEfficiency(eff->FindFixBin(jpsi_rap, jpsi_pt)));
-			  datapt->Fill(jpsi_pt, weight);
-			}
-		    }
-		}
-	    }
-	}
-      TFile* fsave(0x0);
-      if (isPr)
-	fsave = new TFile ("prdataunfold.root","RECREATE");
-      else
-	fsave = new TFile ("nprdataunfold.root", "RECREATE");
-      datapt->Write("ptdist");
-      fsave->Close();
-    }
-}
+void myTree::Unfolding() {cout << "[INFO] This function is empty at the moment!!"<< endl;}
 
 void myTree::JetPtRange()
 { 
