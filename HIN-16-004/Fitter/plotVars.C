@@ -82,24 +82,24 @@ void plotPt(const char* workDirName, const char* varname, int iplot, const char*
    vector<anabin> theCats;
 
    // 4 rapidity intervals
-   if (iplot==0) {
-      theCats.push_back(anabin(0,0.6,6.5,50,0,200));
-      theCats.push_back(anabin(0.6,1.2,6.5,50,0,200));
-      theCats.push_back(anabin(1.2,1.8,6.5,50,0,200));
-      theCats.push_back(anabin(1.8,2.4,6.5,50,0,200));
-   }
+   //if (iplot==0) {
+   //theCats.push_back(anabin(0,0.6,6.5,50,0,200));
+   //theCats.push_back(anabin(0.6,1.2,6.5,50,0,200));
+   // theCats.push_back(anabin(1.2,1.8,6.5,50,0,200));
+   // theCats.push_back(anabin(1.8,2.4,6.5,50,0,200));
+   //}
 
    // 3 centrality intervals
-   if (iplot==1) { 
-      theCats.push_back(anabin(0,2.4,6.5,50,0,20));
-      theCats.push_back(anabin(0,2.4,6.5,50,20,60));
-      theCats.push_back(anabin(0,2.4,6.5,50,60,200));
-   }
+   //if (iplot==1) { 
+   // theCats.push_back(anabin(0,2.4,6.5,50,0,20));
+   // theCats.push_back(anabin(0,2.4,6.5,50,20,60));
+   // theCats.push_back(anabin(0,2.4,6.5,50,60,200));
+   //}
 
    // 1 rapidity interval
-   if (iplot==2) {
-      theCats.push_back(anabin(0,2.4,6.5,50,0,200));
-   }
+   //if (iplot==2) {
+   // theCats.push_back(anabin(0,2.4,6.5,50,0,200));
+   //}
 
    addTag = addTagBase + Form("_%i",iplot);
 
@@ -149,23 +149,23 @@ void plotCent(const char* workDirName, const char* varname, int iplot, const cha
    vector<anabin> theCats;
 
    // 4 rapidity intervals
-   if (iplot==0) {
-      theCats.push_back(anabin(0,0.6,6.5,50,0,200));
-      theCats.push_back(anabin(0.6,1.2,6.5,50,0,200));
-      theCats.push_back(anabin(1.2,1.8,6.5,50,0,200));
-      theCats.push_back(anabin(1.8,2.4,6.5,50,0,200));
-   }
+   //if (iplot==0) {
+   // theCats.push_back(anabin(0,0.6,6.5,50,0,200));
+   // theCats.push_back(anabin(0.6,1.2,6.5,50,0,200));
+   // theCats.push_back(anabin(1.2,1.8,6.5,50,0,200));
+   // theCats.push_back(anabin(1.8,2.4,6.5,50,0,200));
+   //}
 
    // 1 rapidity interval
-   if (iplot==1) {
-      theCats.push_back(anabin(0,2.4,6.5,50,0,200));
-   }
+   //if (iplot==1) {
+     //   theCats.push_back(anabin(0,2.4,6.5,50,0,200));
+   //}
 
    // fwd and low pt
-   if (iplot==2) {
-      theCats.push_back(anabin(1.8,2.4,3,6.5,0,200));
-      theCats.push_back(anabin(1.8,2.4,6.5,50,0,200));
-   }
+   //if (iplot==2) {
+   //   theCats.push_back(anabin(1.8,2.4,3,6.5,0,200));
+   //   theCats.push_back(anabin(1.8,2.4,6.5,50,0,200));
+   //}
 
    addTag = addTagBase + Form("_%i",iplot);
 
@@ -213,7 +213,7 @@ void plotCent(const char* workDirName, const char* varname, int iplot, const cha
 void plotRap(const char* workDirName, const char* varname, const char* collTag, bool plotErr, const char* DSTag, bool doSig) {
    string xaxis = "rap";
    vector<anabin> theCats;
-   theCats.push_back(anabin(0,2.4,6.5,50,0,200));
+   //theCats.push_back(anabin(0,2.4,6.5,50,0,200));
    addTag = addTagBase;
 
    TFile *f = new TFile(treeFileName(workDirName,DSTag,"","mass"));
@@ -287,12 +287,12 @@ void plotFilesAll(const char* workDirNames, const char* varname, const char* col
    }
 }
 
-void plotFiles(const char* workDirNames, const char* varname, const char* xaxis, float rapmin, float rapmax, float ptmin, float ptmax, int centmin, int centmax, 
+void plotFiles(const char* workDirNames, const char* varname, const char* xaxis, float zmin, float zmax, float rapmin, float rapmax, float ptmin, float ptmax, int centmin, int centmax, 
                const char* collTag, bool plotErr, const char* DSTag, bool doSig) {
 
    vector<TGraphErrors*> tg;
    vector<string> tags;
-   anabin theBin(rapmin, rapmax, ptmin, ptmax, centmin, centmax);
+   anabin theBin(zmin, zmax, rapmin, rapmax, ptmin, ptmax, centmin, centmax);
 
    TString workDirNamesStr(workDirNames);
    TString workDirName; Int_t from = 0;
@@ -316,7 +316,7 @@ void plotFiles(const char* workDirNames, const char* varname, const char* xaxis,
 TGraphErrors* plotVar(TTree *tr, const char* varname, anabin theBin, string xaxis, string collTag, bool plotErr, bool doSig) {
    if (!tr) return NULL;
    vector<double> x, ex, y, ey;
-   float ptmin, ptmax, ymin, ymax, centmin, centmax;
+   float zmin, zmax, ptmin, ptmax, ymin, ymax, centmin, centmax;
    float val, val_err=0;
    int ival=-999;
    float valmax=0, valmin=0;
@@ -345,9 +345,9 @@ TGraphErrors* plotVar(TTree *tr, const char* varname, anabin theBin, string xaxi
       // special case of npar
       if (ival>=0) val=ival;
 
-      anabin trbin(ymin, ymax, ptmin, ptmax, centmin, centmax);
+      anabin trbin(zmin, zmax, ymin, ymax, ptmin, ptmax, centmin, centmax);
       // special case of PP and centrality
-      if (collTag=="PP" /*&& xaxis=="cent"*/) trbin = anabin(ymin, ymax, ptmin, ptmax, 0, 200);
+      if (collTag=="PP" /*&& xaxis=="cent"*/) trbin = anabin(zmin, zmax, ymin, ymax, ptmin, ptmax, 0, 200);
       // general case
       if (!binok(theBin, xaxis, trbin, false)) continue;
       if (string(collSystem) != collTag) continue;
@@ -448,7 +448,11 @@ void plotGraphs(vector<TGraphErrors*> graphs, vector<string> tags, const char* w
    tleg->SetBorderSize(0);
    tleg->SetTextSize(0.03);
 
-   TH1 *haxes = NULL;
+   //TH1 *haxes = NULL;
+   TH1F *haxes = new TH1F("haxes", "", 5, 0, 1);
+   haxes->GetYaxis()->SetLimits(graphs[0]->GetHistogram()->GetYaxis()->GetXmin(), graphs[0]->GetHistogram()->GetYaxis()->GetXmax());
+   haxes->Draw();
+
    double ymin=0, ymax=0;
 
    bool issysts = string(workDirName)=="systematics";
@@ -464,10 +468,12 @@ void plotGraphs(vector<TGraphErrors*> graphs, vector<string> tags, const char* w
          graphs[i]->SetFillStyle(0);
       }
       if (i==0) {
-         graphs[i]->Draw(!issysts ? "AP" : "A2");
-         haxes = graphs[i]->GetHistogram();
-         ymin = haxes->GetYaxis()->GetXmin();
-         ymax = haxes->GetYaxis()->GetXmax();
+	haxes = graphs[i]->GetHistogram();
+	ymin = haxes->GetYaxis()->GetXmin();
+	ymax = haxes->GetYaxis()->GetXmax();
+	haxes->GetYaxis()->SetRangeUser(ymin, ymax);
+        haxes->Draw();
+	graphs[i]->Draw(!issysts ? "P" : "2");
       }
       else {
          graphs[i]->Draw(!issysts ? "P" : "2");
@@ -478,9 +484,11 @@ void plotGraphs(vector<TGraphErrors*> graphs, vector<string> tags, const char* w
    }
 
    if (issysts) graphs[0]->Draw("2"); // in the case of systs, re-draw the total on top
-
-   if (haxes) haxes->GetYaxis()->SetRangeUser(ymin, ymax);
-   // c1->Update();
+   //cout<<"ymin = "<<ymin<<" ymax = "<<ymax<<endl;
+   //if (haxes) 
+   haxes->GetYaxis()->SetRangeUser(ymin, ymax);
+   haxes->GetYaxis()->SetLimits(ymin, ymax);
+   c1->Update();
 
    tleg->Draw();
 
@@ -491,8 +499,9 @@ void plotGraphs(vector<TGraphErrors*> graphs, vector<string> tags, const char* w
    CMS_lumi( (TPad*) gPad, ilumi, iPos, "" );
 
    string yaxis = haxes->GetYaxis()->GetTitle();
-   string xaxis = "rap";
+   string xaxis = "z";
    TString txaxis(haxes->GetXaxis()->GetTitle());
+   if (txaxis.Index("rap") != kNPOS) xaxis = "rap";
    if (txaxis.Index("Centrality") != kNPOS) xaxis = "cent";
    if (txaxis.Index("p_{T}") != kNPOS) xaxis = "pt";
 
@@ -517,6 +526,7 @@ void plotGraphs(vector<TGraphErrors*> graphs, vector<string> tags, const char* w
    string xname = "$|y|$";
    if (xaxis=="cent") xname = "Centrality";
    if (xaxis=="pt") xname = "\\pt";
+   if (xaxis=="z") xname = "\\z";
    string yname = latexSafe(yaxis); // make the name safe for LaTeX
    gSystem->mkdir(Form("Output/%s/tex/", workDirName), kTRUE); 
    char texname[2048]; 
@@ -544,6 +554,7 @@ void plotGraphs(vector<TGraphErrors*> graphs, vector<string> tags, const char* w
    closetex(texname);
    cout << "Closed " << texname << endl;
    cout << "It is advised that you check the contents of " << texname << " as it may not compile nicely as is." << endl;
+   delete haxes;
 }
 
 void plotFiles(const char* workDirNames, const char* varname, const char* xaxis, const char* collTag, bool plotErr, const char* DSTag, bool doSig) {
@@ -560,7 +571,7 @@ void plotFiles(const char* workDirNames, const char* varname, const char* xaxis,
    TTree *tpull = new TTree("tpull","tpull");
    tpull->Branch("pull",&pull,"pull/F");
 
-   float ptmin, ptmax, ymin, ymax, centmin, centmax;
+   float zmin, zmax, ptmin, ptmax, ymin, ymax, centmin, centmax;
    char collSystem[5];
    float val, val_err=0;
 
@@ -597,7 +608,7 @@ void plotFiles(const char* workDirNames, const char* varname, const char* xaxis,
 
       for (int i=0; i<tr->GetEntries(); i++) {
          tr->GetEntry(i);
-         anabinc thebin(anabin(ymin,ymax,ptmin,ptmax,centmin,centmax), collSystem);
+         anabinc thebin(anabin(zmin, zmax, ymin,ymax,ptmin,ptmax,centmin,centmax), collSystem);
          if ((string(collTag) == "" || string(collTag) == collSystem) && binok(thebin.first,xaxis)) {
             if (doSig) {
                val = val/val_err;
@@ -616,7 +627,6 @@ void plotFiles(const char* workDirNames, const char* varname, const char* xaxis,
       vals.push_back(vals0);
       errs.push_back(errs0);
       tags.push_back(string(workDirName.Data()));
-
       delete f;
    }
 
@@ -795,7 +805,7 @@ void plotComparisonVars(const char* workDirName, const char* varname1, const cha
   
   map<anabinc,int> binmap;
   
-  float ptmin, ptmax, ymin, ymax, centmin, centmax;
+  float zmin, zmax, ptmin, ptmax, ymin, ymax, centmin, centmax;
   char collSystem[5];
   float val1, val_err1=0;
   float val2, val_err2=0;
@@ -844,7 +854,7 @@ void plotComparisonVars(const char* workDirName, const char* varname1, const cha
   
   for (int i=0; i<tr->GetEntries(); i++) {
     tr->GetEntry(i);
-    anabinc thebin(anabin(ymin,ymax,ptmin,ptmax,centmin,centmax), collSystem);
+    anabinc thebin(anabin(zmin, zmax, ymin,ymax,ptmin,ptmax,centmin,centmax), collSystem);
     if ((string(collTag) == "" || string(collTag) == collSystem) && binok(thebin.first,xaxis)) {
       vals1[thebin] = val1;
       errs1[thebin] = val_err1;
@@ -947,7 +957,9 @@ void plotComparisonVars(const char* workDirName, const char* varname1, const cha
 
 bool binok(anabin thebin, const char* xaxis) {
    if (string(xaxis) == "") return true;
-
+   if (string(xaxis) == "z" && thebin.rapbin() == binF(1.6,2.4) && thebin.ptbin() == binF(3,35)) return true;
+   if (string(xaxis) == "z" && thebin.rapbin() == binF(0,1.6) && thebin.ptbin() == binF(6.5,35)) return true;
+ 
    if (string(xaxis) == "rap") {
       if (thebin.ptbin()==binF(6.5,50)&&thebin.centbin()==binI(0,200)) return true;
       return false;
