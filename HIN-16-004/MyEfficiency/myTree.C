@@ -12,7 +12,7 @@
 #include "RooPlotable.h"
 #include <TUnfold.h>
 #include <TLorentzVector.h>
-
+#include <vector>
 #include "tnp_weight.h"
 using namespace std;
 using namespace  RooFit;
@@ -337,10 +337,23 @@ void myTree::EffSyst() {
       "trk_plus1sig",
       "trk_minus1sig"
     };
+
+  string systName [] =
+    {                                                                                                                                                                              
+      "binned",
+      "trgSyst",
+      "muidSyst",
+      "staSyst",
+      "trkSyst"
+  };
   TObjArray *corrHis = new TObjArray(15);
   TObjArray *countHis016 = new TObjArray(15);
   TObjArray *countHis1624 = new TObjArray(15);
-  TEfficiency *corrTemp = NULL; TH1F* countTemp = NULL;
+  TEfficiency *corrTemp = NULL; TH1F* countTemp = NULL; TH1F* countTemp2 = NULL;
+
+  vector<double> v016;
+  vector<double> v1624;
+
   for(int i=0; i<13; i++) {
     corrTemp = (TEfficiency*) corrFile->Get(Form("hcorr_%s",corrName[i].c_str()));
     corrHis->Add(corrTemp);
@@ -375,34 +388,188 @@ void myTree::EffSyst() {
       };
  
     cout<<"[INFO] Getting the ratios and filling the csv files"<<endl;
-    countTemp = (TH1F*) countHis016->At(0);
-    TH1F* countTemp2 = (TH1F*) countHis1624->At(0);
 
-    float initval016 [] = {(float)countTemp->GetBinContent(countTemp->FindBin(0.1)), (float)countTemp->GetBinContent(countTemp->FindBin(0.3)), (float)countTemp->GetBinContent(countTemp->FindBin(0.5)), (float)countTemp->GetBinContent(countTemp->FindBin(0.7)), (float)countTemp->GetBinContent(countTemp->FindBin(0.9))};
-    float initval1624 [] = {(float)countTemp2->GetBinContent(countTemp2->FindBin(0.1)), (float)countTemp2->GetBinContent(countTemp2->FindBin(0.3)), (float)countTemp2->GetBinContent(countTemp2->FindBin(0.5)), (float)countTemp2->GetBinContent(countTemp2->FindBin(0.7)), (float)countTemp2->GetBinContent(countTemp2->FindBin(0.9))};
+    ////// filling the different syst files
+    for (int i = 0; i<6 ; i++)
+      { 
+	ofstream file016(Form("../Fitter/Systematics/csv/syst_016_NJpsi_%s_PP_tnp%s.csv",isPr?"prompt":"nonprompt",systName[i].c_str()));
+	ofstream file1624(Form("../Fitter/Systematics/csv/syst_1624_NJpsi_%s_PP_tnp%s.csv",isPr?"prompt":"nonprompt",systName[i].c_str()));
+	file016 << "tnp " << systName[i] << endl;
+	file1624 << "tnp " << systName[i] << endl;
+	v016.clear();
+	v1624.clear();
+	for (int j=1; j<5; j++){
+	  v016.clear();
+	  v1624.clear();	    
+	  countTemp = (TH1F*) countHis016->At(0);
+	  countTemp2 = (TH1F*) countHis1624->At(0);
+	  v016.push_back((double)(countTemp->GetBinContent(countTemp->FindBin(j*0.2+0.1))));
+	  v1624.push_back((double)(countTemp2->GetBinContent(countTemp->FindBin(j*0.2+0.1))));
 
-    TFile *systSave = new TFile (Form("%sEffSystHist.root",isPr?"pr":"npr"),"RECREATE");
-    countTemp->Write(Form("hist_016_%s","nominal"));
-    countTemp2->Write(Form("hist_1624_%s","nominal"));
-    for(int i=1; i<13; i++) {
-      ofstream file016(Form("../Fitter/Systematics/csv/syst_016_NJpsi_%s_PP_tnp%s.csv",isPr?"prompt":"nonprompt",corrName[i].c_str()));
-      ofstream file1624(Form("../Fitter/Systematics/csv/syst_1624_NJpsi_%s_PP_tnp%s.csv",isPr?"prompt":"nonprompt",corrName[i].c_str()));
-      file016 << "tnp " << corrName[i] << endl;
-      file1624 << "tnp " << corrName[i] << endl;
-      countTemp = (TH1F*) countHis016->At(i);
-      countTemp2 = (TH1F*) countHis1624->At(i);
-      countTemp->Write(Form("hist_016_%s",corrName[i].c_str()));
-      countTemp2->Write(Form("hist_1624_%s",corrName[i].c_str()));
-      for (int j=1; j<5; j++){
-	file016 << "0, 1.6, 6.5, 35, "<<j*0.2<<", "<< j*0.2+0.2 <<", 0, 100, "<< abs(countTemp->GetBinContent(countTemp->FindBin(j*0.2+0.1))-initval016[j])*1.0/initval016[j]<< endl; 
-	file1624 << "1.6, 2.4, 3, 35, "<<j*0.2<<", "<< j*0.2+0.2 <<", 0, 100, "<< abs(countTemp2->GetBinContent(countTemp2->FindBin(j*0.2+0.1))-initval1624[j])*1.0/initval1624[j]<< endl;
+	  if (i==0) {
+	    countTemp = (TH1F*) countHis016->At(1);
+	    v016.push_back((double)(countTemp->GetBinContent(countTemp->FindBin(j*0.2+0.1))));
+	    countTemp2 = (TH1F*) countHis1624->At(1);
+	    v1624.push_back((double)(countTemp2->GetBinContent(countTemp->FindBin(j*0.2+0.1))));
+	  }
+	  if (i==1) {
+	    countTemp = (TH1F*) countHis016->At(2);
+            v016.push_back((double)(countTemp->GetBinContent(countTemp->FindBin(j*0.2+0.1))));
+            countTemp2 = (TH1F*) countHis1624->At(2);
+            v1624.push_back((double)(countTemp2->GetBinContent(countTemp->FindBin(j*0.2+0.1))));
+
+	    countTemp = (TH1F*) countHis016->At(3);
+            v016.push_back((double)(countTemp->GetBinContent(countTemp->FindBin(j*0.2+0.1))));
+            countTemp2 = (TH1F*) countHis1624->At(3);
+            v1624.push_back((double)(countTemp2->GetBinContent(countTemp->FindBin(j*0.2+0.1))));
+	  }
+	  if (i==2) {
+	    countTemp = (TH1F*) countHis016->At(5);
+            v016.push_back((double)(countTemp->GetBinContent(countTemp->FindBin(j*0.2+0.1))));
+            countTemp2 = (TH1F*) countHis1624->At(5);
+            v1624.push_back((double)(countTemp2->GetBinContent(countTemp->FindBin(j*0.2+0.1))));
+
+	    countTemp = (TH1F*) countHis016->At(6);
+            v016.push_back((double)(countTemp->GetBinContent(countTemp->FindBin(j*0.2+0.1))));
+            countTemp2 = (TH1F*) countHis1624->At(6);
+            v1624.push_back((double)(countTemp2->GetBinContent(countTemp->FindBin(j*0.2+0.1))));
+
+	    countTemp = (TH1F*) countHis016->At(7);
+            v016.push_back((double)(countTemp->GetBinContent(countTemp->FindBin(j*0.2+0.1))));
+            countTemp2 = (TH1F*) countHis1624->At(7);
+            v1624.push_back((double)(countTemp2->GetBinContent(countTemp->FindBin(j*0.2+0.1))));
+	  }
+	  if (i==3) {
+	    countTemp = (TH1F*) countHis016->At(8);
+            v016.push_back((double)(countTemp->GetBinContent(countTemp->FindBin(j*0.2+0.1))));
+            countTemp2 = (TH1F*) countHis1624->At(8);
+            v1624.push_back((double)(countTemp2->GetBinContent(countTemp->FindBin(j*0.2+0.1))));
+
+	    countTemp = (TH1F*) countHis016->At(9);
+            v016.push_back((double)(countTemp->GetBinContent(countTemp->FindBin(j*0.2+0.1))));
+            countTemp2 = (TH1F*) countHis1624->At(9);
+            v1624.push_back((double)(countTemp2->GetBinContent(countTemp->FindBin(j*0.2+0.1))));
+
+	    countTemp = (TH1F*) countHis016->At(10);
+            v016.push_back((double)(countTemp->GetBinContent(countTemp->FindBin(j*0.2+0.1))));
+            countTemp2 = (TH1F*) countHis1624->At(10);
+            v1624.push_back((double)(countTemp2->GetBinContent(countTemp->FindBin(j*0.2+0.1))));
+	  }
+	  if (i==4) {
+	    countTemp = (TH1F*) countHis016->At(11);
+            v016.push_back((double)(countTemp->GetBinContent(countTemp->FindBin(j*0.2+0.1))));
+            countTemp2 = (TH1F*) countHis1624->At(11);
+            v1624.push_back((double)(countTemp2->GetBinContent(countTemp->FindBin(j*0.2+0.1))));
+
+	    countTemp = (TH1F*) countHis016->At(12);
+            v016.push_back((double)(countTemp->GetBinContent(countTemp->FindBin(j*0.2+0.1))));
+            countTemp2 = (TH1F*) countHis1624->At(12);
+            v1624.push_back((double)(countTemp2->GetBinContent(countTemp->FindBin(j*0.2+0.1))));
+	  }
+	  if (j!=1)
+	    file016 << "0, 1.6, 6.5, 35, "<<j*0.2<<", "<< j*0.2+0.2 <<", 0, 200, "<< maxdiff(v016, 1) << endl;
+	  file1624 << "1.6, 2.4, 3, 35, "<<j*0.2<<", "<< j*0.2+0.2 <<", 0, 200, "<< maxdiff(v1624, 1) << endl;
+	}
+	file016.close();
+	file1624.close();
       }
-      file016.close();
-      file1624.close();
+
+}
+void myTree::FullEffSyst() {
+  string systName [] = {"binned", "trgSyst", "muidSyst", "staSyst", "trkSyst"};
+
+  ofstream file016(Form("../Fitter/Systematics/csv/syst_016_NJpsi_%s_PP_fulltnp.csv",isPr?"prompt":"nonprompt"));
+  ofstream file1624(Form("../Fitter/Systematics/csv/syst_1624_NJpsi_%s_PP_fulltnp.csv",isPr?"prompt":"nonprompt"));
+  file016<<"tnp"<<endl;
+  file1624<<"tnp"<<endl;
+  double val1 [] = {0,0,0};
+  double val2 [] = {0,0,0,0};
+  for (int i=0; i<5; i++)
+    {
+      vector<double> v1 = readSyst(Form("../Fitter/Systematics/csv/syst_016_NJpsi_%s_PP_tnp%s.csv", isPr?"prompt":"nonprompt", systName[i].c_str()));
+      vector<double> v2 = readSyst(Form("../Fitter/Systematics/csv/syst_1624_NJpsi_%s_PP_tnp%s.csv", isPr?"prompt":"nonprompt", systName[i].c_str()));
+      for (int j=0; j<3; j++)
+	{
+	  val1[j]=sqrt(pow(val1[j],2)+pow(v1[j],2));
+	  val2[j]=sqrt(pow(val2[j],2)+pow(v2[j],2));
+	}
+      val2[3]=sqrt(pow(val2[3],2)+pow(v2[3],2));
     }
-    systSave->Close();
+  for (int j=1; j<5; j++)
+    {
+      if (j!=1)
+	file016 << "0, 1.6, 6.5, 35, "<<j*0.2<<", "<< j*0.2+0.2 <<", 0, 200, "<< val1[j-2] << endl;
+      file1624 << "1.6, 2.4, 3, 35, "<<j*0.2<<", "<< j*0.2+0.2 <<", 0, 200, "<<  val2[j-1]<< endl;
+    }
+  file016.close();
+  file1624.close();
+}
+
+vector<double> myTree::readSyst(const char* systfile) {
+  vector<double> ans;
+    ifstream file(systfile);
+    if (!(file.good())) return ans;
+
+    string systname; getline(file,systname);
+
+    string line;
+    double zmin=0, zmax=0, rapmin=0, rapmax=0, ptmin=0, ptmax=0, centmin=0, centmax=0, value=0;
+
+    while (file.good()) {
+      getline(file,line);
+      if (line.size()==0) break;
+      TString tline(line.c_str());
+      TString t; Int_t from = 0, cnt=0;
+      while (tline.Tokenize(t, from , ",")) {
+	t.Strip(TString::kBoth,' ');
+	value = atof(t.Data());
+	if (cnt==0) rapmin = atof(t.Data());
+	else if (cnt==1) rapmax = value;
+	else if (cnt==2) ptmin = value;
+	else if (cnt==3) ptmax = value;
+	else if (cnt==4) zmin = value;
+	else if (cnt==5) zmax = value;
+	else if (cnt==6) centmin = value;
+	else if (cnt==7) centmax = value;
+	else if (cnt>8) {
+	  cout << "Warning, too many fields, I'll take the last one." << endl;
+	  continue;
+	}
+	cnt++;
+      }
+      ans.push_back(value);
+    }
+    file.close();
+    return ans;
+}
+
+
+double myTree::rms(vector<double> v, bool isrelative) {
+  if (v.size()==0 || v[0]==0) return 0;
+  double s=0,s2=0;
+  for (unsigned int i=0; i<v.size(); i++) {
+    if (v[i]==-999) continue;
+    s+=v[i];
+    s2+=v[i]*v[i];
   }
-  
+  double ans = sqrt(s2-(s*s));
+  if (isrelative) ans = ans/v[0];
+  return ans;
+}
+
+double myTree::maxdiff(vector<double> v, bool isrelative) {
+  if (v.size()==0 || v[0]==0) return 0;
+  double maxdiff=0;
+  for (unsigned int i=1; i<v.size(); i++) {
+    if (v[i]==-999) continue;
+    maxdiff=max(maxdiff,fabs(v[i]-v[0]));
+  }
+  double ans = maxdiff;
+  if (isrelative) ans = ans/v[0];
+  return ans;
+}
+
+
 void myTree::ANEffPlots()
 {
   if (isMc)

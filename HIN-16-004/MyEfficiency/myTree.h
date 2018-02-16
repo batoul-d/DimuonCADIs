@@ -714,6 +714,10 @@ public :
    virtual void     Unfolding();
    virtual void     JetPtRange();
    virtual void     EffSyst();
+   virtual vector<double> readSyst(const char* systfile);
+   virtual void     FullEffSyst();
+   virtual double   rms(vector<double> v, bool isrelative);
+   virtual double   maxdiff(vector<double> v, bool isrelative);
    virtual Bool_t   isTriggerMatch (Int_t iRecoQQ, Int_t TriggerBit);
    virtual Bool_t   isGlobalMuonInAccept2015 (TLorentzVector* Muon);
    virtual Bool_t   areMuonsInAcceptance2015 (Int_t iRecoQQ);
