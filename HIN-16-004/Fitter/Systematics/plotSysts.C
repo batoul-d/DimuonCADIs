@@ -8,7 +8,7 @@ using namespace std;
 
 TString spoiname(""); // It can be NJpsi, BJpsi, NJpsi_prompt or NJpsi_nonprompt
 //bool bins16004=false; // If false use 16-025 bins, if true use 16-004 bins
-TString nameTag("016"); // It can be 16025 or 16004 or...
+TString nameTag(""); // It can be 16025 or 16004 or...
 bool midBins=true;
 // DECLARATIONS
 void plotSysts(anabin thebin, string xaxis, string collTag, bool plotEffSyst=false, bool plotSigSyst=true, bool plotGlobalSysts=false);
@@ -23,15 +23,35 @@ void plotSystsAll(const char* apoiname, bool plotEffSyst, bool plotSigSyst, bool
     return;
   }
 
+  //mid JtPt
   //mid rap
-  nameTag = "016";
+  nameTag = "midJtPt_016";
   midBins = true;
   plotSysts(anabin(0.4,1.0,0,1.6,6.5,35,0,200),"z","PP",plotEffSyst,plotSigSyst,plotGlobalSysts);
   //forward
-  nameTag = "1624";
+  nameTag = "midJtPt_1624";
   midBins = false;
   plotSysts(anabin(0.2,1.0,1.6,2.4,3,35,0,200),"z","PP",plotEffSyst,plotSigSyst,plotGlobalSysts);
-  
+
+  ///low JtPt
+  //mid rap                                                                                                                                                                              
+  nameTag = "lowJtPt_016";
+  midBins = true;
+  plotSysts(anabin(0.4,1.0,0,1.6,6.5,35,0,200),"z","PP",plotEffSyst,plotSigSyst,plotGlobalSysts);
+  //forward                                                                                                                           
+  nameTag = "lowJtPt_1624";
+  midBins = false;
+  plotSysts(anabin(0.2,1.0,1.6,2.4,3,35,0,200),"z","PP",plotEffSyst,plotSigSyst,plotGlobalSysts);
+
+  ////high JtPt
+  //mid rap                                                                                                                                                                                           
+  nameTag = "highJtPt_016";
+  midBins = true;
+  plotSysts(anabin(0.4,1.0,0,1.6,6.5,35,0,200),"z","PP",plotEffSyst,plotSigSyst,plotGlobalSysts);
+  //forward                                                                                                                                                                                          
+  nameTag = "highJtPt_1624";
+  midBins = false;
+  plotSysts(anabin(0.2,1.0,1.6,2.4,3,35,0,200),"z","PP",plotEffSyst,plotSigSyst,plotGlobalSysts);  
 }
 
 void plotSysts(anabin thebin, string xaxis, string collTag, bool plotEffSyst, bool plotSigSyst, bool plotGlobalSysts) {
@@ -78,7 +98,7 @@ void plotSysts(anabin thebin, string xaxis, string collTag, bool plotEffSyst, bo
   //} else {
   if (plotSigSyst) {
     if (plotEffSyst) {
-      systs.push_back(readSyst(Form("csv/syst_%s_%s_PP_fulltnp.csv",nameTag.Data(),spoiname.Data())));
+      systs.push_back(readSyst(Form("csv/syst_%s_%s_PP_fullAccEff.csv",nameTag.Data(),spoiname.Data())));
       tags.push_back(systs.back().begin()->second.name);
     }
     systs.push_back(readSyst(Form("csv/syst_%s_%s_PP_massBkg.csv",nameTag.Data(),spoiname.Data())));
@@ -116,9 +136,19 @@ void plotSysts(anabin thebin, string xaxis, string collTag, bool plotEffSyst, bo
 	systs.push_back(readSyst(Form("csv/syst_%s_%s_PP_tnptrgSyst.csv",nameTag.Data(),spoiname.Data())));
 	tags.push_back(systs.back().begin()->second.name);
 	systs.push_back(readSyst(Form("csv/syst_%s_%s_PP_tnptrkSyst.csv",nameTag.Data(),spoiname.Data())));
+	tags.push_back(systs.back().begin()->second.name);
+	systs.push_back(readSyst(Form("csv/syst_%s_%s_PP_tnpmuidStat.csv",nameTag.Data(),spoiname.Data())));
+	tags.push_back(systs.back().begin()->second.name);
+	systs.push_back(readSyst(Form("csv/syst_%s_%s_PP_tnpstaStat.csv",nameTag.Data(),spoiname.Data())));
+	tags.push_back(systs.back().begin()->second.name);
+	systs.push_back(readSyst(Form("csv/syst_%s_%s_PP_tnptrgStat.csv",nameTag.Data(),spoiname.Data())));
+	tags.push_back(systs.back().begin()->second.name);
+	systs.push_back(readSyst(Form("csv/syst_%s_%s_PP_AccEffStat.csv",nameTag.Data(),spoiname.Data())));
+	tags.push_back(systs.back().begin()->second.name);
+	systs.push_back(readSyst(Form("csv/syst_%s_%s_PP_AccEffMisMod.csv",nameTag.Data(),spoiname.Data())));
+	tags.push_back(systs.back().begin()->second.name);
       }
 	else cout << "[WARNING] you have to specify the type of uncertainties to plot";
-
     }
   // global systs
   //if (plotGlobalSysts) {
@@ -172,10 +202,9 @@ void plotSysts(anabin thebin, string xaxis, string collTag, bool plotEffSyst, bo
       dx.push_back((high-low)/2.);
       y.push_back(0);
       dy.push_back(thesyst[*it].value);
-      cout <<"x = "<< (low+high)/2. << " dx = "<< (high-low)/2. << " ;y = 0"<<" dy = "<< thesyst[*it].value<<endl;
       valmax = max(valmax,dy.back());
     }
-    
+
     TGraphErrors *thegraph = new TGraphErrors(x.size(),x.data(),y.data(),dx.data(),dy.data());
     TH1F *haxes=NULL;
     if (xaxis=="z") {
@@ -187,8 +216,8 @@ void plotSysts(anabin thebin, string xaxis, string collTag, bool plotEffSyst, bo
     } else { // if (xaxis=="rap")
       haxes = new TH1F(tags[i].c_str(),Form(";|y|;Syst_%s",spoiname.Data()),1,0,2.4);
     }
-    haxes->GetYaxis()->SetLimits(-1.3*valmax, 2.*valmax);
-    haxes->GetYaxis()->SetRangeUser(-1.3*valmax, 2.*valmax);
+    haxes->GetYaxis()->SetLimits(-1.5*valmax, 2.5*valmax);
+    haxes->GetYaxis()->SetRangeUser(-1.5*valmax, 2.5*valmax);
     //haxes->GetYaxis()->SetLimits(-1,1);
     //haxes->GetYaxis()->SetRangeUser(-1,1);
     haxes->GetYaxis()->SetTitleOffset(1.4);
@@ -198,10 +227,10 @@ void plotSysts(anabin thebin, string xaxis, string collTag, bool plotEffSyst, bo
     graphs.push_back(thegraph);
   }
   
-  cout << "plotting the graphs" <<endl;  
+  cout << "[INFO] plotting the graphs" <<endl;  
   plotGraphs(graphs, tags, "systematics", collTag,
              //Form("z%i%i_pt%i%i_rap%i%i_cent%i%i_%s",(int)zmin*10,(int)zmax*10,(int)ptmin*10,(int)ptmax*10,(int)rapmin*10,(int)rapmax*10,centmin,centmax,nameTag.Data()),
-	     Form("z%i%i_pt%i%i_rap%i%i%s",(int)(zmin*10),(int)(zmax*10),(int)(ptmin*10),(int)(ptmax*10),(int)(rapmin*10),(int)(rapmax*10), plotSigSyst?(plotEffSyst?"_SigEff":"_Sig"):(plotEffSyst?"_Eff":"")),
+	     Form("z%i%i_pt%i%i_rap%i%i%s_%s",(int)(zmin*10),(int)(zmax*10),(int)(ptmin*10),(int)(ptmax*10),(int)(rapmin*10),(int)(rapmax*10), plotSigSyst?(plotEffSyst?"_SigEff":"_Sig"):(plotEffSyst?"_Eff":""), nameTag.Data()),
              //Form("%.1f<z<%.1f, %.1f<|y|<%.1f, %.1f<p_{T}<%.1f, %i-%i%s",zmin,zmax,rapmin,rapmax,ptmin,ptmax,centmin/2,centmax/2,"%"));
 	     Form("%.1f<z<%.1f, %.1f<|y|<%.1f, %.1f<p_{T}<%.1f",zmin,zmax,rapmin,rapmax,ptmin,ptmax));
 }

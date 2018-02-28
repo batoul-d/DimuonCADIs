@@ -120,7 +120,7 @@ map<anabin, syst> readSyst_all(const char* collSystem, const char* poiname, cons
     filelist.push_back(Form("%sSystematics/csv/syst_%s_%s_PP_jetEnergyScale.csv",sprependPath.Data(),snameTag.Data(),spoiname.Data()));
     filelist.push_back(Form("%sSystematics/csv/syst_%s_%s_PP_jetEnergyRes.csv",sprependPath.Data(),snameTag.Data(),spoiname.Data()));
     if (readEffSyst)
-      filelist.push_back(Form("%sSystematics/csv/syst_%s_%s_PP_fulltnp.csv",sprependPath.Data(),snameTag.Data(),spoiname.Data()));
+      filelist.push_back(Form("%sSystematics/csv/syst_%s_%s_PP_fullAccEff.csv",sprependPath.Data(),snameTag.Data(),spoiname.Data()));
   }
   else if (readEffSyst)
   {
@@ -129,6 +129,11 @@ map<anabin, syst> readSyst_all(const char* collSystem, const char* poiname, cons
     filelist.push_back(Form("%sSystematics/csv/syst_%s_%s_PP_tnpmuidSyst.csv",sprependPath.Data(),snameTag.Data(),spoiname.Data()));
     filelist.push_back(Form("%sSystematics/csv/syst_%s_%s_PP_tnpstaSyst.csv",sprependPath.Data(),snameTag.Data(),spoiname.Data()));
     filelist.push_back(Form("%sSystematics/csv/syst_%s_%s_PP_tnptrkSyst.csv",sprependPath.Data(),snameTag.Data(),spoiname.Data()));
+    filelist.push_back(Form("%sSystematics/csv/syst_%s_%s_PP_tnptrgStat.csv",sprependPath.Data(),snameTag.Data(),spoiname.Data()));
+    filelist.push_back(Form("%sSystematics/csv/syst_%s_%s_PP_tnpmuidStat.csv",sprependPath.Data(),snameTag.Data(),spoiname.Data()));
+    filelist.push_back(Form("%sSystematics/csv/syst_%s_%s_PP_tnpstaStat.csv",sprependPath.Data(),snameTag.Data(),spoiname.Data()));
+    filelist.push_back(Form("%sSystematics/csv/syst_%s_%s_PP_AccEffStat.csv",sprependPath.Data(),snameTag.Data(),spoiname.Data()));
+    filelist.push_back(Form("%sSystematics/csv/syst_%s_%s_PP_AccEffMisMod.csv",sprependPath.Data(),snameTag.Data(),spoiname.Data()));
 
     //filelist.push_back("Systematics/csv/syst_PbPb_fulltnp.csv"); // temporary!! to be updated
     //filelist.push_back("Systematics/csv/syst_PP_fulltnp.csv"); // temporary!! to be updated
@@ -158,11 +163,11 @@ map<anabin, syst> readSyst_all(const char* collSystem, const char* poiname, cons
     //filelist.push_back(Form("%sSystematics/csv/syst_%s_%s_PP_trk_syst.csv",sprependPath.Data(),snameTag.Data(),spoiname.Data()));
    }
   
-  if (readAccSyst)
-  {
+  //if (readAccSyst)
+    //{
     //filelist.push_back(Form("%sSystematics/csv/stat_%s_%s_PbPb_acc.csv",sprependPath.Data(),snameTag.Data(),spoiname.Data()));
     //filelist.push_back(Form("%sSystematics/csv/stat_%s_%s_PP_acc.csv",sprependPath.Data(),snameTag.Data(),spoiname.Data()));
-  }
+    //}
   
   vector< map<anabin, syst> > systmap_all;
 

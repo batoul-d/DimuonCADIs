@@ -713,9 +713,14 @@ public :
    virtual void     ClosureTest();
    virtual void     Unfolding();
    virtual void     JetPtRange();
-   virtual void     EffSyst();
+   virtual void     EffSyst(int jtPtRange=0);
+   virtual void     EffStatToy(int nToys=100);
+   virtual void     EffStat(int jtPtRange=0);
+   virtual void     TnpToy(int min=0, int max=100);
+   virtual void     TnpStat(int jtPtRange=0);
+   virtual void     EffMisMod(int jtPtRange=0);
    virtual vector<double> readSyst(const char* systfile);
-   virtual void     FullEffSyst();
+   virtual void     FullEffSyst(int jtPtRange = 0);
    virtual double   rms(vector<double> v, bool isrelative);
    virtual double   maxdiff(vector<double> v, bool isrelative);
    virtual Bool_t   isTriggerMatch (Int_t iRecoQQ, Int_t TriggerBit);

@@ -444,7 +444,7 @@ void plotGraphs(vector<TGraphErrors*> graphs, vector<string> tags, const char* w
    setTDRStyle();
    TCanvas *c1 = new TCanvas("c1","c1",600,600);
 
-   TLegend *tleg = new TLegend(0.18,0.69,0.52,0.89);
+   TLegend *tleg = new TLegend(0.18,0.62,0.52,0.89);
    tleg->SetBorderSize(0);
    tleg->SetTextSize(0.03);
 
