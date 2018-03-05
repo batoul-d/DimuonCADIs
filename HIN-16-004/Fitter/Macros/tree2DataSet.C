@@ -36,7 +36,7 @@ double  getNColl(int centr, bool isPP);
 double  getCorr(Double_t rapidity, Double_t pt, Double_t mass, bool isPP);
 bool    readCorrection(const char* file);
 void    setCentralityMap(const char* file);
-float  jecCorr(double jtPt, double rawPt, double jpsiPt);
+float   jecCorr(double jtPt, double rawPt, double jpsiPt);
 
 bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string DSName, string OutputFileName, bool UpdateDS=false)
 {
@@ -58,14 +58,15 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
   }
   
   bool applyWeight = false;
-  if (isMC && isPbPb) applyWeight = true;
-  
+  //if (isMC && isPbPb) applyWeight = true;
+  if (isMC && DSName.find("JPSIPR")!=std::string::npos) applyWeight = true;  
+
   bool isPureSDataset = false;
   if (OutputFileName.find("_PureS")!=std::string::npos) isPureSDataset = true;
 
   bool applyWeight_Corr = false;
   if ( (OutputFileName.find("_AccEff")!=std::string::npos) || (OutputFileName.find("_lJpsiEff")!=std::string::npos) ) applyWeight_Corr = true;
-  if(applyWeight == true) applyWeight_Corr = false;
+  //if(applyWeight == true) applyWeight_Corr = false;
   TString corrName = "";
   TString corrFileName = "";
   if (OutputFileName.find("_AccEff")!=std::string::npos)
@@ -85,30 +86,30 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
   bool createDS = ( gSystem->AccessPathName(OutputFileName.c_str()) || UpdateDS );
 
   if ( !gSystem->AccessPathName(OutputFileName.c_str()) ) {
-  cout << "[INFO] Loading RooDataSet from " << OutputFileName << endl;
+    cout << "[INFO] Loading RooDataSet from " << OutputFileName << endl;
     
-  TFile *DBFile = TFile::Open(OutputFileName.c_str(),"READ");
-  if (isMC && isPureSDataset) {
-    if (applyWeight_Corr) {
-      dataOSNoBkg = (RooDataSet*)DBFile->Get(Form("dOS_%s_NoBkg_%s%s", DSName.c_str(),corrName.Data(), (applyJEC?"_JEC":"")));
-    if (checkDS(dataOSNoBkg, DSName)==false) { createDS = true; }
+    TFile *DBFile = TFile::Open(OutputFileName.c_str(),"READ");
+    if (isMC && isPureSDataset) {
+      if (applyWeight_Corr) {
+	dataOSNoBkg = (RooDataSet*)DBFile->Get(Form("dOS_%s_NoBkg_%s%s", DSName.c_str(),corrName.Data(), (applyJEC?"_JEC":"")));
+	if (checkDS(dataOSNoBkg, DSName)==false) { createDS = true; }
+      }
+      else {
+	dataOSNoBkg = (RooDataSet*)DBFile->Get(Form("dOS_%s_NoBkg%s", DSName.c_str(), (applyJEC?"_JEC":"")));
+	if (checkDS(dataOSNoBkg, DSName)==false) { createDS = true; }
+      }  
+    } 
+    else if (applyWeight_Corr) {
+      dataOS = (RooDataSet*)DBFile->Get(Form("dOS_%s_%s%s", DSName.c_str(),corrName.Data(), (applyJEC?"_JEC":"")));
+      if (checkDS(dataOS, DSName)==false) { createDS = true; }
     }
     else {
-      dataOSNoBkg = (RooDataSet*)DBFile->Get(Form("dOS_%s_NoBkg%s", DSName.c_str(), (applyJEC?"_JEC":"")));
-      if (checkDS(dataOSNoBkg, DSName)==false) { createDS = true; }
-      }  
-  } 
-  else if (applyWeight_Corr) {
-    dataOS = (RooDataSet*)DBFile->Get(Form("dOS_%s_%s%s", DSName.c_str(),corrName.Data(), (applyJEC?"_JEC":"")));
-  if (checkDS(dataOS, DSName)==false) { createDS = true; }
-  }
-  else {
-    dataOS = (RooDataSet*)DBFile->Get(Form("dOS_%s%s", DSName.c_str(),(applyJEC?"_JEC":"")));
-  if (checkDS(dataOS, DSName)==false) { createDS = true; }
-  dataSS = (RooDataSet*)DBFile->Get(Form("dSS_%s%s", DSName.c_str(),(applyJEC?"_JEC":"")));
-  if (checkDS(dataSS, DSName)==false) { createDS = true; }
-  }
-  DBFile->Close(); delete DBFile;
+      dataOS = (RooDataSet*)DBFile->Get(Form("dOS_%s%s", DSName.c_str(),(applyJEC?"_JEC":"")));
+      if (checkDS(dataOS, DSName)==false) { createDS = true; }
+      dataSS = (RooDataSet*)DBFile->Get(Form("dSS_%s%s", DSName.c_str(),(applyJEC?"_JEC":"")));
+      if (checkDS(dataSS, DSName)==false) { createDS = true; }
+    }
+    DBFile->Close(); delete DBFile;
   }
   //cout<< "FileName: "<< OutputFileName << " DSName: " << DSName.c_str() << " CorrName: " << corrName.Data() << " or " <<corrName << endl;
   if (createDS) {
@@ -138,7 +139,7 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
     RooRealVar* weightCorr   = new RooRealVar("weightCorr","Data correction weight", 0.0, 10000000.0, "");
     RooArgSet*  cols    = NULL;
     
-    if (applyWeight)
+    if (applyWeight && !applyWeight_Corr)
     {
       setCentralityMap(Form("%s/Input/CentralityMap_PbPb2015.txt",gSystem->ExpandPathName(gSystem->pwd())));
       if (isMC) {
@@ -176,7 +177,7 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
       if (isMC && isPureSDataset)
 	dataOSNoBkg = new RooDataSet(Form("dOS_%s_NoBkg_%s%s", DSName.c_str(),corrName.Data(),(applyJEC?"_JEC":"")), "dOSNoBkg", *cols, WeightVar(*weightCorr), StoreAsymError(*mass));
       //      dataSS = new RooDataSet(Form("dSS_%s", DSName.c_str()), "dSS", *cols, WeightVar(*weightCorr), StoreAsymError(*mass));
-      cout<<"--- 1./applyWeight_Corr applied---"<<endl;
+      cout<<"[INFO] "<<corrName<<" applied!"<<endl;
     }
     else
     {
@@ -196,6 +197,7 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
       dataSS = new RooDataSet(Form("dSS_%s%s", DSName.c_str(), (applyJEC?"_JEC":"")), "dSS", *cols, StoreAsymError(*mass));
       if (isMC && isPureSDataset) dataOSNoBkg = new RooDataSet(Form("dOS_%s_NoBkg%s", DSName.c_str(),(applyJEC?"_JEC":"")), "dOSNoBkg", *cols, StoreAsymError(*mass));
     }
+    if (applyWeight) cout<<"[INFO] pt weights applied!"<<endl;
 
 
     ////////////////////////////////////
@@ -223,13 +225,22 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
       
       normF = nentries/normF;
     }
-
     // creating the tree to use in the unfolding
-    string trUnfFileName = Form("TreesForUnfolding/tree_%s%s%s%s.root", DSName.c_str(), (isPureSDataset?"_NoBkg":""), (applyWeight_Corr?Form("_%s",corrName.Data()):""), (applyJEC?"_JEC":""));
+    string fl = InputFileNames[0];
+    cout<<"[INFO] nb of files "<<InputFileNames.size()<<endl;
+    if (fl.find("ext")!=std::string::npos && InputFileNames.size()>1) fl = "";
+    else if (fl.find("ext")!=std::string::npos && InputFileNames.size()==1) fl = "_ext";
+    else if (fl.find("pthat15")!=std::string::npos) fl = "_pthat15";
+    else if (fl.find("pthat25")!=std::string::npos) fl = "_pthat25";
+    else if (fl.find("pthat35")!=std::string::npos) fl = "_pthat35";
+    else if (fl.find("pthat45")!=std::string::npos) fl = "_pthat45";
+
+    string trUnfFileName = Form("TreesForUnfolding/tree_%s%s%s%s%s.root", DSName.c_str(), (isPureSDataset?"_NoBkg":""), (applyWeight_Corr?Form("_%s",corrName.Data()):""), (applyJEC?"_JEC":""), (applyWeight? fl.c_str():""));
+
     TFile * trUnfFile = new TFile (trUnfFileName.c_str(),"RECREATE");
     trUnfFile->cd();
     TTree* trUnf = new TTree ("trUnf","tree used for the unfolding");
-    Int_t evtNb; Float_t jp_pt; Float_t jp_rap; Float_t jp_eta; Float_t jp_mass; Float_t jp_phi; Float_t jp_gen_pt; Float_t jp_gen_rap; Float_t jp_gen_eta; Float_t jp_gen_phi; Float_t jt_pt; Float_t jt_rap; Float_t jt_eta; Float_t jt_phi; Float_t jt_ref_pt; Float_t jt_ref_rap; Float_t jt_ref_eta; Float_t jt_ref_phi; Float_t z; Float_t gen_z; Float_t corr_AccEff;
+    Int_t evtNb; Float_t jp_pt; Float_t jp_rap; Float_t jp_eta; Float_t jp_mass; Float_t jp_phi; Float_t jp_gen_pt; Float_t jp_gen_rap; Float_t jp_gen_eta; Float_t jp_gen_phi; Float_t jt_pt; Float_t jt_rap; Float_t jt_eta; Float_t jt_phi; Float_t jt_ref_pt; Float_t jt_ref_rap; Float_t jt_ref_eta; Float_t jt_ref_phi; Float_t z; Float_t gen_z; Float_t corr_AccEff; Float_t pt_hat; Float_t corr_ptw;
 
     cout<< "[INFO] Creating the tree to use in the unfolding" << endl;
     trUnf->Branch("evtNb", &evtNb, "evtNb/I");
@@ -245,16 +256,19 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
     trUnf->Branch("z", &z, "z/F");
     trUnf->Branch("corr_AccEff", &corr_AccEff, "corr_AccEff/F");
     if (isMC) {
-	trUnf->Branch("jp_gen_pt", &jp_gen_pt, "jp_gen_pt/F");
-	trUnf->Branch("jp_gen_rap", &jp_gen_rap, "jp_gen_rap/F");
-	trUnf->Branch("jp_gen_eta", &jp_gen_eta, "jp_gen_eta/F");
-	trUnf->Branch("jp_gen_phi", &jp_gen_phi, "jp_gen_phi/F");
-	trUnf->Branch("jt_ref_pt", &jt_ref_pt, "jt_ref_pt/F");
-	trUnf->Branch("jt_ref_rap", &jt_ref_rap, "jt_ref_rap/F");
-	trUnf->Branch("jt_ref_eta", &jt_ref_eta, "jt_ref_eta/F");
-	trUnf->Branch("jt_ref_phi", &jt_ref_phi, "jt_ref_phi/F");
-	trUnf->Branch("gen_z", &gen_z, "gen_z/F");
-      }
+      trUnf->Branch("corr_ptw", &corr_ptw, "corr_ptw/F");
+      trUnf->Branch("pt_hat", &pt_hat, "pt_hat/F");
+      trUnf->Branch("jp_gen_pt", &jp_gen_pt, "jp_gen_pt/F");
+      trUnf->Branch("jp_gen_rap", &jp_gen_rap, "jp_gen_rap/F");
+      trUnf->Branch("jp_gen_eta", &jp_gen_eta, "jp_gen_eta/F");
+      trUnf->Branch("jp_gen_phi", &jp_gen_phi, "jp_gen_phi/F");
+      trUnf->Branch("jt_ref_pt", &jt_ref_pt, "jt_ref_pt/F");
+      trUnf->Branch("jt_ref_rap", &jt_ref_rap, "jt_ref_rap/F");
+      trUnf->Branch("jt_ref_eta", &jt_ref_eta, "jt_ref_eta/F");
+      trUnf->Branch("jt_ref_phi", &jt_ref_phi, "jt_ref_phi/F");
+      trUnf->Branch("gen_z", &gen_z, "gen_z/F");
+    }
+
     
     cout << "[INFO] Starting to process " << nentries << " nentries" << endl;
     for (Long64_t jentry=0; jentry<nentries;jentry++) {
@@ -297,6 +311,8 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
 	jp_eta = RecoQQ4mom->Eta();
 	jp_phi = RecoQQ4mom->Phi();
 	jp_mass = RecoQQ4mom->M();
+	pt_hat = pthat;
+	corr_ptw = 1;
 	for (Long64_t ijet=0; ijet<nref; ijet++)
 	  {
 	    TLorentzVector v_jet;
@@ -341,7 +357,7 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
           ctauRes->setVal( (ctau->getValV() - ctauTrue->getValV()) );
         }
 
-        if (applyWeight){
+        if (applyWeight && !applyWeight_Corr){
 	  double w = theTree->GetWeight();
 	  if (isMC && isPbPb) w = w*normF;//*getNColl(Centrality,!isPbPb)*normF;
 	  weight->setVal(w);
@@ -349,11 +365,18 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
         else if (applyWeight_Corr)
 	  { double Corr = 1;
 	    Corr = getCorr(RecoQQ4mom->Rapidity(),RecoQQ4mom->Pt(),RecoQQ4mom->M(),!isPbPb);
-	  double wCorr = 1/Corr;
-	  weightCorr->setVal(wCorr);
-	  corr_AccEff = Corr;
+	    double wCorr = 1/Corr;
+	    //// add pt weights for prompt MC
+	    if (applyWeight)
+	      {
+		if (pthat >= 15 && pthat < 25)  corr_ptw = 0.562375;
+		else if (pthat >= 25 && pthat < 35) corr_ptw = 0.116431;
+		else if (pthat >= 35 && pthat < 45) corr_ptw = 0.0255525;
+		else if (pthat >= 45) corr_ptw = 0.00749754;
+	      }
+	    weightCorr->setVal(wCorr);
+	    corr_AccEff = wCorr;
 	  }
-        
         if (
             ( RecoQQ::areMuonsInAcceptance2015(iQQ) ) &&  // 2015 Global Muon Acceptance Cuts
             ( RecoQQ::passQualityCuts2015(iQQ)      ) &&  // 2015 Soft Global Muon Quality Cuts
@@ -377,23 +400,16 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
 		if (gen_z > 1 && gen_z <= 1.000001) gen_z = 0.9999999;
 	      }
 	      else if (isMC && isPureSDataset && !isMatchedRecoDiMuon(iQQ))
-		{
 		  gen_z = -1;
-		}
+
 	      else if (applyWeight_Corr) dataOS->add(*cols,weightCorr->getVal()); //Signal and background dimuons
 	      else dataOS->add(*cols, ( applyWeight ? weight->getVal() : 1.0)); //Signal and background dimuons
 	      evtNb = jentry;
 	      if (isMC && isPureSDataset && gen_z >= 0 && z > -1)
-		{
-		  //if (gen_z != jp_gen_pt/jt_ref_pt) cout << "[ERROR] in event " << jentry << ": gen_z = " << gen_z << " jp_gen_pt = " << jp_gen_pt << " jt_ref_pt = " << jt_ref_pt << endl;
-		  //if (z != jp_pt/jt_pt) cout << "[ERROR] z = " << z << " jp_pt = " << jp_pt << " jt_pt = " << jt_pt << endl;
-		  trUnf->Fill();
-		}
+		trUnf->Fill();
+
 	      else if (!isPureSDataset && z > -1)
-		{
-		  //if (z != jp_pt/jt_pt) cout << "[ERROR] z = " << z << " jp_pt = " << jp_pt << " jt_pt = " << jt_pt << endl;
-		  trUnf->Fill();
-		}
+		trUnf->Fill();
 	    }
 	    else { // Like-Sign dimuons
 	      if (!isPureSDataset && !applyWeight_Corr ) dataSS->add(*cols, ( applyWeight  ? weight->getVal() : 1.0));
@@ -401,6 +417,8 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
 	  }
       }
     }
+
+
     // Close the TChain and all its pointers
     delete Reco_QQ_4mom; delete Reco_QQ_mumi_4mom; delete Reco_QQ_mupl_4mom; delete Gen_QQ_mumi_4mom; delete Gen_QQ_mupl_4mom;
     theTree->Reset(); delete theTree;
@@ -461,7 +479,6 @@ string findMyTree(string FileName)
   if(f->GetListOfKeys()->Contains("hionia")) name = "hionia/myTree";
   else if(f->GetListOfKeys()->Contains("myTree")) name = "myTree";
   else { cout << "[ERROR] myTree was not found in: " << FileName << endl;}
-  //htr = (TTree*)f->Get(name.c_str());
   f->Close(); delete f;
   return name;
 };
@@ -473,7 +490,6 @@ string  findJetTree(string FileName)
   if(f->GetListOfKeys()->Contains("ak4PFJetAnalyzer")) name = "ak4PFJetAnalyzer/t";
   else if(f->GetListOfKeys()->Contains("t")) name = "t";
   else { cout << "[ERROR] t was not found in: " << FileName << endl; }
-  //jtr = (TTree*)f->Get(name.c_str());
   f->Close(); delete f;
   return name;
 };
@@ -485,9 +501,9 @@ bool getTChain(TChain *fChain, TChain *jChain, vector<string> FileNames)
     cout << "[INFO] Adding TFile " << FileName->c_str() << endl;
     fChain->Add(Form("%s/%s", FileName->c_str(),  TreeName.c_str()));
     jChain->Add(Form("%s/%s", FileName->c_str(),  jetTreeName.c_str()));
-    fChain->AddFriend(jChain);
   }
-  if (!fChain) { cout << "[ERROR] fChain was not created, some input files are missing" << endl; return false; }
+  fChain->AddFriend(jChain);
+  if (!fChain || !jChain) { cout << "[ERROR] fChain was not created, some input files are missing" << endl; return false; }
   return true;
 };
 
@@ -524,7 +540,8 @@ void iniBranch(TChain* fChain, bool isMC)
 
   if (isMC)
   {
-    if (fChain->GetBranch("Gen_QQ_4mom")) { fChain->SetBranchStatus("Gen_QQ_4mom",1); }
+    if (fChain->GetBranch("pthat"))            { fChain->SetBranchStatus("pthat",1);            }
+    if (fChain->GetBranch("Gen_QQ_4mom"))      { fChain->SetBranchStatus("Gen_QQ_4mom",1);      }
     if (fChain->GetBranch("Gen_QQ_size"))      { fChain->SetBranchStatus("Gen_QQ_size",1);      }
     if (fChain->GetBranch("Gen_QQ_mupl_4mom")) { fChain->SetBranchStatus("Gen_QQ_mupl_4mom",1); }
     if (fChain->GetBranch("Gen_QQ_mumi_4mom")) { fChain->SetBranchStatus("Gen_QQ_mumi_4mom",1); }
