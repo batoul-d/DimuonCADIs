@@ -281,9 +281,9 @@ void myTree::EffCalc()
 
       TFile* ef (0x0);
       if (isPr)
-	ef = new TFile ("../Fitter/Input/pr_correction_AccEff.root", "RECREATE");
+	ef = new TFile ("Utilities/pr_correction_AccEff.root", "RECREATE");
       else
-	ef = new TFile ("../Fitter/Input/npr_correction_AccEff.root", "RECREATE");
+	ef = new TFile ("Utilities/npr_correction_AccEff.root", "RECREATE");
 
 
       gptef->Write("effVsPt");
@@ -330,7 +330,7 @@ void myTree::EffSyst(int jtPtRange) {
   trNom->SetBranchAddress("jt_rap",&jt_rap);
 
   cout<<"[INFO] Loading the corrections"<<endl;
-  TFile* corrFile = TFile::Open("../Fitter/Input/pr_correction_AccEff.root","READ"); //always use the prompt
+  TFile* corrFile = TFile::Open("Utilities/pr_correction_AccEff.root","READ"); //always use the prompt
 
   string corrName [] = 
     {
@@ -477,7 +477,7 @@ void myTree::EffSyst(int jtPtRange) {
 
 void myTree::EffStatToy(int nToys) {
   // Randomise TEfficiency 100 times. Output will be a TObjArray with 100 TH2
-  TFile* effFile = TFile::Open("../Fitter/Input/pr_correction_AccEff.root","READ"); 
+  TFile* effFile = TFile::Open("Utilities/pr_correction_AccEff.root","READ"); 
   TEfficiency *eff = (TEfficiency*) effFile->Get("hcorr_Jpsi_PP");
 
   TObjArray *arrEffs = new TObjArray(); // Array to store efficiencies
@@ -542,7 +542,7 @@ void myTree::EffStat(int jtPtRange){
 
   TFile *corFile = TFile::Open("toyMC/accEff100Toys.root");
   TObjArray* corArr = (TObjArray*) corFile->Get("accEffArray");
-  TFile *nomFile = TFile::Open("../Fitter/Input/pr_correction_AccEff.root","READ");
+  TFile *nomFile = TFile::Open("Utilities/pr_correction_AccEff.root","READ");
   TEfficiency* nomEff = (TEfficiency*) nomFile->Get("hcorr_Jpsi_PP");
   TH1F* hist016 = NULL;
   TH1F* hist1624 = NULL;
@@ -614,7 +614,7 @@ void myTree::EffStat(int jtPtRange){
 
 void myTree::TnpToy(int min, int max) {
   if (isMc) {
-    TFile* denoFile = TFile::Open("../Fitter/Input/pr_correction_AccEff.root","READ");
+    TFile* denoFile = TFile::Open("Utilities/pr_correction_AccEff.root","READ");
     TH2F *deno = (TH2F*) denoFile->Get("hcorr_his_deno");
 
     TObjArray *trgEff = new TObjArray(); trgEff->SetOwner(kTRUE);
@@ -764,7 +764,7 @@ void myTree::TnpStat(int jtPtRange) {
     }
 
   cout<<"[INFO] Loading the nominal corrections"<<endl;
-  TFile* fNom = TFile::Open("../Fitter/Input/pr_correction_AccEff.root","READ"); 
+  TFile* fNom = TFile::Open("Utilities/pr_correction_AccEff.root","READ"); 
   TEfficiency* corNom = (TEfficiency*) fNom->Get("hcorr_Jpsi_PP");
   TEfficiency* corTemp3 = NULL;
   TEfficiency* corTemp2 = NULL;
@@ -967,9 +967,9 @@ void myTree::EffMisMod(int jtPtRange) {
   trNom->SetBranchAddress("jt_pt",&jt_pt);
   trNom->SetBranchAddress("jt_rap",&jt_rap);
 
-  TFile *nomFile = TFile::Open("../Fitter/Input/pr_correction_AccEff.root","READ");
+  TFile *nomFile = TFile::Open("Utilities/pr_correction_AccEff.root","READ");
   TEfficiency* nomEff = (TEfficiency*) nomFile->Get("hcorr_Jpsi_PP");
-  TFile *nprFile = TFile::Open("../Fitter/Input/npr_correction_AccEff.root","READ");
+  TFile *nprFile = TFile::Open("Utilities/npr_correction_AccEff.root","READ");
   TEfficiency* nprEff = (TEfficiency*) nprFile->Get("hcorr_Jpsi_PP");
 
   TH1F* hist016 = NULL;

@@ -71,7 +71,7 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
   TString corrFileName = "";
   if (OutputFileName.find("_AccEff")!=std::string::npos)
   {
-    corrFileName = "pr_correction_AccEff.root";
+    corrFileName = "correction_AccEff.root";
     corrName = "AccEff";
   }
   else if (OutputFileName.find("_lJpsiEff")!=std::string::npos)
@@ -227,7 +227,7 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
     }
     // creating the tree to use in the unfolding
     string fl = InputFileNames[0];
-    cout<<"[INFO] nb of files "<<InputFileNames.size()<<endl;
+    //cout<<"[INFO] nb of files "<<InputFileNames.size()<<endl;
     if (fl.find("ext")!=std::string::npos && InputFileNames.size()>1) fl = "";
     else if (fl.find("ext")!=std::string::npos && InputFileNames.size()==1) fl = "_ext";
     else if (fl.find("pthat15")!=std::string::npos) fl = "_pthat15";
@@ -238,7 +238,7 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
     string trUnfFileName = Form("TreesForUnfolding/tree_%s%s%s%s%s.root", DSName.c_str(), (isPureSDataset?"_NoBkg":""), (applyWeight_Corr?Form("_%s",corrName.Data()):""), (applyJEC?"_JEC":""), (applyWeight? fl.c_str():""));
 
     TFile * trUnfFile = new TFile (trUnfFileName.c_str(),"RECREATE");
-    trUnfFile->cd();
+    //trUnfFile->cd();
     TTree* trUnf = new TTree ("trUnf","tree used for the unfolding");
     Int_t evtNb; Float_t jp_pt; Float_t jp_rap; Float_t jp_eta; Float_t jp_mass; Float_t jp_phi; Float_t jp_gen_pt; Float_t jp_gen_rap; Float_t jp_gen_eta; Float_t jp_gen_phi; Float_t jt_pt; Float_t jt_rap; Float_t jt_eta; Float_t jt_phi; Float_t jt_ref_pt; Float_t jt_ref_rap; Float_t jt_ref_eta; Float_t jt_ref_phi; Float_t z; Float_t gen_z; Float_t corr_AccEff; Float_t pt_hat; Float_t corr_ptw;
 
@@ -374,8 +374,8 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
 		else if (pthat >= 35 && pthat < 45) corr_ptw = 0.0255525;
 		else if (pthat >= 45) corr_ptw = 0.00749754;
 	      }
-	    weightCorr->setVal(wCorr);
 	    corr_AccEff = wCorr;
+	    weightCorr->setVal(wCorr*corr_ptw);
 	  }
         if (
             ( RecoQQ::areMuonsInAcceptance2015(iQQ) ) &&  // 2015 Global Muon Acceptance Cuts
@@ -424,6 +424,9 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
     theTree->Reset(); delete theTree;
     // Save the tree for the unfolding
     cout<<"[INFO] Saving the tree for the unfolding" << endl;
+    //trUnfFileTemp->Close();
+    //TFile* trUnfFile = new TFile (trUnfFileName.c_str(),"RECREATE");
+    trUnfFile->cd();
     trUnf->Write("treeForUnfolding");
     trUnfFile->Close(); delete trUnfFile;
     // Save all the datasets
@@ -677,8 +680,10 @@ bool readCorrection(const char* file)
   TEfficiency* h = static_cast<TEfficiency*>(froot->FindObjectAny(fname->GetString().Data()));
 
   TString sName(h->GetName());
-  if ( sName.Contains("hcorr") ) 
+  if ( sName.Contains("hcorr") ){ 
   fcorrArray->Add(h->Clone());
+  cout<<"[INFO] Adding "<< sName << " to the correction array"<<endl;
+  }
   else cout << "[WARNING] Correction histo " << sName.Data() << " not according to naming convention. Not included in correction array" << endl;
   }
   
@@ -689,23 +694,14 @@ bool readCorrection(const char* file)
   }
   delete lcorr;
   //froot->Close(); delete froot;
-  //corrHist = static_cast<TH2F*>(froot->FindObjectAny("hcorr_Jpsi_PP"));
-  //TString sName(corrHist->GetName());
-  //if (sName.Contains("hcorr")){
-  //cout<< "[INFO] Adding correction "<<sName<<" to the list of correction"<< endl;
-  //}                                                         
-  //else cout << "[WARNING] Correction histo " << sName.Data() << " not according to naming convention. but anyway taken as the correction" << endl;
   return true;
 };
 
 double getCorr(Double_t rapidity, Double_t pt, Double_t mass, bool isPP)
 {
   const char* collName = "PbPb";
-  const char* massName = "Interp";
+  const char* massName = "Jpsi";
   if (isPP) collName = "PP";
-  //if (mass>3.5) massName = "Psi2S";
-  //else //if (mass<3.3) 
-  massName = "Jpsi";
   
     if (!fcorrArray)
     {
@@ -735,23 +731,28 @@ double getCorr(Double_t rapidity, Double_t pt, Double_t mass, bool isPP)
   corr = corrJpsi;
   }
   else
-  {
-    //TH2* corrHisto = static_cast<TH2*>(fcorrArray->FindObject("ptrapg_clone"));
-    TEfficiency* corrHisto = static_cast<TEfficiency*>(fcorrArray->FindObject(Form("hcorr_Jpsi_%s",collName)));
-    if (!corrHisto)
-      {
-	//std::cout << "[Error] No histogram provided for correction of " << collName << " " << massName << ". Weight set to 1." << std::endl;
-	return 1.;
+    {
+      //TH2* corrHisto = static_cast<TH2*>(fcorrArray->FindObject("ptrapg_clone"));
+      //TF1  *bfrac = new TF1("bfrac","0.360511-0.348448*pow(x,0.5)+0.145442*x+-0.0134963*pow(x,1.5)", 3, 50);// Francois' polynomial
+
+      TF1  *bfrac = new TF1("bfrac","exp(-2.74079+0.211476*pow(x,1)-0.007024*pow(x,2)+(7.90067e-05)*pow(x,3))", 3, 50);
+      TEfficiency* prcorrHisto = static_cast<TEfficiency*>(fcorrArray->FindObject(Form("hcorr_Jpsi_%s_pr",collName)));
+      TEfficiency* nprcorrHisto = static_cast<TEfficiency*>(fcorrArray->FindObject(Form("hcorr_Jpsi_%s_npr",collName)));
+      double prEff = 1.0; double nprEff = 1.0; double bf = 1.0;
+      if (!prcorrHisto || !nprcorrHisto)
+	{
+	  std::cout << "[Error] pr or npr histogram not provided for correction of " << collName << " " << massName << ". Weight set to 1." << std::endl;
+	  return 1.;
+	}
+      if (pt > 3 && pt < 50 && abs(rapidity) < 2.4){
+	prEff = prcorrHisto->GetEfficiency(prcorrHisto->FindFixBin(rapidity, pt));
+	nprEff = nprcorrHisto->GetEfficiency(nprcorrHisto->FindFixBin(rapidity, pt));
+	bf = bfrac->Eval(pt);
+	corr = bf*nprEff + (1-bf)*prEff;
+	//if (bf > 0.5 && bf <0.6) std::cout<<"[INFO] dimuon with pt = "<<pt<<", bfrac = "<<bf<<", prEff = "<<prEff<<", nprEff = "<<nprEff<<", corr = "<<corr<<endl;
       }
-    //cout<< "[INFO] pt = "<<pt<<" rap = "<< rapidity <<endl;
-  if (pt > 3 && pt < 50 && abs(rapidity) < 2.4){
-    //Int_t bin = corrHisto->FindBin(rapidity, pt); //changed one thing: instead of rapidity it was the absolute value
-    //corr = corrHisto->GetBinContent(bin);
-    corr = corrHisto->GetEfficiency(corrHisto->FindFixBin(rapidity, pt));
-    // cout<<"[INFO] corr = "<< corr<< endl;
     }
-    }
-    if(corr<0.00001) corr=1.0;
+  if(corr<0.00001) corr=1.0;
   return corr;
 };
 
