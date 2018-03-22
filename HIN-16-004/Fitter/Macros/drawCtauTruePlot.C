@@ -126,9 +126,9 @@ void drawCtauTruePlot(RooWorkspace& myws,   // Local workspace
     t->DrawLatex(0.21, 0.86-dy, "HLT_HIL1DoubleMu0_v1"); dy+=0.045;
   } 
   if (isPbPb) {t->DrawLatex(0.21, 0.86-dy, Form("Cent. %d-%d%%", (int)(cut.Centrality.Start/2), (int)(cut.Centrality.End/2))); dy+=0.045;}
-  t->DrawLatex(0.21, 0.86-dy, Form("%.2f #leq z^{#mu#mu} < %.2f",cut.dMuon.Zed.Min,cut.dMuon.Zed.Max)); dy+=0.045;
+  if (cut.dMuon.Zed.Max<100) {t->DrawLatex(0.21, 0.86-dy, Form("%.2f < z^{#mu#mu} #leq %.2f",cut.dMuon.Zed.Min,cut.dMuon.Zed.Max)); dy+=0.045;}
   t->DrawLatex(0.21, 0.86-dy, Form("%.1f #leq p_{T}^{#mu#mu} < %.1f GeV/c",cut.dMuon.Pt.Min,cut.dMuon.Pt.Max)); dy+=0.045; 
-  t->DrawLatex(0.21, 0.86-dy, Form("%.1f #leq p_{T}^{jet} < %.1f GeV/c",cut.jet.Pt.Min,cut.jet.Pt.Max)); dy+=0.045;
+  if (cut.jet.Pt.Max<1000) {t->DrawLatex(0.21, 0.86-dy, Form("%.1f #leq p_{T}^{jet} < %.1f GeV/c",cut.jet.Pt.Min,cut.jet.Pt.Max)); dy+=0.045;}
   t->DrawLatex(0.21, 0.86-dy, Form("%.1f #leq |y^{#mu#mu}| < %.1f",cut.dMuon.AbsRap.Min,cut.dMuon.AbsRap.Max)); dy+=1.5*0.045;
 
   // Drawing the Legend

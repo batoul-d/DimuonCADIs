@@ -199,11 +199,11 @@ void drawMassFrom2DPlot(RooWorkspace& myws,   // Local workspace
         t->DrawLatex(0.20, 0.86-dy, "HLT_HIL1DoubleMu0_v1"); dy+=2.0*0.045;
      } 
   }
-  t->DrawLatex(0.5175, 0.86-dy, Form("%g < z^{#mu#mu} < %g",cut.dMuon.Zed.Min,cut.dMuon.Zed.Max)); dy+=0.045;
+  if (cut.dMuon.Zed.Max<100) {t->DrawLatex(0.5175, 0.86-dy, Form("%g < z^{#mu#mu} #leq %g",cut.dMuon.Zed.Min,cut.dMuon.Zed.Max)); dy+=0.045;}
   if (cut.dMuon.AbsRap.Min>0.1) {t->DrawLatex(0.5175, 0.86-dy, Form("%.1f < |y^{#mu#mu}| < %.1f",cut.dMuon.AbsRap.Min,cut.dMuon.AbsRap.Max)); dy+=0.045;}
   else {t->DrawLatex(0.5175, 0.86-dy, Form("|y^{#mu#mu}| < %.1f",cut.dMuon.AbsRap.Max)); dy+=0.045;}
   t->DrawLatex(0.5175, 0.86-dy, Form("%g < p_{T}^{#mu#mu} < %g GeV/c",cut.dMuon.Pt.Min,cut.dMuon.Pt.Max)); dy+=0.045;
-  t->DrawLatex(0.5175, 0.86-dy, Form("%g < p_{T}^{jet} < %g GeV/c",cut.jet.Pt.Min,cut.jet.Pt.Max)); dy+=0.045;
+  if (cut.jet.Pt.Max<1000) {t->DrawLatex(0.5175, 0.86-dy, Form("%g < p_{T}^{jet} < %g GeV/c",cut.jet.Pt.Min,cut.jet.Pt.Max)); dy+=0.045;}
   if (isPbPb) {t->DrawLatex(0.5175, 0.86-dy, Form("Cent. %d-%d%%", (int)(cut.Centrality.Start/2), (int)(cut.Centrality.End/2))); dy+=0.045;}
 
   // Drawing the Legend

@@ -352,11 +352,11 @@ void drawMassPlot(RooWorkspace& myws,   // Local workspace
         t->DrawLatex(0.20, 0.86-dy, "HLT_HIL1DoubleMu0_v1"); dy+=2.0*0.045;
      } 
   }
-  t->DrawLatex(0.5175, 0.86-dy, Form("%g < z^{#mu#mu} < %g",cut.dMuon.Zed.Min,cut.dMuon.Zed.Max)); dy+=0.045;
+  if (cut.dMuon.Zed.Max<100) {t->DrawLatex(0.5175, 0.86-dy, Form("%g < z^{#mu#mu} #leq %g",cut.dMuon.Zed.Min,cut.dMuon.Zed.Max)); dy+=0.045;}
   if (cut.dMuon.AbsRap.Min>0.1) {t->DrawLatex(0.5175, 0.86-dy, Form("%.1f < |y^{#mu#mu}| < %.1f",cut.dMuon.AbsRap.Min,cut.dMuon.AbsRap.Max)); dy+=0.045;}
   else {t->DrawLatex(0.5175, 0.86-dy, Form("|y^{#mu#mu}| < %.1f",cut.dMuon.AbsRap.Max)); dy+=0.045;}
   t->DrawLatex(0.5175, 0.86-dy, Form("%g < p_{T}^{#mu#mu} < %g GeV/c",cut.dMuon.Pt.Min,cut.dMuon.Pt.Max)); dy+=0.045;
-  t->DrawLatex(0.5175, 0.86-dy, Form("%g < p_{T}^{jet} < %g GeV/c",cut.jet.Pt.Min,cut.jet.Pt.Max)); dy+=0.045;
+  if (cut.jet.Pt.Max<1000) {t->DrawLatex(0.5175, 0.86-dy, Form("%g < p_{T}^{jet} < %g GeV/c",cut.jet.Pt.Min,cut.jet.Pt.Max)); dy+=0.045;}
   if (isPbPb) {t->DrawLatex(0.5175, 0.86-dy, Form("Cent. %d-%d%%", (int)(cut.Centrality.Start/2), (int)(cut.Centrality.End/2))); dy+=0.045;}
   if (getMeanPT){
     if (incJpsi) {
@@ -580,24 +580,24 @@ void printMassParameters(RooWorkspace myws, TPad* Pad, bool isPbPb, string pdfNa
     }
     // Print the parameter's results
     bool limClose = false;
-    if ((it->getValV()+3*it->getError() > it->getMax())||(it->getValV()-3*it->getError() < it->getMin())||(abs(it->getError()/it->getValV()) > 0.5)) limClose = true;
+    //if ((it->getValV()+3*it->getError() > it->getMax())||(it->getValV()-3*it->getError() < it->getMin())||(abs(it->getError()/it->getValV()) > 0.5)) limClose = true;
     if(s1=="N"){ 
-      t->DrawLatex(0.20, 0.76-dy, Form((isWeighted?"%s = %.6f#pm%.6f %s":"%s = %.0f#pm%.0f %s "), label.c_str(), it->getValV(), it->getError(), (limClose?"XD":""))); dy+=0.045; 
+      t->DrawLatex(0.20, 0.76-dy, Form((isWeighted?"%s = %.6f#pm%.6f %s":"%s = %.0f#pm%.0f %s "), label.c_str(), it->getValV(), it->getError(), (limClose?"T-T":""))); dy+=0.045; 
     }
     else if(s1.find("#sigma_{2}/#sigma_{1}")!=std::string::npos){ 
-      t->DrawLatex(0.20, 0.76-dy, Form("%s = %.3f#pm%.3f %s ", label.c_str(), it->getValV(), it->getError(), (limClose?"XD":""))); dy+=0.045; 
+      t->DrawLatex(0.20, 0.76-dy, Form("%s = %.3f#pm%.3f %s ", label.c_str(), it->getValV(), it->getError(), (limClose?"T-T":""))); dy+=0.045; 
     }
     else if(s1.find("sigma")!=std::string::npos){ 
-      t->DrawLatex(0.20, 0.76-dy, Form("%s = %.2f#pm%.2f MeV/c^{2} %s", label.c_str(), it->getValV()*1000., it->getError()*1000.,(limClose?"XD":""))); dy+=0.045; 
+      t->DrawLatex(0.20, 0.76-dy, Form("%s = %.2f#pm%.2f MeV/c^{2} %s", label.c_str(), it->getValV()*1000., it->getError()*1000.,(limClose?"T-T":""))); dy+=0.045; 
     }
     else if(s1.find("lambda")!=std::string::npos){ 
-      t->DrawLatex(0.20, 0.76-dy, Form("%s = %.4f#pm%.4f %s", label.c_str(), it->getValV(), it->getError(),(limClose?"XD":""))); dy+=0.045; 
+      t->DrawLatex(0.20, 0.76-dy, Form("%s = %.4f#pm%.4f %s", label.c_str(), it->getValV(), it->getError(),(limClose?"T-T":""))); dy+=0.045; 
     }
     else if(s1.find("m")!=std::string::npos){ 
-      t->DrawLatex(0.20, 0.76-dy, Form("%s = %.5f#pm%.5f GeV/c^{2} %s", label.c_str(), it->getValV(), it->getError(), (limClose?"XD":""))); dy+=0.045; 
+      t->DrawLatex(0.20, 0.76-dy, Form("%s = %.5f#pm%.5f GeV/c^{2} %s", label.c_str(), it->getValV(), it->getError(), (limClose?"T-T":""))); dy+=0.045; 
     }
     else { 
-      t->DrawLatex(0.20, 0.76-dy, Form("%s = %.4f#pm%.4f %s", label.c_str(), it->getValV(), it->getError(),(limClose?"XD":""))); dy+=0.045; 
+      t->DrawLatex(0.20, 0.76-dy, Form("%s = %.4f#pm%.4f %s", label.c_str(), it->getValV(), it->getError(),(limClose?"T-T":""))); dy+=0.045; 
     }
   }
 };

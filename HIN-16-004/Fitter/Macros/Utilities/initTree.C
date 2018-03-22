@@ -275,6 +275,23 @@ Float_t         gendphijt[28];   //[ngen]
 Float_t         gendrjt[28];   //[ngen]
 Int_t           gensubid[28];   //[ngen]
 
+Int_t           Onia2MuMuPAT;
+Int_t           ana_step;
+Int_t           pHBHENoiseFilterResultProducer;
+Int_t           HBHENoiseFilterResult;
+Int_t           HBHENoiseFilterResultRun1;
+Int_t           HBHENoiseFilterResultRun2Loose;
+Int_t           HBHENoiseFilterResultRun2Tight;
+Int_t           HBHEIsoNoiseFilterResult;
+Int_t           pPAprimaryVertexFilter;
+Int_t           pBeamScrapingFilter;
+Int_t           pVertexFilterCutG;
+Int_t           pVertexFilterCutGloose;
+Int_t           pVertexFilterCutGtight;
+Int_t           pVertexFilterCutGplus;
+Int_t           pVertexFilterCutE;
+Int_t           pVertexFilterCutEandG;
+
 
 // List of branches
 TBranch        *b_eventNb;   //!
@@ -531,12 +548,31 @@ TBranch        *b_gendphijt;   //!
 TBranch        *b_gendrjt;   //!
 TBranch        *b_gensubid;   //!
 
+TBranch        *b_Onia2MuMuPAT;   //!                                                                                                                                                                
+TBranch        *b_ana_step;   //!                                                                                                                                                                    
+TBranch        *b_pHBHENoiseFilterResultProducer;   //!                                                                                                                                              
+TBranch        *b_HBHENoiseFilterResult;   //!                                                                                                                                                       
+TBranch        *b_HBHENoiseFilterResultRun1;   //!                                                                                                                                                   
+TBranch        *b_HBHENoiseFilterResultRun2Loose;   //!                                                                                                                                              
+TBranch        *b_HBHENoiseFilterResultRun2Tight;   //!                                                                                                                                              
+TBranch        *b_HBHEIsoNoiseFilterResult;   //!                                                                                                                                                    
+TBranch        *b_pPAprimaryVertexFilter;   //!                                                                                                                                                      
+TBranch        *b_pBeamScrapingFilter;   //!                                                                                                                                                         
+TBranch        *b_pVertexFilterCutG;   //!                                                                                                                                                           
+TBranch        *b_pVertexFilterCutGloose;   //!                                                                                                                                                      
+TBranch        *b_pVertexFilterCutGtight;   //!                                                                                                                                                      
+TBranch        *b_pVertexFilterCutGplus;   //!                                                                                                                                                       
+TBranch        *b_pVertexFilterCutE;   //!                                                                                                                                                           
+TBranch        *b_pVertexFilterCutEandG;   //!
+
 
 string TreeName("hionia/myTree");
 string jetTreeName("ak4PFJetAnalyzer/t");
+string skimTreeName("skimanalysis/HltTree");
 
 TTree *htr;
 TTree *jtr;
+TTree *str;
 
 void initTree(TChain *tree)
 {
@@ -820,5 +856,23 @@ void initTree(TChain *tree)
   if (fChain->GetBranch("gendphijt")) fChain->SetBranchAddress("gendphijt", gendphijt, &b_gendphijt);
   if (fChain->GetBranch("gendrjt")) fChain->SetBranchAddress("gendrjt", gendrjt, &b_gendrjt);
   if (fChain->GetBranch("gensubid")) fChain->SetBranchAddress("gensubid", gensubid, &b_gensubid);
+
+  //skimanalysis tree
+  if (fChain->GetBranch("Onia2MuMuPAT")) fChain->SetBranchAddress("Onia2MuMuPAT", &Onia2MuMuPAT, &b_Onia2MuMuPAT);
+  if (fChain->GetBranch("ana_step")) fChain->SetBranchAddress("ana_step", &ana_step, &b_ana_step);
+  if (fChain->GetBranch("pHBHENoiseFilterResultProducer")) fChain->SetBranchAddress("pHBHENoiseFilterResultProducer", &pHBHENoiseFilterResultProducer, &b_pHBHENoiseFilterResultProducer);
+  if (fChain->GetBranch("HBHENoiseFilterResult")) fChain->SetBranchAddress("HBHENoiseFilterResult", &HBHENoiseFilterResult, &b_HBHENoiseFilterResult);
+  if (fChain->GetBranch("HBHENoiseFilterResultRun1")) fChain->SetBranchAddress("HBHENoiseFilterResultRun1", &HBHENoiseFilterResultRun1, &b_HBHENoiseFilterResultRun1);
+  if (fChain->GetBranch("HBHENoiseFilterResultRun2Loose")) fChain->SetBranchAddress("HBHENoiseFilterResultRun2Loose", &HBHENoiseFilterResultRun2Loose, &b_HBHENoiseFilterResultRun2Loose);
+  if (fChain->GetBranch("HBHENoiseFilterResultRun2Tight")) fChain->SetBranchAddress("HBHENoiseFilterResultRun2Tight", &HBHENoiseFilterResultRun2Tight, &b_HBHENoiseFilterResultRun2Tight);
+  if (fChain->GetBranch("HBHEIsoNoiseFilterResult")) fChain->SetBranchAddress("HBHEIsoNoiseFilterResult", &HBHEIsoNoiseFilterResult, &b_HBHEIsoNoiseFilterResult);
+  if (fChain->GetBranch("pPAprimaryVertexFilter")) fChain->SetBranchAddress("pPAprimaryVertexFilter", &pPAprimaryVertexFilter, &b_pPAprimaryVertexFilter);
+  if (fChain->GetBranch("pBeamScrapingFilter")) fChain->SetBranchAddress("pBeamScrapingFilter", &pBeamScrapingFilter, &b_pBeamScrapingFilter);
+  if (fChain->GetBranch("pVertexFilterCutG")) fChain->SetBranchAddress("pVertexFilterCutG", &pVertexFilterCutG, &b_pVertexFilterCutG);
+  if (fChain->GetBranch("pVertexFilterCutGloose")) fChain->SetBranchAddress("pVertexFilterCutGloose", &pVertexFilterCutGloose, &b_pVertexFilterCutGloose);
+  if (fChain->GetBranch("pVertexFilterCutGplus")) fChain->SetBranchAddress("pVertexFilterCutGtight", &pVertexFilterCutGtight, &b_pVertexFilterCutGtight);
+  if (fChain->GetBranch("pVertexFilterCutGplus")) fChain->SetBranchAddress("pVertexFilterCutGplus", &pVertexFilterCutGplus, &b_pVertexFilterCutGplus);
+  if (fChain->GetBranch("pVertexFilterCutE")) fChain->SetBranchAddress("pVertexFilterCutE", &pVertexFilterCutE, &b_pVertexFilterCutE);
+  if (fChain->GetBranch("pVertexFilterCutEandG")) fChain->SetBranchAddress("pVertexFilterCutEandG", &pVertexFilterCutEandG, &b_pVertexFilterCutEandG);
 }
 #endif // #ifndef initTree_C

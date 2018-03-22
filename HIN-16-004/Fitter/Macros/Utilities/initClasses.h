@@ -638,7 +638,7 @@ int importDataset(RooWorkspace& myws, const RooWorkspace& inputWS, struct KinCut
   }
   string indMuonRap     = Form("(%.6f <= abs(rap) && abs(rap) < %.6f)",      cut.dMuon.AbsRap.Min,   cut.dMuon.AbsRap.Max);
   string indMuonPt      = Form("(%.6f <= pt && pt < %.6f)",                  cut.dMuon.Pt.Min,       cut.dMuon.Pt.Max);
-  string indMuonZed     = Form("(%.2f <= zed && zed < %.2f)",                cut.dMuon.Zed.Min,      cut.dMuon.Zed.Max);
+  string indMuonZed     = Form("(%.2f < zed && zed <= %.2f)",                cut.dMuon.Zed.Min,      cut.dMuon.Zed.Max);
   string indMuonCtau    = Form("(%.6f < ctau && ctau <= %.6f)",              cut.dMuon.ctau.Min,     cut.dMuon.ctau.Max); 
   if(cut.dMuon.ctauCut!=""){ indMuonCtau = cut.dMuon.ctauCut; }
   string indMuonCtauErr = Form("(%.12f < ctauErr && ctauErr < %.12f)",       cut.dMuon.ctauErr.Min,  cut.dMuon.ctauErr.Max);
@@ -794,7 +794,7 @@ int importDataset(RooWorkspace& myws, const RooWorkspace& inputWS, struct KinCut
     myws.var("ctauN")->setMax(cut.dMuon.ctauN.Max);
   }
   cout << "[INFO] Analyzing bin: " << Form(
-                                           "%.3f < z < %.3f,%.3f < pt(JPsi) < %.3f, %.3f < rap(JPsi) < %.3f, %.3f < pt(jet) < %.3f, %.3f < rap(jet) < %.3f, %d < cent < %d", 
+                                           "%.3f < z <= %.3f,%.3f < pt(JPsi) < %.3f, %.3f < rap(JPsi) < %.3f, %.3f < pt(jet) < %.3f, %.3f < rap(jet) < %.3f, %d < cent < %d", 
 					   cut.dMuon.Zed.Min,
 					   cut.dMuon.Zed.Max,
                                            cut.dMuon.Pt.Min,

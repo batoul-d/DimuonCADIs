@@ -27,7 +27,8 @@ double drmin = 0.5;
 int matchGR= 0;
 string  findMyTree(string FileName);
 string  findJetTree(string FileName);
-bool    getTChain(TChain* fChain, TChain* jChain, vector<string> FileNames);
+string  findSkimTree(string FileName);
+bool    getTChain(TChain* fChain, TChain* jChain, TChain* sChain, vector<string> FileNames);
 void    iniBranch(TChain* fChain,bool isMC=false);
 bool    checkDS(RooDataSet* DS, string DSName);
 double  deltaR(TLorentzVector* GenMuon, TLorentzVector* RecoMuon);
@@ -115,10 +116,12 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
   if (createDS) {
     cout << "[INFO] Creating " << (isPureSDataset ? "pure signal " : "") << "RooDataSet for " << DSName << endl;
     TreeName = findMyTree(InputFileNames[0]); if(TreeName==""){return false;}
-    jetTreeName = findJetTree(InputFileNames[0]); if(jetTreeName==""){return false;}
+    jetTreeName = findJetTree(InputFileNames[0]); //if(jetTreeName==""){return false;}
+    skimTreeName = findSkimTree(InputFileNames[0]);
     TChain* theTree = new TChain(TreeName.c_str(),"");
     TChain* jetTree = new TChain(jetTreeName.c_str(),"");
-    if(!getTChain(theTree, jetTree, InputFileNames)){ return false; }     // Import files to TChain
+    TChain* skimTree = new TChain(skimTreeName.c_str(),"");
+    if(!getTChain(theTree, jetTree, skimTree, InputFileNames)){ return false; }     // Import files to TChain
     initTree(theTree);                         // Initialize the Tree
     iniBranch(theTree,isMC);                   // Initialize the Branches
 
@@ -269,12 +272,16 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
       trUnf->Branch("gen_z", &gen_z, "gen_z/F");
     }
 
-    
+    //double cutpass [] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+
     cout << "[INFO] Starting to process " << nentries << " nentries" << endl;
     for (Long64_t jentry=0; jentry<nentries;jentry++) {
+
+      if (jentry%1000000==0) cout << "[INFO] " << jentry << "/" << nentries <<endl;//", runNb = " <<runNb<< endl;
       
-      if (jentry%1000000==0) cout << "[INFO] " << jentry << "/" << nentries << endl;
-      
+      pPAprimaryVertexFilter=1;
+      pBeamScrapingFilter=1;
+
       if (theTree->LoadTree(jentry)<0) break;
       if (theTree->GetTreeNumber()!=fCurrent) {
         fCurrent = theTree->GetTreeNumber();
@@ -288,11 +295,17 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
         Gen_QQ_mupl_4mom->Clear();
       }
       theTree->GetEntry(jentry);
-      
+
+      //if (runNb!=262327) continue;
+
       for (int iQQ=0; iQQ<Reco_QQ_size; iQQ++) {
+	//cutpass[13]++;
 	drmin= 0.5;
-	zed->setVal(-1);
-	z=-1;
+	zed->setVal(100);
+	z=100;
+	ptJet->setVal(1);
+	rapJet->setVal(100);
+
         TLorentzVector *RecoQQ4mom = (TLorentzVector*) Reco_QQ_4mom->At(iQQ);
         mass->setVal(RecoQQ4mom->M());
         if (theTree->GetBranch("Reco_QQ_ctau3D")) { ctau->setVal(Reco_QQ_ctau3D[iQQ]); }
@@ -313,8 +326,10 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
 	jp_mass = RecoQQ4mom->M();
 	pt_hat = pthat;
 	corr_ptw = 1;
+	///////////////pay attention to remove this
+	//nref=0;
 	for (Long64_t ijet=0; ijet<nref; ijet++)
-	  {
+	{
 	    TLorentzVector v_jet;
 	    v_jet.SetPtEtaPhiM(jtpt[ijet], jteta[ijet], jtphi[ijet], jtm[ijet]);
 	    if (RecoQQ4mom->DeltaR (v_jet)<=drmin)
@@ -369,55 +384,63 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
 	    //// add pt weights for prompt MC
 	    if (applyWeight)
 	      {
-		if (pthat >= 15 && pthat < 25)  corr_ptw = 0.562375;
-		else if (pthat >= 25 && pthat < 35) corr_ptw = 0.116431;
-		else if (pthat >= 35 && pthat < 45) corr_ptw = 0.0255525;
-		else if (pthat >= 45) corr_ptw = 0.00749754;
+		if (pthat >= 15 && pthat < 25)  corr_ptw = 0.292892;
+		else if (pthat >= 25 && pthat < 35) corr_ptw = 0.0414401;
+		else if (pthat >= 35 && pthat < 45) corr_ptw = 0.00854792;
+		else if (pthat >= 45) corr_ptw = 0.00289359;
 	      }
 	    corr_AccEff = wCorr;
 	    weightCorr->setVal(wCorr*corr_ptw);
 	  }
         if (
-            ( RecoQQ::areMuonsInAcceptance2015(iQQ) ) &&  // 2015 Global Muon Acceptance Cuts
-            ( RecoQQ::passQualityCuts2015(iQQ)      ) &&  // 2015 Soft Global Muon Quality Cuts
-            ( isPbPb ? (RecoQQ::isTriggerMatch(iQQ,triggerIndex_PbPb) || (usePeriPD ? RecoQQ::isTriggerMatch(iQQ,HI::HLT_HIL1DoubleMu0_2HF0_Cent30100_v1) : (RecoQQ::isTriggerMatch(iQQ,HI::HLT_HIL1DoubleMu0_2HF_v1) || RecoQQ::isTriggerMatch(iQQ,HI::HLT_HIL1DoubleMu0_2HF0_v1)))) :
-              RecoQQ::isTriggerMatch(iQQ, triggerIndex_PP) )     // if PbPb && !periPD then (HLT_HIL1DoubleMu0_v1 || HLT_HIL1DoubleMu0_2HF_v1)
+            ( RecoQQ::areMuonsInAcceptance2015(iQQ/*,cutpass*/) ) &&  // 2015 Global Muon Acceptance Cuts
+            ( RecoQQ::passQualityCuts2015(iQQ/*, cutpass*/)) &&  // 2015 Soft Global Muon Quality Cuts
+            ( isPbPb ? (RecoQQ::isTriggerMatch(iQQ,triggerIndex_PbPb/*, cutpass*/) || (usePeriPD ? RecoQQ::isTriggerMatch(iQQ,HI::HLT_HIL1DoubleMu0_2HF0_Cent30100_v1/*, cutpass*/) : (RecoQQ::isTriggerMatch(iQQ,HI::HLT_HIL1DoubleMu0_2HF_v1/*, cutpass*/) || RecoQQ::isTriggerMatch(iQQ,HI::HLT_HIL1DoubleMu0_2HF0_v1/*, cutpass*/)))) :
+              RecoQQ::isTriggerMatch(iQQ, triggerIndex_PP/*, cutpass*/) )     // if PbPb && !periPD then (HLT_HIL1DoubleMu0_v1 || HLT_HIL1DoubleMu0_2HF_v1)
             )
-	  
 	  {
-	    if (Reco_QQ_sign[iQQ]==0) { // Opposite-Sign dimuons
-	      if (isMC && isPureSDataset && isMatchedRecoDiMuon(iQQ)) {
-		if (applyWeight_Corr)
-		  dataOSNoBkg->add(*cols, weightCorr->getVal()); //Signal-only dimuons
-		else 
-		  dataOSNoBkg->add(*cols, (applyWeight ? weight->getVal() : 1.0)); // Signal-only dimuons
-		TLorentzVector *GenQQ4mom = (TLorentzVector*) Gen_QQ_4mom->At(matchGR);
-		jp_gen_pt = GenQQ4mom->Pt();
-		jp_gen_rap = GenQQ4mom->Rapidity();
-		jp_gen_eta = GenQQ4mom->Eta();
-		jp_gen_phi = GenQQ4mom->Phi();
-		gen_z = jp_gen_pt/jt_ref_pt;
-		if (gen_z > 1 && gen_z <= 1.000001) gen_z = 0.9999999;
+	    if (pPAprimaryVertexFilter)
+	      { //cutpass[10]++;
+		if (pBeamScrapingFilter)
+		  { //cutpass[11]++;
+		    if (Reco_QQ_sign[iQQ]==0) { // Opposite-Sign dimuons
+		      //cutpass[12]++;
+		      if (isMC && isPureSDataset && isMatchedRecoDiMuon(iQQ)) {
+			if (applyWeight_Corr)
+			  dataOSNoBkg->add(*cols, weightCorr->getVal()); //Signal-only dimuons
+			else 
+			  dataOSNoBkg->add(*cols, (applyWeight ? weight->getVal() : 1.0)); // Signal-only dimuons
+			TLorentzVector *GenQQ4mom = (TLorentzVector*) Gen_QQ_4mom->At(matchGR);
+			jp_gen_pt = GenQQ4mom->Pt();
+			jp_gen_rap = GenQQ4mom->Rapidity();
+			jp_gen_eta = GenQQ4mom->Eta();
+			jp_gen_phi = GenQQ4mom->Phi();
+			gen_z = jp_gen_pt/jt_ref_pt;
+			if (gen_z > 1 && gen_z <= 1.000001) gen_z = 0.9999999;
+		      }
+		      else if (isMC && isPureSDataset && !isMatchedRecoDiMuon(iQQ))
+			gen_z = -1;
+		      
+		      else if (applyWeight_Corr) dataOS->add(*cols,weightCorr->getVal()); //Signal and background dimuons
+		      else dataOS->add(*cols, ( applyWeight ? weight->getVal() : 1.0)); //Signal and background dimuons
+		      evtNb = jentry;
+		      if (isMC && isPureSDataset && gen_z >= 0 && z < 100)
+			trUnf->Fill();
+		      
+		      else if (!isPureSDataset && z < 100)
+			trUnf->Fill();
+		    }
+		    else { // Like-Sign dimuons
+		      if (!isPureSDataset && !applyWeight_Corr ) dataSS->add(*cols, ( applyWeight  ? weight->getVal() : 1.0));
+		    }
+		  }
 	      }
-	      else if (isMC && isPureSDataset && !isMatchedRecoDiMuon(iQQ))
-		  gen_z = -1;
-
-	      else if (applyWeight_Corr) dataOS->add(*cols,weightCorr->getVal()); //Signal and background dimuons
-	      else dataOS->add(*cols, ( applyWeight ? weight->getVal() : 1.0)); //Signal and background dimuons
-	      evtNb = jentry;
-	      if (isMC && isPureSDataset && gen_z >= 0 && z > -1)
-		trUnf->Fill();
-
-	      else if (!isPureSDataset && z > -1)
-		trUnf->Fill();
-	    }
-	    else { // Like-Sign dimuons
-	      if (!isPureSDataset && !applyWeight_Corr ) dataSS->add(*cols, ( applyWeight  ? weight->getVal() : 1.0));
-	    }
 	  }
       }
     }
-
+    //int b = sizeof(cutpass)/sizeof(double);
+    //for (int a = 0; a < b;a++)
+    //cout<<"[COMP INFO] cutpass["<<a<<"] = "<<cutpass[a]<<endl;
 
     // Close the TChain and all its pointers
     delete Reco_QQ_4mom; delete Reco_QQ_mumi_4mom; delete Reco_QQ_mupl_4mom; delete Gen_QQ_mumi_4mom; delete Gen_QQ_mupl_4mom;
@@ -497,16 +520,32 @@ string  findJetTree(string FileName)
   return name;
 };
 
-bool getTChain(TChain *fChain, TChain *jChain, vector<string> FileNames)
+string  findSkimTree(string FileName)
+{
+  TFile *f = TFile::Open(FileName.c_str(), "READ");
+  string name = "";
+  if(f->GetListOfKeys()->Contains("skimanalysis")) name = "skimanalysis/HltTree";
+  else if(f->GetListOfKeys()->Contains("HltTree")) name = "HltTree";
+  else { cout << "[ERROR] HltTree was not found in: " << FileName << endl; }
+  f->Close(); delete f;
+  return name;
+};
+
+bool getTChain(TChain *fChain, TChain *jChain, TChain *sChain, vector<string> FileNames)
 {
   cout << "[INFO] Extrating TTree " << TreeName.c_str() << endl;
   for (vector<string>::iterator FileName = FileNames.begin() ; FileName != FileNames.end(); ++FileName){
     cout << "[INFO] Adding TFile " << FileName->c_str() << endl;
     fChain->Add(Form("%s/%s", FileName->c_str(),  TreeName.c_str()));
     jChain->Add(Form("%s/%s", FileName->c_str(),  jetTreeName.c_str()));
+    sChain->Add(Form("%s/%s", FileName->c_str(),  skimTreeName.c_str()));
   }
-  fChain->AddFriend(jChain);
-  if (!fChain || !jChain) { cout << "[ERROR] fChain was not created, some input files are missing" << endl; return false; }
+  if (jChain)
+    fChain->AddFriend(jChain);
+  if (sChain)
+    fChain->AddFriend(sChain);
+
+  if (!fChain /*|| !jChain*/) { cout << "[ERROR] fChain was not created, some input files are missing" << endl; return false; }
   return true;
 };
 
@@ -523,6 +562,7 @@ void iniBranch(TChain* fChain, bool isMC)
     }
   fChain->SetBranchStatus("*",0);
   RecoQQ::iniBranches(fChain);
+  if (fChain->GetBranch("runNb"))             { fChain->SetBranchStatus("runNb",1);             }
   if (fChain->GetBranch("Centrality"))        { fChain->SetBranchStatus("Centrality",1);        }
   if (fChain->GetBranch("Reco_QQ_size"))      { fChain->SetBranchStatus("Reco_QQ_size",1);      }
   if (fChain->GetBranch("Reco_QQ_sign"))      { fChain->SetBranchStatus("Reco_QQ_sign",1);      }
@@ -540,6 +580,8 @@ void iniBranch(TChain* fChain, bool isMC)
   if (fChain->GetBranch("jty"))               { fChain->SetBranchStatus("jty",1);               }
   if (fChain->GetBranch("jtphi"))             { fChain->SetBranchStatus("jtphi",1);             }
   if (fChain->GetBranch("jtm"))               { fChain->SetBranchStatus("jtm",1);               }
+  if (fChain->GetBranch("pPAprimaryVertexFilter")){ fChain->SetBranchStatus("pPAprimaryVertexFilter",1);}
+  if (fChain->GetBranch("pBeamScrapingFilter")){ fChain->SetBranchStatus("pBeamScrapingFilter",1);}
 
   if (isMC)
   {

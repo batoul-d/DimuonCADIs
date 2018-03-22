@@ -491,6 +491,7 @@ namespace RecoQQ {
     Bool_t cond = true;
     cond = cond && ( (HLTriggers&((ULong64_t)pow(2, TriggerBit))) == ((ULong64_t)pow(2, TriggerBit)) );
     cond = cond && ( (Reco_QQ_trig[iRecoQQ]&((ULong64_t)pow(2, TriggerBit))) == ((ULong64_t)pow(2, TriggerBit)) );
+    //if (cond) cutpass[9]++;
     return cond;
   };
   
@@ -521,6 +522,7 @@ namespace RecoQQ {
   {
     TLorentzVector *RecoQQmupl = (TLorentzVector*) Reco_QQ_mupl_4mom->At(iRecoQQ);
     TLorentzVector *RecoQQmumi = (TLorentzVector*) Reco_QQ_mumi_4mom->At(iRecoQQ);
+
     return ( isGlobalMuonInAccept2015(RecoQQmupl) && isGlobalMuonInAccept2015(RecoQQmumi) );
   };
   
@@ -547,7 +549,7 @@ namespace RecoQQ {
     cond = cond && (fabs(Reco_QQ_mupl_dz[iRecoQQ]) < 20.);
     
     cond = cond && (Reco_QQ_VtxProb[iRecoQQ] > 0.01);
-    
+
     return cond;
   };
   
