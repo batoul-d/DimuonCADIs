@@ -117,10 +117,11 @@ map<anabin, syst> readSyst_all(const char* collSystem, const char* poiname, cons
     filelist.push_back(Form("%sSystematics/csv/syst_%s_%s_PP_ctauTrue.csv",sprependPath.Data(),snameTag.Data(),spoiname.Data()));
     filelist.push_back(Form("%sSystematics/csv/syst_%s_%s_PP_ctauRes.csv",sprependPath.Data(),snameTag.Data(),spoiname.Data()));
     filelist.push_back(Form("%sSystematics/csv/syst_%s_%s_PP_ctauBkg.csv",sprependPath.Data(),snameTag.Data(),spoiname.Data()));
-    filelist.push_back(Form("%sSystematics/csv/syst_%s_%s_PP_jetEnergyScale.csv",sprependPath.Data(),snameTag.Data(),spoiname.Data()));
-    filelist.push_back(Form("%sSystematics/csv/syst_%s_%s_PP_jetEnergyRes.csv",sprependPath.Data(),snameTag.Data(),spoiname.Data()));
-    if (readEffSyst)
+    //filelist.push_back(Form("%sSystematics/csv/syst_%s_%s_PP_jetEnergyScale.csv",sprependPath.Data(),snameTag.Data(),spoiname.Data()));
+    //filelist.push_back(Form("%sSystematics/csv/syst_%s_%s_PP_jetEnergyRes.csv",sprependPath.Data(),snameTag.Data(),spoiname.Data()));
+    if (readEffSyst){
       filelist.push_back(Form("%sSystematics/csv/syst_%s_%s_PP_fullAccEff.csv",sprependPath.Data(),snameTag.Data(),spoiname.Data()));
+    }
   }
   else if (readEffSyst)
   {

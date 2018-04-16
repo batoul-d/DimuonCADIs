@@ -27,7 +27,7 @@ void plotSystsAll(const char* apoiname, bool plotEffSyst, bool plotSigSyst, bool
   //mid rap
   nameTag = "midJtPt_016";
   midBins = true;
-  plotSysts(anabin(0.4,1.0,0,1.6,6.5,35,0,200),"z","PP",plotEffSyst,plotSigSyst,plotGlobalSysts);
+  plotSysts(anabin(0.44,1.0,0,1.6,6.5,35,0,200),"z","PP",plotEffSyst,plotSigSyst,plotGlobalSysts);
   //forward
   nameTag = "midJtPt_1624";
   midBins = false;
@@ -37,7 +37,7 @@ void plotSystsAll(const char* apoiname, bool plotEffSyst, bool plotSigSyst, bool
   //mid rap                                                                                                                                                                              
   nameTag = "lowJtPt_016";
   midBins = true;
-  plotSysts(anabin(0.4,1.0,0,1.6,6.5,35,0,200),"z","PP",plotEffSyst,plotSigSyst,plotGlobalSysts);
+  plotSysts(anabin(0.44,1.0,0,1.6,6.5,35,0,200),"z","PP",plotEffSyst,plotSigSyst,plotGlobalSysts);
   //forward                                                                                                                           
   nameTag = "lowJtPt_1624";
   midBins = false;
@@ -47,7 +47,7 @@ void plotSystsAll(const char* apoiname, bool plotEffSyst, bool plotSigSyst, bool
   //mid rap                                                                                                                                                                                           
   nameTag = "highJtPt_016";
   midBins = true;
-  plotSysts(anabin(0.4,1.0,0,1.6,6.5,35,0,200),"z","PP",plotEffSyst,plotSigSyst,plotGlobalSysts);
+  plotSysts(anabin(0.44,1.0,0,1.6,6.5,35,0,200),"z","PP",plotEffSyst,plotSigSyst,plotGlobalSysts);
   //forward                                                                                                                                                                                          
   nameTag = "highJtPt_1624";
   midBins = false;
@@ -113,10 +113,11 @@ void plotSysts(anabin thebin, string xaxis, string collTag, bool plotEffSyst, bo
     tags.push_back(systs.back().begin()->second.name);
     systs.push_back(readSyst(Form("csv/syst_%s_%s_PP_ctauBkg.csv",nameTag.Data(),spoiname.Data())));
     tags.push_back(systs.back().begin()->second.name);
-    systs.push_back(readSyst(Form("csv/syst_%s_%s_PP_jetEnergyScale.csv",nameTag.Data(),spoiname.Data())));
-    tags.push_back(systs.back().begin()->second.name);
-    systs.push_back(readSyst(Form("csv/syst_%s_%s_PP_jetEnergyRes.csv",nameTag.Data(),spoiname.Data())));
-    tags.push_back(systs.back().begin()->second.name);
+    //systs.push_back(readSyst(Form("csv/syst_%s_%s_PP_jetEnergyScale.csv",nameTag.Data(),spoiname.Data())));
+    //tags.push_back(systs.back().begin()->second.name);
+    //systs.push_back(readSyst(Form("csv/syst_%s_%s_PP_jetEnergyRes.csv",nameTag.Data(),spoiname.Data())));
+    //tags.push_back(systs.back().begin()->second.name);
+
 //    systs.push_back(readSyst("csv/syst_PP_fulltnp.csv"));
 //    tags.push_back(systs.back().begin()->second.name);
 //    systs.push_back(readSyst("csv/syst_PP_muidtnp.csv"));
@@ -168,8 +169,8 @@ void plotSysts(anabin thebin, string xaxis, string collTag, bool plotEffSyst, bo
   //if (bins16004) sb = allbins16004();
   //else sb = allbins();
   cout<<"[INFO] setting the bins"<<endl;
-  if (midBins) sb = midbinsXXXXX();
-  else sb = forbinsXXXXX();
+  if (midBins) sb = midbins18012();
+  else sb = forbins18012();
   for (unsigned int i=0; i<systs.size(); i++) {
     map<anabin, syst> thesyst = systs[i];
     vector<double> x, y, dx, dy;
@@ -232,5 +233,5 @@ void plotSysts(anabin thebin, string xaxis, string collTag, bool plotEffSyst, bo
              //Form("z%i%i_pt%i%i_rap%i%i_cent%i%i_%s",(int)zmin*10,(int)zmax*10,(int)ptmin*10,(int)ptmax*10,(int)rapmin*10,(int)rapmax*10,centmin,centmax,nameTag.Data()),
 	     Form("z%i%i_pt%i%i_rap%i%i%s_%s",(int)(zmin*10),(int)(zmax*10),(int)(ptmin*10),(int)(ptmax*10),(int)(rapmin*10),(int)(rapmax*10), plotSigSyst?(plotEffSyst?"_SigEff":"_Sig"):(plotEffSyst?"_Eff":""), nameTag.Data()),
              //Form("%.1f<z<%.1f, %.1f<|y|<%.1f, %.1f<p_{T}<%.1f, %i-%i%s",zmin,zmax,rapmin,rapmax,ptmin,ptmax,centmin/2,centmax/2,"%"));
-	     Form("%.1f<z<%.1f, %.1f<|y|<%.1f, %.1f<p_{T}<%.1f",zmin,zmax,rapmin,rapmax,ptmin,ptmax));
+	     Form("%.2f<z<%.2f, %.1f<|y|<%.1f, %.1f<p_{T}<%.1f",zmin,zmax,rapmin,rapmax,ptmin,ptmax));
 }
