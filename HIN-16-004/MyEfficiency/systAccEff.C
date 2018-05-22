@@ -260,8 +260,10 @@ void oniaTree::AccEffStat(string caseLabel = "") {
 
   TH1F* temp = NULL;
 
+  int jmax =5;
+  if (isMid) jmax = 6;
   if (jtPtmin > 10) {
-    for (int j=1; j<5; j++)
+    for (int j=1; j<jmax; j++)
       {
 	vCount.clear();
 	for (int i=0; i<=100; i++) {
@@ -960,14 +962,15 @@ void oniaTree::FullAccEffSyst(string caseLabel) {
 
 void oniaTree::AccEffSyst_all() {
 
-  string systName [] = {"midJtPt_016","midJtPt_1624", "lowJtPt_016","lowJtPt_1624", "highJtPt_016","highJtPt_1624", "NoJets_total"};
+  //string systName [] = {"midJtPt_016","midJtPt_1624", "lowJtPt_016","lowJtPt_1624", "highJtPt_016","highJtPt_1624", "NoJets_total"};
+  string systName [] = {"midJtPt_016", "lowJtPt_016", "highJtPt_016"};
   int systN = sizeof(systName)/sizeof(systName[0]);
 
   for (int i=0; i<systN; i++) {
     cout<<"--------[INFO] Sarting TnpSyst for "<<systName[i]<<"----------"<<endl;
     //TnpSyst(systName[i]);
     cout<<"--------[INFO] Sarting AccEffStat for "<<systName[i]<<"----------"<<endl;
-    //AccEffStat(systName[i]);
+    AccEffStat(systName[i]);
     cout<<"--------[INFO] Sarting TnpStat for "<<systName[i]<<"----------"<<endl;
     //TnpStat(systName[i]);
     cout<<"--------[INFO] Sarting AccEffMisMod for "<<systName[i]<<"----------"<<endl;

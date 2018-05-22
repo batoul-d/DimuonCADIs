@@ -28,7 +28,7 @@ void drawMassFrom2DPlot(RooWorkspace& myws,   // Local workspace
                   bool paperStyle=false // if true, print less info
                   ) 
 {
-
+  bool pasStyle = true;
   RooMsgService::instance().getStream(0).removeTopic(Caching);  
   RooMsgService::instance().getStream(1).removeTopic(Caching);
   RooMsgService::instance().getStream(0).removeTopic(Plotting);
@@ -65,6 +65,7 @@ void drawMassFrom2DPlot(RooWorkspace& myws,   // Local workspace
   bool isWeighted = myws.data(dsOSName.c_str())->isWeighted();
   bool isMC = (DSTAG.find("MC")!=std::string::npos);
 
+  if (pasStyle) myws.var("invMass")->setUnit("GeV");
   double normDSTot   = 1.0;  if (myws.data(dsOSNameCut.c_str()))  { normDSTot   = myws.data(dsOSName.c_str())->sumEntries()/myws.data(dsOSNameCut.c_str())->sumEntries();  }
   
   // Create the main plot of the fit
@@ -83,14 +84,14 @@ void drawMassFrom2DPlot(RooWorkspace& myws,   // Local workspace
         myws.pdf(pdfTotName.c_str())->plotOn(frame,Name("JPSIPR"),Components(RooArgSet(*myws.pdf(Form("pdfCTAUMASS_JpsiPR_%s", (isPbPb?"PbPb":"PP"))), *myws.pdf(Form("pdfCTAUMASS_Bkg_%s", (isPbPb?"PbPb":"PP"))))),
                                              ProjWData(RooArgSet(*myws.var("ctauErr")), *myws.data(dsOSName.c_str()), kTRUE),
                                              Normalization(normDSTot, RooAbsReal::NumEvent),
-                                             LineColor(kRed+3), LineStyle(1), Precision(1e-4), NumCPU(32)
+                                             LineColor(pasStyle?kRed+2:kRed+3), LineStyle(1), Precision(1e-4), NumCPU(32)
                                              );
       }
       if ( myws.pdf(Form("pdfCTAUMASS_JpsiNoPR_%s", (isPbPb?"PbPb":"PP"))) ) {
         myws.pdf(pdfTotName.c_str())->plotOn(frame,Name("JPSINOPR"),Components(RooArgSet(*myws.pdf(Form("pdfCTAUMASS_JpsiNoPR_%s", (isPbPb?"PbPb":"PP"))), *myws.pdf(Form("pdfCTAUMASS_Bkg_%s", (isPbPb?"PbPb":"PP"))))),
                                              ProjWData(RooArgSet(*myws.var("ctauErr")), *myws.data(dsOSName.c_str()), kTRUE),
                                              Normalization(normDSTot, RooAbsReal::NumEvent),
-                                             LineColor(kGreen+3), LineStyle(1), Precision(1e-4), NumCPU(32)
+                                             LineColor(pasStyle?kGreen+2:kGreen+3), LineStyle(1), Precision(1e-4), NumCPU(32)
                                              );
       }
     }
@@ -158,8 +159,13 @@ void drawMassFrom2DPlot(RooWorkspace& myws,   // Local workspace
      frame->GetYaxis()->SetTitleSize(0.04);
      frame->GetYaxis()->SetTitleOffset(1.7);
      frame->GetYaxis()->SetTitleFont(42);
+     if (pasStyle) frame->GetYaxis()->SetTitleOffset(1);
+     if (pasStyle) frame->GetYaxis()->SetTitleSize(0.06);
+     if (pasStyle) frame->GetXaxis()->SetTitleSize(0.06);
+     if (pasStyle) frame->GetYaxis()->SetTitleFont(42);
+     if (pasStyle) frame->GetYaxis()->CenterTitle(true);
   } else {
-     frame->GetXaxis()->SetTitle("m_{#mu^{+}#mu^{-}} (GeV/c^{2})");
+    frame->GetXaxis()->SetTitle("m_{#mu^{+}#mu^{-}} (GeV/c^{2})");
      frame->GetXaxis()->SetTitleOffset(1.1);
      frame->GetYaxis()->SetTitleOffset(1.45);
      frame->GetXaxis()->SetTitleSize(0.05);
@@ -182,8 +188,8 @@ void drawMassFrom2DPlot(RooWorkspace& myws,   // Local workspace
   pad1->Draw();
   pad1->cd(); 
   frame->Draw();
-
-  printMassFrom2DParameters(myws, pad1, isPbPb, pdfTotName, isWeighted);
+  if (!pasStyle)
+    printMassFrom2DParameters(myws, pad1, isPbPb, pdfTotName, isWeighted);
   pad1->SetLogy(setLogScale);
 
   // Drawing the text in the plot
@@ -191,7 +197,10 @@ void drawMassFrom2DPlot(RooWorkspace& myws,   // Local workspace
   float dy = 0; 
   
   t->SetTextSize(0.03);
-  if (!paperStyle) { // do not print selection details for paper style
+  if (pasStyle) t->SetTextSize(0.044);
+  if (pasStyle) t->SetTextFont(42);
+
+  if (!paperStyle && !pasStyle) { // do not print selection details for paper style
      t->DrawLatex(0.20, 0.86-dy, "2015 HI Soft Muon ID"); dy+=0.045;
      if (isPbPb) {
         t->DrawLatex(0.20, 0.86-dy, "HLT_HIL1DoubleMu0_v1"); dy+=2.0*0.045;
@@ -199,24 +208,42 @@ void drawMassFrom2DPlot(RooWorkspace& myws,   // Local workspace
         t->DrawLatex(0.20, 0.86-dy, "HLT_HIL1DoubleMu0_v1"); dy+=2.0*0.045;
      } 
   }
+  if (pasStyle) {
+  dy+=0.045;
+  //dy+=2.0*0.045;
+  }
+  if (!pasStyle) {
   if (cut.dMuon.Zed.Max<100) {t->DrawLatex(0.5175, 0.86-dy, Form("%g < z^{#mu#mu} #leq %g",cut.dMuon.Zed.Min,cut.dMuon.Zed.Max)); dy+=0.045;}
   if (cut.dMuon.AbsRap.Min>0.1) {t->DrawLatex(0.5175, 0.86-dy, Form("%.1f < |y^{#mu#mu}| < %.1f",cut.dMuon.AbsRap.Min,cut.dMuon.AbsRap.Max)); dy+=0.045;}
   else {t->DrawLatex(0.5175, 0.86-dy, Form("|y^{#mu#mu}| < %.1f",cut.dMuon.AbsRap.Max)); dy+=0.045;}
   t->DrawLatex(0.5175, 0.86-dy, Form("%g < p_{T}^{#mu#mu} < %g GeV/c",cut.dMuon.Pt.Min,cut.dMuon.Pt.Max)); dy+=0.045;
   if (cut.jet.Pt.Max<1000) {t->DrawLatex(0.5175, 0.86-dy, Form("%g < p_{T}^{jet} < %g GeV/c",cut.jet.Pt.Min,cut.jet.Pt.Max)); dy+=0.045;}
   if (isPbPb) {t->DrawLatex(0.5175, 0.86-dy, Form("Cent. %d-%d%%", (int)(cut.Centrality.Start/2), (int)(cut.Centrality.End/2))); dy+=0.045;}
+  }
 
+  else {
+    if (cut.dMuon.Zed.Max<100) {t->DrawLatex(0.2175, 0.86-dy, Form("%g < z_{#mu#mu} < %g",cut.dMuon.Zed.Min,cut.dMuon.Zed.Max)); dy+=0.065;}
+    if (cut.dMuon.AbsRap.Min>0.1) {t->DrawLatex(0.2175, 0.86-dy, Form("%.1f < |y_{#mu#mu}| < %.1f",cut.dMuon.AbsRap.Min,cut.dMuon.AbsRap.Max)); dy+=0.065;}
+    else {t->DrawLatex(0.2175, 0.86-dy, Form("|y_{#mu#mu}| < %.1f",cut.dMuon.AbsRap.Max)); dy+=0.065;}
+    t->DrawLatex(0.2175, 0.86-dy, Form("%g < p_{T,#mu#mu} < %.0f GeV",cut.dMuon.Pt.Min,cut.dMuon.Pt.Max)); dy+=0.065;
+    if (cut.jet.AbsRap.Min>0.1) {t->DrawLatex(0.2175, 0.86-dy, Form("%.1f < |y_{jet}| < %.1f",cut.jet.AbsRap.Min,cut.jet.AbsRap.Max)); dy+=0.065;}
+    else {t->DrawLatex(0.2175, 0.86-dy, Form("|y_{jet}| < %.1f",cut.jet.AbsRap.Max)); dy+=0.065;}
+    if (cut.jet.Pt.Max<1000) {t->DrawLatex(0.2175, 0.86-dy, Form("%.0f < p_{T,jet} < %.0f GeV",cut.jet.Pt.Min,cut.jet.Pt.Max)); dy+=0.065;}
+    if (isPbPb) {t->DrawLatex(0.2175, 0.86-dy, Form("Cent. %d-%d%%", (int)(cut.Centrality.Start/2), (int)(cut.Centrality.End/2))); dy+=0.065;}
+  }
   // Drawing the Legend
   double ymin = 0.7602;
   if (incPsi2S && incJpsi && incSS)  { ymin = 0.7202; } 
   if (incPsi2S && incJpsi && !incSS) { ymin = 0.7452; }
   if (paperStyle) { ymin = 0.72; }
+  if (pasStyle) { ymin = 0.35;}
   TLegend* leg = new TLegend(0.5175, ymin, 0.7180, 0.8809); leg->SetTextSize(0.03);
+  if (pasStyle) {leg = new TLegend(0.67, ymin, 0.87, 0.6); leg->SetTextSize(0.044); leg->SetTextFont(42);}
   if (frame->findObject("dOS")) { leg->AddEntry(frame->findObject("dOS"), (incSS?"Opposite Charge":"Data"),"pe"); }
   if (incSS) { leg->AddEntry(frame->findObject("dSS"),"Same Charge","pe"); }
   if (frame->findObject("PDF")) { leg->AddEntry(frame->findObject("PDF"),"Total fit","l"); }
   if (frame->findObject("JPSIPR")) { leg->AddEntry(frame->findObject("JPSIPR"),"Prompt J/#psi","l"); }
-  if (frame->findObject("JPSINOPR")) { leg->AddEntry(frame->findObject("JPSINOPR"),"Non-Prompt J/#psi","l"); }
+  if (frame->findObject("JPSINOPR")) { leg->AddEntry(frame->findObject("JPSINOPR"),"Nonprompt J/#psi","l"); }
   if (incBkg && frame->findObject("BKG")) { leg->AddEntry(frame->findObject("BKG"),"Background",paperStyle ? "l" : "fl"); }
   leg->Draw("same");
 
@@ -259,8 +286,12 @@ void drawMassFrom2DPlot(RooWorkspace& myws,   // Local workspace
      frame2->GetXaxis()->SetTitleSize(0.12);
      frame2->GetXaxis()->SetLabelSize(0.1);
      frame2->GetXaxis()->SetTitle("m_{#mu^{+}#mu^{-}} (GeV/c^{2})");
+     if (pasStyle) frame2->GetXaxis()->SetTitle("m_{#mu^{+}#mu^{-}} (GeV)");
      frame2->GetYaxis()->SetRangeUser(-7.0, 7.0);
-
+     if (pasStyle) frame2->GetYaxis()->SetNdivisions(505);
+     if (pasStyle) frame2->GetXaxis()->SetTitleSize(0.18);
+     if (pasStyle) frame2->GetYaxis()->SetTitleSize(0.18);
+     if (pasStyle) frame2->GetYaxis()->SetTitleOffset(0.3);
      frame2->Draw(); 
 
      // *** Print chi2/ndof 
@@ -347,7 +378,7 @@ void printMassFrom2DParameters(RooWorkspace myws, TPad* Pad, bool isPbPb, string
     }
     // Print the parameter's results
     if(s1=="N"){ 
-      t->DrawLatex(0.20, 0.76-dy, Form((isWeighted?"%s = %.6f#pm%.6f ":"%s = %.0f#pm%.0f "), label.c_str(), it->getValV(), it->getError())); dy+=0.045; 
+      t->DrawLatex(0.20, 0.76-dy, Form((isWeighted?"%s = %.2f#pm%.2f ":"%s = %.0f#pm%.0f "), label.c_str(), it->getValV(), it->getError())); dy+=0.045; 
     }
     else if(s1.find("#sigma_{2}/#sigma_{1}")!=std::string::npos){ 
       t->DrawLatex(0.20, 0.76-dy, Form("%s = %.3f#pm%.3f ", label.c_str(), it->getValV(), it->getError())); dy+=0.045; 

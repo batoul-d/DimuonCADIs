@@ -96,7 +96,8 @@ bool fitCharmoniaCtauModel( RooWorkspace& myws,             // Local Workspace
   }
   // Import the local datasets
   double numEntries = 1000000;
-  if (wantPureSMC) label = Form("%s_NoBkg%s%s", label.c_str(), (strcmp(applyCorr,"")?Form("_%s", applyCorr):""), (applyJEC?"_JEC":""));
+  if (wantPureSMC) label = ((DSTAG.find(COLL.c_str())!=std::string::npos) ? DSTAG.c_str() : Form("%s_%s_NoBkg%s%s", DSTAG.c_str(), COLL.c_str(), (strcmp(applyCorr,"")?Form("_%s", applyCorr):""), (applyJEC?"_JEC":"")));
+  // Form("%s_NoBkg%s%s", label.c_str(), (strcmp(applyCorr,"")?Form("_%s", applyCorr):""), (applyJEC?"_JEC":""));
   string dsName = Form("dOS_%s", label.c_str());
   if (importDS) {
     if ( !(myws.data(dsName.c_str())) ) {
@@ -246,8 +247,10 @@ bool fitCharmoniaCtauModel( RooWorkspace& myws,             // Local Workspace
       string FileName = "";
       string plotLabel = Form("_CtauRes_%s", parIni[Form("Model_CtauRes_%s", COLL.c_str())].c_str());
       string DSTAG = Form("DATA_%s", (isPbPb?"PbPb":"PP"));//Form("MCJPSIPR_%s", (isPbPb?"PbPb":"PP"));
-      if (inputFitDir["CTAURES"].find("nonPrompt")!=std::string::npos) DSTAG = Form("MCJPSINOPR_%s", (isPbPb?"PbPb":"PP"));
-      if (inputFitDir["CTAURES"].find("prompt")!=std::string::npos /*&& inputFitDir["CTAURES"].find("MCFits")==std::string::npos*/) DSTAG = Form("MCJPSIPR_%s", (isPbPb?"PbPb":"PP"));
+      //if (inputFitDir["CTAURES"].find("nonPrompt")!=std::string::npos) DSTAG = Form("MCJPSINOPR_%s", (isPbPb?"PbPb":"PP"));
+      //if (inputFitDir["CTAURES"].find("prompt")!=std::string::npos /*&& inputFitDir["CTAURES"].find("MCFits")==std::string::npos*/) DSTAG = Form("MCJPSIPR_%s", (isPbPb?"PbPb":"PP"));
+      if (outputDir.find("ResPromptMC")!=std::string::npos) DSTAG = Form("MCJPSIPR_%s", (isPbPb?"PbPb":"PP"));
+      if (outputDir.find("ResNonPromptMC")!=std::string::npos) DSTAG = Form("MCJPSINOPR_%s", (isPbPb?"PbPb":"PP"));
       setCtauResFileName(FileName, (inputFitDir["CTAURES"]=="" ? outputDir : inputFitDir["CTAURES"]), DSTAG, plotLabel, cut, isPbPb);
       if (wantPureSMC) { plotLabel = plotLabel + "_NoBkg"; }
       if (strcmp(applyCorr, "")) {plotLabel = plotLabel + "_" + applyCorr;}

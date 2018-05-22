@@ -61,11 +61,6 @@ string nameTag_base = "_prompt";    // can put here e.g. "_prompt", "_nonprompt"
 const bool useNcoll = false; // false -> use TAA / NMB, true -> use Ncoll / lumiPbPb
 
 double histMax = 0;
-double integxs [] = {0,0,0,0}; //prmid, prfrw, nprmid, nprfwd
-double integxsStat [] = {0,0,0,0}; //prmid, prfrw, nprmid, nprfwd
-double integxsSyst [] = {0,0,0,0}; //prmid, prfrw, nprmid, nprfwd
-double integxsMC [] = {0,0,0,0}; //prmid, prfrw, nprmid, nprfwd
-double integxsMCStat [] = {0,0,0,0}; //prmid, prfrw, nprmid, nprfwd
 //////////////////
 // DECLARATIONS //
 //////////////////
@@ -539,12 +534,6 @@ void plotNJJ(vector<anabin> thecats, string xaxis, string outputDir) {
       intErr = sqrt(intErr);
       intSyst = sqrt(intSyst);
       if (integ == 0) cout<<"[ERROR] the integral of the graph is 0."<<endl;
-      int c = 0; if (doprompt && plotMid) c=0; if (doprompt && !plotMid) c=1; if (!doprompt && plotMid) c=2; if (!doprompt && !plotMid) c=3;
-      if (plotUnfolded && mcON){
-	integxs[c]=integ;
-	integxsStat[c]=intErr;
-	integxsSyst[c]=intSyst;
-      }
       //else {
 	//if (plotUnfolded && jtPtRange==0) {
 	  //if (plotMid) cout <<Form("[INFO] %s",doprompt?"prompt":"nonprompt") <<" integral in mid rapidity = "<<integ<<" +- "<<intErr<<endl;
@@ -598,8 +587,8 @@ void plotNJJ(vector<anabin> thecats, string xaxis, string outputDir) {
 void plotGraphNJJ(map<anabin, TGraphAsymmErrors*> theGraphs, map<anabin, TGraphAsymmErrors*> theGraphs_syst, string xaxis, string outputDir, map<anabin, syst> gsyst_low, map<anabin, syst> gsyst_high) {
   setTDRStyle();
   
-  const char* ylabel = "N(J/#psi-Jet)";
-  if (plotUnfolded) ylabel = "1/N dN/dz (J/#psi-Jet)";  
+  const char* ylabel = "N(J/#psi)";
+  if (plotUnfolded) ylabel = "1/N dN/dz";  
   int intervals2Plot = theGraphs.size();
   
   vector<anabin> theCats;
@@ -611,13 +600,13 @@ void plotGraphNJJ(map<anabin, TGraphAsymmErrors*> theGraphs, map<anabin, TGraphA
   // the axes
   TH1F *haxes=NULL; TLine line;
   haxes = new TH1F("haxes","haxes", 5, 0, 1);
-  //haxes->GetXaxis()->SetNdivisions(306,false);
+  haxes->GetXaxis()->SetNdivisions(505);
   //line = TLine(0,1,1,1);
-  if (plotUnfolded) haxes->GetYaxis()->SetRangeUser(0, 7.5);
+  if (plotUnfolded) haxes->GetYaxis()->SetRangeUser(0, 8);
   else
     haxes->GetYaxis()->SetRangeUser(0, histMax*2);
   haxes->GetYaxis()->SetTitle(ylabel);
-  const char* xlabel = "z(J/#psi)";//(xaxis=="pt") ? "p_{T} (GeV)" : ((xaxis=="rap") ? "|y|" : "N_{part}");
+  const char* xlabel = "z";//(xaxis=="pt") ? "p_{T} (GeV)" : ((xaxis=="rap") ? "|y|" : "N_{part}");
   haxes->GetXaxis()->SetTitle(xlabel);
   haxes->GetXaxis()->CenterTitle(true);
   haxes->GetYaxis()->CenterTitle(true);
@@ -641,11 +630,6 @@ void plotGraphNJJ(map<anabin, TGraphAsymmErrors*> theGraphs, map<anabin, TGraphA
     intErr = intErr + pow(mcHist->GetBinError(i),2);
   intErr=sqrt(intErr);
 
-  int c = 0; if (doprompt && plotMid) c=0; if (doprompt && !plotMid) c=1; if (!doprompt && plotMid) c=2; if (!doprompt && !plotMid) c=3;
-  if (plotUnfolded && mcON) {
-    integxsMC[c]=integ;
-    integxsMCStat[c]=intErr;
-  }
   mcHist->Scale(1.0/mcHist->Integral("width")); 
   bHist->Scale(1.0/bHist->Integral("width"));
 
@@ -655,24 +639,32 @@ void plotGraphNJJ(map<anabin, TGraphAsymmErrors*> theGraphs, map<anabin, TGraphA
       mcHist->SetMarkerColor(color(3));
       mcHist->SetLineColor(color(3));
       mcHist->SetLineWidth(2);
+      mcHist->SetMarkerStyle(kOpenSquare);
+      mcHist->SetMarkerColor(color(3));
+      mcHist->SetMarkerSize(1.5);
       //mcHist->Draw("same");
     }
   if (plotUnfolded && bffON)
     {
-      mcHist->SetMarkerColor(color(8));
-      mcHist->SetLineColor(color(8));
-      bHist->SetMarkerColor(color(4));
-      bHist->SetLineColor(color(4));
-      bHist->SetLineWidth(2);
+      //mcHist->SetMarkerColor(color(8));
+      //mcHist->SetLineColor(color(8));
+      bHist->SetMarkerColor(color(5));
+      bHist->SetLineColor(color(5));
+      bHist->SetLineWidth(3);
+      bHist->SetLineStyle(2);
     }
   double xshift=0.025;
   TLegend *tleg(0x0);
   tleg = new TLegend(0.70,0.62,0.98,0.72);
-  if (bffON) tleg = new TLegend(0.65,0.62,0.93,0.72);
+  if (bffON) {
+    tleg = new TLegend(0.70,0.57,0.98,0.76);
+    if (plotMid) tleg = new TLegend(0.20,0.35,0.5,0.55);
+  }
   tleg->SetBorderSize(0);
   tleg->SetFillStyle(0);
   tleg->SetTextFont(42);
   tleg->SetTextSize(0.04);
+  if (bffON) tleg->SetTextSize(0.04);
   bool drawLegend(true);
   
   // prepare for the printing of the result tables
@@ -799,10 +791,11 @@ void plotGraphNJJ(map<anabin, TGraphAsymmErrors*> theGraphs, map<anabin, TGraphA
       // tg->Draw("[]");
     }
   
-    if (plotUnfolded && mcON)
-      mcHist->Draw("same");
+    if (plotUnfolded && mcON){
+      mcHist->Draw("E1 same");
+    }
     if (plotUnfolded && bffON)
-      bHist->Draw("same");
+      bHist->Draw("same hist");
     TLatex tl;
     double tlx = 0.25; //0.92;
     double tly = 0.80; //0.69;
@@ -820,11 +813,11 @@ void plotGraphNJJ(map<anabin, TGraphAsymmErrors*> theGraphs, map<anabin, TGraphA
 	{
 	  tleg->AddEntry(tg, "Data", "lp");
 	  if (bffON){
-	    tleg->AddEntry(mcHist, "MC J/#psi", "lp");
-	    tleg->AddEntry(bHist, "MC b-hadron", "lp");
+	    tleg->AddEntry(mcHist, "PYTHIA 8", "lp");
+	    tleg->AddEntry(bHist, "#splitline{PYTHIA 8}{b hadron}", "lp");
 	  }
 	  else 
-	    tleg->AddEntry(mcHist, "Pythia8", "lp");
+	    tleg->AddEntry(mcHist, "PYTHIA 8", "lp");
 	}
       if (xaxis == "pt")
         {
@@ -926,21 +919,28 @@ void plotGraphNJJ(map<anabin, TGraphAsymmErrors*> theGraphs, map<anabin, TGraphA
 
   if (xaxis=="z" && plotMid)
     {
-      TLatex *tex = new TLatex(0.2,0.78,"|y| < 1.6");
+      TLatex *tex = new TLatex(0.2,0.78,"|y_{J/#psi}| < 1.6");
       tex->SetNDC();
       tex->SetTextSize(0.044);
       tex->SetTextFont(42);
       tex->SetLineWidth(2);
       tex->Draw();
 
-      TLatex *tex1 = new TLatex(0.2,0.73,"6.5 < p_{T}(J/#psi) < 35 GeV");
+      TLatex *tex0 = new TLatex(0.2,0.66,"|y_{jet}| < 2.4");
+      tex0->SetNDC();
+      tex0->SetTextSize(0.044);
+      tex0->SetTextFont(42);
+      tex0->SetLineWidth(2);
+      tex0->Draw();
+
+      TLatex *tex1 = new TLatex(0.2,0.72,"6.5 < p_{T,J/#psi} < 35 GeV");
       tex1->SetNDC();
       tex1->SetTextSize(0.044);
       tex1->SetTextFont(42);
       tex1->SetLineWidth(2);
       tex1->Draw();
 
-      TLatex *tex2 = new TLatex(0.2,0.68,Form("%d < p_{T}(Jet) < %d GeV",jtPtRange == 0? 25:(jtPtRange == -1? 15:35), jtPtRange == 0? 35:(jtPtRange == -1? 25:45)));
+      TLatex *tex2 = new TLatex(0.2,0.60,Form("%d < p_{T,jet} < %d GeV",jtPtRange == 0? 25:(jtPtRange == -1? 15:35), jtPtRange == 0? 35:(jtPtRange == -1? 25:45)));
       tex2->SetNDC();
       tex2->SetTextSize(0.044);
       tex2->SetTextFont(42);
@@ -950,21 +950,28 @@ void plotGraphNJJ(map<anabin, TGraphAsymmErrors*> theGraphs, map<anabin, TGraphA
 
   if (xaxis=="z" && !plotMid)
     {
-      TLatex *tex = new TLatex(0.2,0.78,"1.6 < |y| < 2.4");
+      TLatex *tex = new TLatex(0.2,0.78,"1.6 < |y_{J/#psi}| < 2.4");
       tex->SetNDC();
       tex->SetTextSize(0.044);
       tex->SetTextFont(42);
       tex->SetLineWidth(2);
       tex->Draw();
 
-      TLatex *tex1 = new TLatex(0.2,0.73,"3 < p_{T}(J/#psi) < 35 GeV");
+      TLatex *tex0 = new TLatex(0.2,0.66,"|y_{jet}| < 2.4");
+      tex0->SetNDC();
+      tex0->SetTextSize(0.044);
+      tex0->SetTextFont(42);
+      tex0->SetLineWidth(2);
+      tex0->Draw();
+
+      TLatex *tex1 = new TLatex(0.2,0.72,"3 < p_{T,J/#psi} < 35 GeV");
       tex1->SetNDC();
       tex1->SetTextSize(0.044);
       tex1->SetTextFont(42);
       tex1->SetLineWidth(2);
       tex1->Draw();
 
-      TLatex *tex2 = new TLatex(0.2,0.68,Form("%d < p_{T}(Jet) < %d GeV",jtPtRange == 0? 25:(jtPtRange == -1? 15:35), jtPtRange == 0? 35:(jtPtRange == -1? 25:45)));
+      TLatex *tex2 = new TLatex(0.2,0.60,Form("%d < p_{T,jet} < %d GeV",jtPtRange == 0? 25:(jtPtRange == -1? 15:35), jtPtRange == 0? 35:(jtPtRange == -1? 25:45)));
       tex2->SetNDC();
       tex2->SetTextSize(0.044);
       tex2->SetTextFont(42);
@@ -975,10 +982,10 @@ void plotGraphNJJ(map<anabin, TGraphAsymmErrors*> theGraphs, map<anabin, TGraphA
   TLatex tl;
   double tlx = 0.20; //0.92;
   double tly = 0.85; //0.69;
-  tl.SetTextFont(42); // consistent font for symbol and plain text
-  tl.SetTextSize(0.057); 
+  tl.SetTextFont(62); // consistent font for symbol and plain text
+  tl.SetTextSize(0.044); 
   if (doprompt) tl.DrawLatexNDC(tlx,tly,"Prompt J/#psi");
-  if (dononprompt) tl.DrawLatexNDC(tlx,tly,"J/#psi from b hadrons");
+  if (dononprompt) tl.DrawLatexNDC(tlx,tly,"Nonprompt J/#psi");
   tl.SetTextSize(0.046);
   
   int iPos = 33;

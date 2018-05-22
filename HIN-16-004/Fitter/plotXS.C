@@ -29,6 +29,7 @@
 #include "Macros/Utilities/resultUtils.h"
 #include "Macros/Utilities/bin.h"
 #include "plotFitParams.C"
+#include "Macros/CMS/tdrstyle.C"
 
 using namespace std;
 
@@ -284,14 +285,14 @@ void compXSPt(bool isPr, bool isDiff) {
 
 }//end of compXS function
 
-void plotXStot(bool isPr) {
+void plotXStot(bool isPr, bool fonllCorr) {
   gStyle->SetOptStat(0);
 
   double ybins [] = {0, 1.6, 2.4};
 
   TFile* totFile = TFile::Open("Output/DataFits/DataFits_NoJets/DataFits_total/ctauMass/DATA/fitsPars/XSPlot_statErr.root");
   TFile* totSystFile = TFile::Open("Output/DataFits/DataFits_NoJets/DataFits_total/ctauMass/DATA/fitsPars/XSPlot_systErr.root");
-  TFile* mcFile = TFile::Open(Form("Output/MCResults/mcResult_%s_underflowOff.root", isPr?"prompt":"nonprompt"));
+  TFile* mcFile = TFile::Open(Form("Output/MCResults%s/mcResult_%s_underflowOff.root", fonllCorr?"/fonllCorr":"", isPr?"prompt":"nonprompt"));
 
   TH1F* totHist = (TH1F*) totFile->Get(Form("%stotXS",isPr?"pr":"npr"));
   TH1F* totSystHist = (TH1F*) totSystFile->Get(Form("%stotXS",isPr?"pr":"npr"));
@@ -409,18 +410,19 @@ void plotXStot(bool isPr) {
   mcHist->SetBinError(bin, errMCFwd);
 
   gSystem->mkdir("Output/XSComparison");
-  TFile *fsave = new TFile(Form("Output/XSComparison/%sXSRatio.root", isPr?"pr":"npr"), "RECREATE");
+  TFile *fsave = new TFile(Form("Output/XSComparison/%sXSRatio%s.root", isPr?"pr":"npr", fonllCorr?"_fonllCorr":""), "RECREATE");
   totHist->Write("XS");
   totSystHist->Write("XS_syst");
   mcHist->Write("XS_mc");
   fsave->Close();
 }//end of compXStot
 
-void drawXStot() {
+void drawXStot(bool fonllCorr) {
   gStyle->SetOptStat(0);
+  setTDRStyle();
 
   TFile *prf = TFile::Open("Output/XSComparison/prXSRatio.root"); 
-  TFile *nprf = TFile::Open("Output/XSComparison/nprXSRatio.root");
+  TFile *nprf = TFile::Open(Form("Output/XSComparison/nprXSRatio%s.root", fonllCorr?"_fonllCorr":""));
   TH1F *prHist = (TH1F*) prf->Get("XS");
   TH1F *nprHist = (TH1F*) nprf->Get("XS");
   TH1F *prSystHist = (TH1F*) prf->Get("XS_syst");
@@ -436,86 +438,89 @@ void drawXStot() {
   nprMCHist->Scale(100);
 
   prHist->SetMarkerColor(kMagenta+2);
-  prHist->SetMarkerStyle(kFullDiamond);
+  prHist->SetMarkerStyle(kFullCircle);
   prHist->SetMarkerSize(2);
   prHist->SetLineColor(kMagenta+2);
   prHist->SetLineWidth(2);
 
-  nprHist->SetMarkerColor(kCyan+2);
-  nprHist->SetMarkerStyle(kFullDiamond);
+  nprHist->SetMarkerColor(kMagenta+2);
+  nprHist->SetMarkerStyle(kFullSquare);
   nprHist->SetMarkerSize(2);
-  nprHist->SetLineColor(kCyan+2);
+  nprHist->SetLineColor(kMagenta+2);
   nprHist->SetLineWidth(2);
 
   prSystHist->SetMarkerColor(kMagenta+2);
-  prSystHist->SetMarkerStyle(kFullDiamond);
+  prSystHist->SetMarkerStyle(kFullCircle);
   prSystHist->SetMarkerSize(0);
   prSystHist->SetLineColor(kMagenta+2);
   prSystHist->SetFillColorAlpha(kMagenta-5, 0.5);
   prSystHist->SetLineWidth(2);
 
-  nprSystHist->SetMarkerColor(kCyan+2);
-  nprSystHist->SetMarkerStyle(kFullDiamond);
+  nprSystHist->SetMarkerColor(kMagenta+2);
+  nprSystHist->SetMarkerStyle(kFullSquare);
   nprSystHist->SetMarkerSize(0);
-  nprSystHist->SetLineColor(kCyan+2);
-  nprSystHist->SetFillColorAlpha(kCyan-5, 0.5);
+  nprSystHist->SetLineColor(kMagenta+2);
+  nprSystHist->SetFillColorAlpha(kMagenta-5, 0.5);
   nprSystHist->SetLineWidth(2);
 
-  prMCHist->SetMarkerColor(kMagenta+2);
-  prMCHist->SetMarkerStyle(kOpenDiamond);
+  prMCHist->SetMarkerColor(kCyan+2);
+  prMCHist->SetMarkerStyle(kFullCircle);
   prMCHist->SetMarkerSize(2);
-  prMCHist->SetLineColor(kMagenta+2);
+  prMCHist->SetLineColor(kCyan+2);
   prMCHist->SetLineWidth(2);
 
   nprMCHist->SetMarkerColor(kCyan+2);
-  nprMCHist->SetMarkerStyle(kOpenDiamond);
+  nprMCHist->SetMarkerStyle(kFullSquare);
   nprMCHist->SetMarkerSize(2);
   nprMCHist->SetLineColor(kCyan+2);
   nprMCHist->SetLineWidth(2);
 
   double ybins [] = {0, 1.6, 2.4};
   TH1F *axisHist = new TH1F("axisHist","", 2, ybins);
-  axisHist->GetYaxis()->SetRangeUser(0.01, 500);
-  axisHist->GetYaxis()->SetTitle("#sigma(J/#psi-Jet)/#sigma_{tot}(J/#psi) (%)");
-  axisHist->GetXaxis()->SetTitle("|y(J/#psi)|");
+  axisHist->GetYaxis()->SetRangeUser(0.005, 500);
+  axisHist->GetYaxis()->SetTitle("J/#psi-in-jet fraction (%)");
+  axisHist->GetXaxis()->SetTitle("|y_{J/#psi}|");
   axisHist->GetXaxis()->SetNdivisions(505);
+  axisHist->GetXaxis()->SetTitleOffset(0.8);
   axisHist->GetXaxis()->CenterTitle(true);
   axisHist->GetYaxis()->CenterTitle(true);
 
-  TLegend* leg = new TLegend(0.62,0.62,0.88,0.80);
+  TLegend* leg = new TLegend(0.47,0.70,0.88,0.88);
+  leg->SetTextFont(42);
+  leg->SetTextSize(0.04);
 
-  leg->AddEntry(prHist, "prompt data", "lp");
-  leg->AddEntry(nprHist, "nonprompt data", "lp");
-  leg->AddEntry(prMCHist, "prompt MC", "lp");
-  leg->AddEntry(nprMCHist, "nonprompt MC", "lp");
+  leg->AddEntry(prHist, "Prompt data", "lp");
+  leg->AddEntry(nprHist, "Nonprompt data", "lp");
+  leg->AddEntry(prMCHist, "Prompt PYTHIA 8", "lp");
+  leg->AddEntry(nprMCHist, Form("Nonprompt PYTHIA 8%s",fonllCorr?" (fonll)":""), "lp");
   leg->SetBorderSize(0);
   leg->SetFillStyle(0);
 
-  TLatex *  text2 = new TLatex(0.160 ,0.72, "6.5 < p_{T} < 35 GeV for |y| < 1.6");
+  TLatex *  text2 = new TLatex(0.2 , 0.22, "6.5 < p_{T,J/#psi} < 35 GeV for |y_{J/#psi}| < 1.6");
   text2->SetNDC();
   text2->SetTextFont(42);
-  text2->SetTextSize(0.03);
+  text2->SetTextSize(0.044);
   text2->SetLineWidth(2);
   
-  TLatex *  text3 = new TLatex(0.160 ,0.67, "3 < p_{T} < 35 GeV for 1.6 < |y| < 2.4");
+  TLatex *  text3 = new TLatex(0.2 , 0.16, "3 < p_{T,J/#psi} < 35 GeV for 1.6 < |y_{J/#psi}| < 2.4");
   text3->SetNDC();
   text3->SetTextFont(42);
-  text3->SetTextSize(0.03);
+  text3->SetTextSize(0.044);
   text3->SetLineWidth(2);
   
-  TLatex *  text = new TLatex(0.18 ,0.82,"CMS");
+  TLatex *  text = new TLatex(0.2 ,0.82,"CMS");
   text->SetNDC();
-  text->SetTextFont(42);
-  text->SetTextSize(0.06);
+  text->SetTextFont(61);
+  text->SetTextSize(0.075);
   text->SetLineWidth(8);
   
-  TLatex *  text1 = new TLatex(0.16 ,0.77,"Preliminary");
+  TLatex *  text1 = new TLatex(0.18 ,0.77,"Preliminary");
   text1->SetNDC();
-  text1->SetTextFont(42);
-  text1->SetTextSize(0.04);
+  text1->SetTextFont(52);
+  text1->SetTextSize(0.055);
   text1->SetLineWidth(2);
   
-  TLatex *  text4 = new TLatex(0.5 ,0.91,"pp 27.39 pb^{-1} (5.02 TeV)");
+  TLatex *  text4 = new TLatex(0.57 ,0.93,"pp 27.39 pb^{-1} (5.02 TeV)");
   text4->SetNDC();
   text4->SetTextFont(42);
   text4->SetTextSize(0.04);
@@ -538,5 +543,163 @@ void drawXStot() {
   text4->Draw("same");
   //c->SaveAs("Output/XSComparison/totXSPlot.pdf");
   c->SetLogy();
-  c->SaveAs("Output/XSComparison/totXSPlot_logScale.pdf");
+  c->SaveAs(Form("Output/XSComparison/totXSPlot_logScale%s.pdf", fonllCorr?"_fonllCorr":""));
+
+  //////draw prompt and nonprompt separately
+  leg = new TLegend(0.68,0.70,0.88,0.80);
+  leg->SetTextFont(42);
+  leg->SetTextSize(0.04);
+  leg->AddEntry(prHist, "Data", "lp");
+  leg->AddEntry(prMCHist, "PYTHIA 8", "lp");
+  leg->SetBorderSize(0);
+  leg->SetFillStyle(0);
+  TLatex * text0 = new TLatex(0.68 ,0.82,"Prompt J/#psi");
+  text0->SetNDC();
+  text0->SetTextFont(62);
+  text0->SetTextSize(0.044);
+  text0->SetLineWidth(2);
+
+  axisHist->GetYaxis()->SetRangeUser(0.005, 200);
+  axisHist->Draw();
+  prSystHist->Draw("E2 same");
+  prHist->Draw("E1 same");
+  prMCHist->Draw("E1 same");
+  leg->Draw("same");
+  text2->Draw("same");
+  text3->Draw("same");
+  text->Draw("same");
+  text1->Draw("same");
+  text4->Draw("same");
+  text0->Draw("same");
+  c->SetLogy();
+  c->SaveAs(Form("Output/XSComparison/prXSPlot_logScale%s.pdf", fonllCorr?"_fonllCorr":""));
+
+  leg = new TLegend(0.68,0.70,0.88,0.80);
+  leg->SetTextFont(42);
+  leg->SetTextSize(0.04);
+  leg->AddEntry(nprHist, "Data", "lp");
+  leg->AddEntry(nprMCHist, Form("PYTHIA 8%s",fonllCorr?" (fonll)":""), "lp");
+  leg->SetBorderSize(0);
+  leg->SetFillStyle(0);
+
+  text0 = new TLatex(0.58 ,0.82,"Nonprompt J/#psi");
+  text0->SetNDC();
+  text0->SetTextFont(62);
+  text0->SetTextSize(0.044);
+  text0->SetLineWidth(2);
+
+  axisHist->GetYaxis()->SetRangeUser(0.05, 500);
+  axisHist->Draw();
+  nprSystHist->Draw("E2 same");
+  nprHist->Draw("E1 same");
+  nprMCHist->Draw("E1 same");
+  leg->Draw("same");
+  text2->Draw("same");
+  text3->Draw("same");
+  text->Draw("same");
+  text1->Draw("same");
+  text4->Draw("same");
+  text0->Draw("same");
+  c->SetLogy();
+  c->SaveAs(Form("Output/XSComparison/nprXSPlot_logScale%s.pdf", fonllCorr?"_fonllCorr":""));
+
+  c = new TCanvas("cr", "", 1000, 1000);
+  prHist->Divide(prMCHist);
+  prSystHist->Divide(prMCHist);
+  nprHist->Divide(nprMCHist);
+  nprSystHist->Divide(nprMCHist);
+  axisHist->GetYaxis()->SetRangeUser(0, 5);
+  axisHist->GetYaxis()->SetTitle("J/#psi-in-jet fraction data/MC");
+  axisHist->GetYaxis()->SetTitleOffset(1.0);
+  axisHist->GetXaxis()->SetTitle("|y_{J/#psi}|");
+  axisHist->GetXaxis()->SetTitleOffset(0.8);
+  axisHist->GetXaxis()->SetNdivisions(505);
+  axisHist->GetYaxis()->SetNdivisions(505);
+  axisHist->GetXaxis()->CenterTitle(true);
+  axisHist->GetYaxis()->CenterTitle(true);
+
+  prHist->SetMarkerColor(kGreen+2);
+  prHist->SetMarkerStyle(kFullCircle);
+  prHist->SetMarkerSize(2);
+  prHist->SetLineColor(kGreen+2);
+  prHist->SetLineWidth(2);
+
+  nprHist->SetMarkerColor(9);
+  nprHist->SetMarkerStyle(kFullSquare);
+  nprHist->SetMarkerSize(2);
+  nprHist->SetLineColor(9);
+  nprHist->SetLineWidth(2);
+
+  prSystHist->SetMarkerColor(29);
+  prSystHist->SetMarkerStyle(kFullCircle);
+  prSystHist->SetMarkerSize(0);
+  prSystHist->SetLineColor(29);
+  prSystHist->SetFillColorAlpha(29, 0.5);
+  prSystHist->SetLineWidth(2);
+
+  nprSystHist->SetMarkerColor(40);
+  nprSystHist->SetMarkerStyle(kFullSquare);
+  nprSystHist->SetMarkerSize(0);
+  nprSystHist->SetLineColor(40);
+  nprSystHist->SetFillColorAlpha(40, 0.5);
+  nprSystHist->SetLineWidth(2);
+
+  leg = new TLegend(0.62,0.72,0.88,0.85);
+  leg->SetTextFont(42);
+  leg->SetTextSize(0.04);
+  leg->AddEntry(prHist, "Prompt", "lp");
+  leg->AddEntry(nprHist, "Nonprompt", "lp");
+  //leg->AddEntry(prMCHist, "prompt MC", "lp");
+  //leg->AddEntry(nprMCHist, "nonprompt MC", "lp");
+  leg->SetBorderSize(0);
+  leg->SetFillStyle(0);
+
+  axisHist->Draw();
+  prSystHist->Draw("E2 same");
+  prHist->Draw("E1 same");
+  nprSystHist->Draw("E2 same");
+  nprHist->Draw("E1 same");
+  leg->Draw("same");
+  text2->Draw("same");
+  text3->Draw("same");
+  text->Draw("same");
+  text1->Draw("same");
+  text4->Draw("same");
+  c->SaveAs(Form("Output/XSComparison/totXSPlot_DataMCFraction%s.pdf", fonllCorr?"_fonllCorr":""));
+
+  //////draw prompt and nonprompt separately
+  text0 = new TLatex(0.68 ,0.82,"Prompt J/#psi");
+  text0->SetNDC();
+  text0->SetTextFont(62);
+  text0->SetTextSize(0.044);
+  text0->SetLineWidth(2);
+
+  axisHist->Draw();
+  prSystHist->Draw("E2 same");
+  prHist->Draw("E1 same");
+  text0->Draw("same");
+  text2->Draw("same");
+  text3->Draw("same");
+  text->Draw("same");
+  text1->Draw("same");
+  text4->Draw("same");
+  c->SaveAs(Form("Output/XSComparison/prXSPlot_DataMCFraction%s.pdf", fonllCorr?"_fonllCorr":""));
+
+  text0 = new TLatex(0.58 ,0.82,"Nonprompt J/#psi");
+  text0->SetNDC();
+  text0->SetTextFont(62);
+  text0->SetTextSize(0.044);
+  text0->SetLineWidth(2);
+
+  axisHist->Draw();
+  nprSystHist->Draw("E2 same");
+  nprHist->Draw("E1 same");
+  text0->Draw("same");
+  text2->Draw("same");
+  text3->Draw("same");
+  text->Draw("same");
+  text1->Draw("same");
+  text4->Draw("same");
+  c->SaveAs(Form("Output/XSComparison/nprXSPlot_DataMCFraction%s.pdf", fonllCorr?"_fonllCorr":""));
+
 }

@@ -27,6 +27,8 @@ void drawCtauFrom2DPlot(RooWorkspace& myws,   // Local workspace
                         ) 
 {
 
+  bool pasStyle = true;
+
   RooMsgService::instance().getStream(0).removeTopic(Caching);  
   RooMsgService::instance().getStream(1).removeTopic(Caching);
   RooMsgService::instance().getStream(0).removeTopic(Plotting);
@@ -65,6 +67,7 @@ void drawCtauFrom2DPlot(RooWorkspace& myws,   // Local workspace
 
   double minRange = -4.0;
   double maxRange = 7.0;
+  if (pasStyle) maxRange = 4.0;
   Double_t outTot = myws.data(dsOSName.c_str())->numEntries();
   Double_t outErr = myws.data(dsOSName.c_str())->reduce(Form("(ctau>%.6f || ctau<%.6f)", range[1], range[0]))->numEntries();
   int nBins = min(int( round((maxRange - minRange)/binWidth) ), 1000);
@@ -94,12 +97,12 @@ void drawCtauFrom2DPlot(RooWorkspace& myws,   // Local workspace
     myws.pdf(pdfTotName.c_str())->plotOn(frame,Name("JPSIPR"),Components(RooArgSet( *myws.pdf(Form("pdfCTAUMASS_JpsiPR_%s", (isPbPb?"PbPb":"PP"))) )),
                                          ProjWData(RooArgSet(*myws.var("ctauErr")), *myws.data(dsOSName.c_str()), kTRUE),
                                          Normalization(normDSTot, RooAbsReal::NumEvent),
-                                         LineColor(kRed+3), Precision(1e-5), NumCPU(32)
+                                         LineColor(pasStyle?kRed+2:kRed+3), Precision(1e-5), NumCPU(32)
                                          );
     myws.pdf(pdfTotName.c_str())->plotOn(frame,Name("JPSINOPR"),Components(RooArgSet( *myws.pdf(Form("pdfCTAUMASS_JpsiNoPR_%s", (isPbPb?"PbPb":"PP"))) )),
                                          ProjWData(RooArgSet(*myws.var("ctauErr")), *myws.data(dsOSName.c_str()), kTRUE),
                                          Normalization(normDSTot, RooAbsReal::NumEvent),
-                                         LineColor(kGreen+3), Precision(1e-5), NumCPU(32)
+                                         LineColor(pasStyle?kGreen+2:kGreen+3), Precision(1e-5), NumCPU(32)
                                          );
   }
   if (incPsi2S) {
@@ -159,6 +162,14 @@ void drawCtauFrom2DPlot(RooWorkspace& myws,   // Local workspace
   frame->GetYaxis()->SetTitleOffset(1.7);
   frame->GetYaxis()->SetTitleFont(42);
   setCtauFrom2DRange(myws, frame, dsOSNameCut, setLogScale, range, outErr);
+
+  if (pasStyle) {
+    frame->GetYaxis()->SetTitleOffset(1);
+    frame->GetYaxis()->SetTitleSize(0.06);
+    frame->GetXaxis()->SetTitleSize(0.06);
+    frame->GetYaxis()->SetTitleFont(42);
+    frame->GetYaxis()->CenterTitle(true);
+  }
  
   cFig->cd();
   pad2->SetTopMargin(0.02);
@@ -171,7 +182,8 @@ void drawCtauFrom2DPlot(RooWorkspace& myws,   // Local workspace
   pad1->cd(); 
   frame->Draw();
 
-  printCtauFrom2DParameters(myws, pad1, isPbPb, pdfTotName, isWeighted);
+  if (!pasStyle)
+    printCtauFrom2DParameters(myws, pad1, isPbPb, pdfTotName, isWeighted);
   pad1->SetLogy(setLogScale);
 
   // Drawing the text in the plot
@@ -179,34 +191,52 @@ void drawCtauFrom2DPlot(RooWorkspace& myws,   // Local workspace
   float dy = 0; 
   
   t->SetTextSize(0.03);
-  t->DrawLatex(0.21, 0.86-dy, "2015 HI Soft Muon ID"); dy+=0.045;
-  if (isPbPb) {
-    t->DrawLatex(0.21, 0.86-dy, "HLT_HIL1DoubleMu0_v1"); dy+=0.045;
-  } else {
-    t->DrawLatex(0.21, 0.86-dy, "HLT_HIL1DoubleMu0_v1"); dy+=0.045;
-  } 
-  if (cut.dMuon.Zed.Max<100) {t->DrawLatex(0.21, 0.86-dy, Form("%.2f < z^{#mu#mu} #leq %.2f",cut.dMuon.Zed.Min,cut.dMuon.Zed.Max)); dy+=0.045;}
-  t->DrawLatex(0.21, 0.86-dy, Form("%.1f #leq p_{T}^{#mu#mu} < %.1f GeV/c",cut.dMuon.Pt.Min,cut.dMuon.Pt.Max)); dy+=0.045;
-  if (cut.jet.Pt.Max<1000) {t->DrawLatex(0.21, 0.86-dy, Form("%.1f #leq p_{T}^{jet} < %.1f GeV/c",cut.jet.Pt.Min,cut.jet.Pt.Max)); dy+=0.045;}
-  t->DrawLatex(0.21, 0.86-dy, Form("%.1f #leq |y^{#mu#mu}| < %.1f",cut.dMuon.AbsRap.Min,cut.dMuon.AbsRap.Max)); dy+=0.045;
-  if (isPbPb) {t->DrawLatex(0.21, 0.86-dy, Form("Cent. %d-%d%%", (int)(cut.Centrality.Start/2), (int)(cut.Centrality.End/2))); dy+=0.045;}
-  if (outErr>0.0) {
-    t->DrawLatex(0.21, 0.86-dy, Form("Excl: (%.4f%%) %.0f evts", (outErr*100.0/outTot), outErr)); dy+=1.5*0.045;
+  if (pasStyle) t->SetTextSize(0.044);
+  if (pasStyle) t->SetTextFont(42);
+  if (!pasStyle) {
+    t->DrawLatex(0.21, 0.86-dy, "2015 HI Soft Muon ID"); dy+=0.045;
+    if (isPbPb) {
+      t->DrawLatex(0.21, 0.86-dy, "HLT_HIL1DoubleMu0_v1"); dy+=0.045;
+    } else {
+      t->DrawLatex(0.21, 0.86-dy, "HLT_HIL1DoubleMu0_v1"); dy+=0.045;
+    } 
+    if (cut.dMuon.Zed.Max<100) {t->DrawLatex(0.21, 0.86-dy, Form("%.2f < z^{#mu#mu} #leq %.2f",cut.dMuon.Zed.Min,cut.dMuon.Zed.Max)); dy+=0.045;}
+    t->DrawLatex(0.21, 0.86-dy, Form("%.1f #leq p_{T}^{#mu#mu} < %.1f GeV/c",cut.dMuon.Pt.Min,cut.dMuon.Pt.Max)); dy+=0.045;
+    if (cut.jet.Pt.Max<1000) {t->DrawLatex(0.21, 0.86-dy, Form("%.1f #leq p_{T}^{jet} < %.1f GeV/c",cut.jet.Pt.Min,cut.jet.Pt.Max)); dy+=0.045;}
+    t->DrawLatex(0.21, 0.86-dy, Form("%.1f #leq |y^{#mu#mu}| < %.1f",cut.dMuon.AbsRap.Min,cut.dMuon.AbsRap.Max)); dy+=0.045;
+    if (isPbPb) {t->DrawLatex(0.21, 0.86-dy, Form("Cent. %d-%d%%", (int)(cut.Centrality.Start/2), (int)(cut.Centrality.End/2))); dy+=0.045;}
+    if (outErr>0.0) {t->DrawLatex(0.21, 0.86-dy, Form("Excl: (%.4f%%) %.0f evts", (outErr*100.0/outTot), outErr)); dy+=1.5*0.045;}
   }
-
+  else {
+    dy+=0.045;
+    if (cut.dMuon.Zed.Max<100) {t->DrawLatex(0.2175, 0.86-dy, Form("%g < z_{#mu#mu} < %g",cut.dMuon.Zed.Min,cut.dMuon.Zed.Max)); dy+=0.065;}
+    if (cut.dMuon.AbsRap.Min>0.1) {t->DrawLatex(0.2175, 0.86-dy, Form("%.1f < |y_{#mu#mu}| < %.1f",cut.dMuon.AbsRap.Min,cut.dMuon.AbsRap.Max)); dy+=0.065;}
+    else {t->DrawLatex(0.2175, 0.86-dy, Form("|y_{#mu#mu}| < %.1f",cut.dMuon.AbsRap.Max)); dy+=0.065;}
+    t->DrawLatex(0.2175, 0.86-dy, Form("%g < p_{T,#mu#mu} < %.0f GeV",cut.dMuon.Pt.Min,cut.dMuon.Pt.Max)); dy+=0.065;
+    if (cut.jet.AbsRap.Min>0.1) {t->DrawLatex(0.2175, 0.86-dy, Form("%.1f < |y_{jet}| < %.1f",cut.jet.AbsRap.Min,cut.jet.AbsRap.Max)); dy+=0.065;}
+    else {t->DrawLatex(0.2175, 0.86-dy, Form("|y_{jet}| < %.1f",cut.jet.AbsRap.Max)); dy+=0.065;}
+    if (cut.jet.Pt.Max<1000) {t->DrawLatex(0.2175, 0.86-dy, Form("%.0f < p_{T,jet} < %.0f GeV",cut.jet.Pt.Min,cut.jet.Pt.Max)); dy+=0.065;}
+    if (isPbPb) {t->DrawLatex(0.2175, 0.86-dy, Form("Cent. %d-%d%%", (int)(cut.Centrality.Start/2), (int)(cut.Centrality.End/2))); dy+=0.065;}
+    if (outErr>0.0) {t->DrawLatex(0.21, 0.86-dy, Form("Excl: (%.4f%%) %.0f evts", (outErr*100.0/outTot), outErr)); dy+=1.5*0.065;}
+  }
   // Drawing the Legend
   double ymin = 0.7602;
+  if (pasStyle) ymin = 0.25;
   if (incPsi2S && incJpsi && incSS)  { ymin = 0.7202; } 
   if (incPsi2S && incJpsi && !incSS) { ymin = 0.7452; }
   TLegend* leg = new TLegend(0.5175, ymin, 0.7180, 0.8809); leg->SetTextSize(0.03);
+  if (pasStyle) {leg = new TLegend(0.2, ymin, 0.4, 0.5); leg->SetTextSize(0.044); leg->SetTextFont(42);}
   leg->AddEntry(frame->findObject("dOS"), (incSS?"Opposite Charge":"Data"),"pe");
   if (incSS) { leg->AddEntry(frame->findObject("dSS"),"Same Charge","pe"); }
   if(frame->findObject("PDF")) { leg->AddEntry(frame->findObject("PDF"),"Total fit","fl"); }
-  if((incBkg && (incJpsi || incPsi2S)) && frame->findObject("BKG")) { leg->AddEntry(frame->findObject("BKG"),"Background","fl");  }
-  if(incBkg && incJpsi && frame->findObject("JPSIPR")) { leg->AddEntry(frame->findObject("JPSIPR"),"J/#psi Prompt","l"); }
-  if(incBkg && incJpsi && frame->findObject("JPSINOPR")) { leg->AddEntry(frame->findObject("JPSINOPR"),"J/#psi Non-Prompt","l"); }
+  if (!pasStyle)
+    if((incBkg && (incJpsi || incPsi2S)) && frame->findObject("BKG")) { leg->AddEntry(frame->findObject("BKG"),"Background","fl");  }
+  if(incBkg && incJpsi && frame->findObject("JPSIPR")) { leg->AddEntry(frame->findObject("JPSIPR"),pasStyle?"Prompt J/#psi":"J/#psi Prompt","l"); }
+  if(incBkg && incJpsi && frame->findObject("JPSINOPR")) { leg->AddEntry(frame->findObject("JPSINOPR"),pasStyle?"Nonprompt J/#psi":"J/#psi Nonprompt","l"); }
   if(incBkg && incPsi2S && frame->findObject("PSI2SPR")) { leg->AddEntry(frame->findObject("PSI2SPR"),"#psi(2S) Prompt","l"); }
   if(incBkg && incPsi2S && frame->findObject("PSI2SNOPR")) { leg->AddEntry(frame->findObject("PSI2SNOPR"),"#psi(2S) Non-Prompt","l"); }
+  if (pasStyle)
+    if((incBkg && (incJpsi || incPsi2S)) && frame->findObject("BKG")) { leg->AddEntry(frame->findObject("BKG"),"Background","fl");  }
   leg->Draw("same");
 
   //Drawing the title
@@ -248,7 +278,10 @@ void drawCtauFrom2DPlot(RooWorkspace& myws,   // Local workspace
   frame2->GetXaxis()->SetLabelSize(0.1);
   frame2->GetXaxis()->SetTitle("#font[12]{l}_{J/#psi} (mm)");
   frame2->GetYaxis()->SetRangeUser(-7.0, 7.0);
-
+  if (pasStyle) frame2->GetYaxis()->SetNdivisions(505);
+  if (pasStyle) frame2->GetXaxis()->SetTitleSize(0.18);
+  if (pasStyle) frame2->GetYaxis()->SetTitleSize(0.18);
+  if (pasStyle) frame2->GetYaxis()->SetTitleOffset(0.3);
   frame2->Draw(); 
   
   // *** Print chi2/ndof 
@@ -285,6 +318,8 @@ void setCtauFrom2DRange(RooWorkspace& myws, RooPlot* frame, string dsName, bool 
   {
     Yup = YMax*TMath::Power((YMax/0.1), 0.5);
     Ydown = 0.1;
+    /////if pasStyle
+    Ydown = 0.8;
   }
   else
   {

@@ -238,6 +238,8 @@ bool fitCharmoniaCtauMassModel( RooWorkspace& myws,             // Local Workspa
       bool found = false;
       if (!found && gSystem->AccessPathName(FileName.c_str()) && inputFitDir["CTAURECO"]!="") {
         plotLabel = "_CtauReco_NoBkg";
+	if (strcmp(applyCorr,"")) plotLabel = plotLabel + "_" + applyCorr;
+        if (applyJEC) plotLabel = plotLabel +"_JEC";
         setCtauRecoFileName(FileName, (inputFitDir["CTAURECO"]=="" ? outputDir : inputFitDir["CTAURECO"]), DSTAG, plotLabel, cut, isPbPb);
       } else if (inputFitDir["CTAURECO"]!="") { found = true; }
       if (!found && gSystem->AccessPathName(FileName.c_str()) && inputFitDir["CTAURECO"]!="") {

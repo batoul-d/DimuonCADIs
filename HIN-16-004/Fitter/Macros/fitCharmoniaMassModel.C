@@ -233,6 +233,8 @@ bool fitCharmoniaMassModel( RooWorkspace& myws,            // Local Workspace
     // Fit the Datasets
     if (skipFit==false) {
       bool isWeighted = myws.data(dsName.c_str())->isWeighted();
+      ///////////////////////// don't forget to change this
+      //isWeighted = false;
       RooFitResult* fitResult(0x0);
       if (doConstrFit)
       {
