@@ -544,6 +544,7 @@ void drawXStot(bool fonllCorr) {
   //c->SaveAs("Output/XSComparison/totXSPlot.pdf");
   c->SetLogy();
   c->SaveAs(Form("Output/XSComparison/totXSPlot_logScale%s.pdf", fonllCorr?"_fonllCorr":""));
+  c->SaveAs(Form("Output/XSComparison/totXSPlot_logScale%s.C", fonllCorr?"_fonllCorr":""));
 
   //////draw prompt and nonprompt separately
   leg = new TLegend(0.68,0.70,0.88,0.80);
@@ -573,6 +574,7 @@ void drawXStot(bool fonllCorr) {
   text0->Draw("same");
   c->SetLogy();
   c->SaveAs(Form("Output/XSComparison/prXSPlot_logScale%s.pdf", fonllCorr?"_fonllCorr":""));
+  c->SaveAs(Form("Output/XSComparison/prXSPlot_logScale%s.C", fonllCorr?"_fonllCorr":""));
 
   leg = new TLegend(0.68,0.70,0.88,0.80);
   leg->SetTextFont(42);
@@ -602,6 +604,7 @@ void drawXStot(bool fonllCorr) {
   text0->Draw("same");
   c->SetLogy();
   c->SaveAs(Form("Output/XSComparison/nprXSPlot_logScale%s.pdf", fonllCorr?"_fonllCorr":""));
+  c->SaveAs(Form("Output/XSComparison/nprXSPlot_logScale%s.C", fonllCorr?"_fonllCorr":""));
 
   c = new TCanvas("cr", "", 1000, 1000);
   prHist->Divide(prMCHist);
@@ -666,6 +669,7 @@ void drawXStot(bool fonllCorr) {
   text1->Draw("same");
   text4->Draw("same");
   c->SaveAs(Form("Output/XSComparison/totXSPlot_DataMCFraction%s.pdf", fonllCorr?"_fonllCorr":""));
+  c->SaveAs(Form("Output/XSComparison/totXSPlot_DataMCFraction%s.C", fonllCorr?"_fonllCorr":""));
 
   //////draw prompt and nonprompt separately
   text0 = new TLatex(0.68 ,0.82,"Prompt J/#psi");
@@ -684,6 +688,7 @@ void drawXStot(bool fonllCorr) {
   text1->Draw("same");
   text4->Draw("same");
   c->SaveAs(Form("Output/XSComparison/prXSPlot_DataMCFraction%s.pdf", fonllCorr?"_fonllCorr":""));
+  c->SaveAs(Form("Output/XSComparison/prXSPlot_DataMCFraction%s.C", fonllCorr?"_fonllCorr":""));
 
   text0 = new TLatex(0.58 ,0.82,"Nonprompt J/#psi");
   text0->SetNDC();
@@ -701,5 +706,5 @@ void drawXStot(bool fonllCorr) {
   text1->Draw("same");
   text4->Draw("same");
   c->SaveAs(Form("Output/XSComparison/nprXSPlot_DataMCFraction%s.pdf", fonllCorr?"_fonllCorr":""));
-
+  c->SaveAs(Form("Output/XSComparison/nprXSPlot_DataMCFraction%s.C", fonllCorr?"_fonllCorr":""));
 }

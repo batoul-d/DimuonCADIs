@@ -572,7 +572,7 @@ void plotNJJ(vector<anabin> thecats, string xaxis, string outputDir) {
       theGraphs[*it]->SetPointError(i,exl,exh,eyl,eyh);
       theGraphs_syst[*it]->SetPoint(i,x,y);
       theGraphs_syst[*it]->SetPointError(i,exsyst,exsyst,eysyst_low,eysyst_high);
-      //cout << "final = " << x << " " << y << " " << eyl << " " << eyh << " " << eysyst_low << endl;
+      cout << "final : x = " << x << " ,y = " << y << " ,eyl = " << eyl << " ,eyh = " << eyh << " ,syst = " << eysyst_low << endl;
       if (y > histMax) histMax = y;
       // theGraphs[*it]->Sort();
       // theGraphs_syst[*it]->Sort();
@@ -1001,6 +1001,8 @@ void plotGraphNJJ(map<anabin, TGraphAsymmErrors*> theGraphs, map<anabin, TGraphA
   c1->SaveAs(Form("Output/%s/RESULT/plot/png/result_JPSI_NJJ_%s%s.png",outputDir.c_str(), xaxis.c_str(), nameTag.c_str()));
   gSystem->mkdir(Form("Output/%s/RESULT/plot/pdf/", outputDir.c_str()), kTRUE);
   c1->SaveAs(Form("Output/%s/RESULT/plot/pdf/result_JPSI_NJJ_%s%s.pdf",outputDir.c_str(), xaxis.c_str(), nameTag.c_str()));
+  gSystem->mkdir(Form("Output/%s/RESULT/plot/cMacro/", outputDir.c_str()), kTRUE);
+  c1->SaveAs(Form("Output/%s/RESULT/plot/cMacro/result_JPSI_NJJ_%s%s.C",outputDir.c_str(), xaxis.c_str(), nameTag.c_str()));
   
   delete tleg;
   delete haxes;

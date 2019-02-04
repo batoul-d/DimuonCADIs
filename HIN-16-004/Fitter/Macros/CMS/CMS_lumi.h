@@ -44,7 +44,7 @@ TString lumi_PbPb2015_OR_P  = "368";
 TString lumi_PbPb2015_Peri_P  = "464";
 TString lumi_PbPb2015_alt  = "351 #mub^{-1}";
 TString lumi_pp2013  = "pp 5.4 pb^{-1}";
-TString lumi_pp2015  = "pp 28.0 pb^{-1}";
+TString lumi_pp2015  = "pp 27.39 pb^{-1}";//"pp 25.8 pb^{-1}";
 TString lumi_pp2015_alt  = "28.0 pb^{-1}";
 
 bool drawLogo      = false;

@@ -43,10 +43,11 @@ class anabin : public tuple<binF,binF,binF,binI> {
 };
 
 
-set<anabin> allbinsXXXXX() {
+set<anabin> allbins18012() {
   set<anabin> ans;
   // JPsiJet analysis 
   ans.insert(anabin(0.4,1.0,0,1.6,6.5,35,0,200));
+  ans.insert(anabin(0.2,0.4,0,1.6,6.5,35,0,200));
   ans.insert(anabin(0.4,0.6,0,1.6,6.5,35,0,200));
   ans.insert(anabin(0.6,0.8,0,1.6,6.5,35,0,200));
   ans.insert(anabin(0.8,1.0,0,1.6,6.5,35,0,200));
@@ -65,26 +66,36 @@ set<anabin> allbinsXXXXX() {
   return ans;
 }
 
-set<anabin> midbinsXXXXX() {
+set<anabin> midbins18012() {
   set<anabin> ans;
   // JPsiJet analysis in mid rapidity                                                                                                                                                       
-  ans.insert(anabin(0.4,1.0,0,1.6,6.5,35,0,200));
-  ans.insert(anabin(0.4,0.6,0,1.6,6.5,35,0,200));
-  ans.insert(anabin(0.6,0.8,0,1.6,6.5,35,0,200));
-  ans.insert(anabin(0.8,1.0,0,1.6,6.5,35,0,200));
+  //ans.insert(anabin(0.4,1.0,0,1.6,6.5,35,0,200));
+  ans.insert(anabin(0.3,0.44,0,1.6,6.5,35,0,200));
+  ans.insert(anabin(0.44,0.58,0,1.6,6.5,35,0,200));
+  ans.insert(anabin(0.58,0.72,0,1.6,6.5,35,0,200));
+  ans.insert(anabin(0.72,0.86,0,1.6,6.5,35,0,200));
+  ans.insert(anabin(0.86,1.0,0,1.6,6.5,35,0,200));
 
   return ans;
 }
 
-set<anabin> forbinsXXXXX() {
+set<anabin> forbins18012() {
   set<anabin> ans;
   // JPsiJet analysis in forward rapidity
-  ans.insert(anabin(0.2,1.0,1.6,2.4,3,35,0,200));
+  //ans.insert(anabin(0.2,1.0,1.6,2.4,3,35,0,200));
   ans.insert(anabin(0.2,0.4,1.6,2.4,3,35,0,200));
   ans.insert(anabin(0.4,0.6,1.6,2.4,3,35,0,200));
   ans.insert(anabin(0.6,0.8,1.6,2.4,3,35,0,200));
   ans.insert(anabin(0.8,1.0,1.6,2.4,3,35,0,200));
 
+  return ans;
+}
+
+set<anabin> totbins18012() {
+  set<anabin> ans;
+  // JPsiJet analysis for the XS
+  ans.insert(anabin(0.0,101.0,0.0,1.6,6.5,35,0,200));
+  ans.insert(anabin(0.0,101.0,1.6,2.4,3.0,35,0,200));
   return ans;
 }
 

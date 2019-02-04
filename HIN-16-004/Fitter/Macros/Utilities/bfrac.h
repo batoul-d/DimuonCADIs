@@ -138,7 +138,7 @@ RooRealVar bfrac (const char* pr_fits, // name of the prompt fits directory
    RooRealVar failjpsipr("failjpsipr","",0), failjpsipr_err("failjpsipr_err","",0), failnjpsipr("failnjpsipr","",0), failnjpsipr_err("failnjpsipr_err","",0);
    RooRealVar failpsippr("failpsippr","",0), failpsippr_err("failpsippr_err","",0), failnpsippr("failnpsippr","",0), failnpsippr_err("failnpsippr_err","",0);
    RooRealVar failnpr("failnpr","",0), failnpr_err("failnpr_err","",0), failnnpr("failnnpr","",0), failnnpr_err("failnnpr_err","",0);
-   if (bin == anabin(0,1.6,6.5,30,0,200) || bin == anabin(1.6,2.4,3,30,0,200)) { // Min.Bias bin
+   if (bin == anabin(0.4,1,0,1.6,6.5,35,0,200) || bin == anabin(0.2,1.0,1.6,2.4,3,35,0,200)) { // Min.Bias bin
       hnumjpsipr = integrateHist(hnumjpsipr); numjpsipr.setVal(hnumjpsipr->GetBinContent(1)); numjpsipr_err.setVal(hnumjpsipr->GetBinError(1));
       hnumpsippr = integrateHist(hnumpsippr); numpsippr.setVal(hnumpsippr->GetBinContent(1)); numpsippr_err.setVal(hnumpsippr->GetBinError(1));
       hnumnpr = integrateHist(hnumnpr); numnpr.setVal(hnumnpr->GetBinContent(1)); numnpr_err.setVal(hnumnpr->GetBinError(1));
@@ -356,9 +356,9 @@ RooRealVar alphaval(const char* pr_fits, const char* npr_fits, anabin bin, bool 
    TH1F *hdenjpsipr = (TH1F*) tfeffjpsipr->Get(denname);
    TH1F *hdennpr = (TH1F*) tfeffnpr->Get(denname);
 
-   double numjpsipr, numnpr, denjpsipr, dennpr;
+   double numjpsipr=1.0, numnpr=1.0, denjpsipr=1.0, dennpr=1.0;
 
-   if (bin == anabin(0,1.6,6.5,30,0,200) || bin == anabin(1.6,2.4,3,30,0,200)) { // Min.Bias bin
+   if (bin == anabin(0.4,1.0,0,1.6,6.5,35,0,200) || bin == anabin(0.2, 1.0,1.6,2.4,3,35,0,200)) { // Min.Bias bin
       hnumjpsipr = integrateHist(hnumjpsipr); numjpsipr = hnumjpsipr->GetBinContent(1);
       hnumnpr = integrateHist(hnumnpr); numnpr = hnumnpr->GetBinContent(1);
       hdenjpsipr = integrateHist(hdenjpsipr); denjpsipr = hdenjpsipr->GetBinContent(1);

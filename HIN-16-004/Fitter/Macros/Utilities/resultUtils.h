@@ -27,7 +27,7 @@
 ///////////////
 
 // NB: luminosities in mub-1
-const double lumipp = 28.0e6;
+const double lumipp = 27.39e6;//25.8e6;//28.0e6;
 const double lumipbpb_ABCD = 351*1.049;
 const double lumipbpb_peri = 464;
 const double NMB = 2.366003e9*1.049;
@@ -263,7 +263,7 @@ bool binok(vector<anabin> thecats, string xaxis, anabin &tocheck, bool override)
 
    for (vector<anabin>::const_iterator it=thecats.begin(); it!=thecats.end(); it++) {
       if (xaxis=="z" && it->ptbin()==tocheck.ptbin() && it->rapbin()==tocheck.rapbin() && it->centbin()==tocheck.centbin()
-            && ! (it->zbin()==tocheck.zbin())) {
+	  && ! (it->zbin()==tocheck.zbin())) {
          ok=true;
          if (override) tocheck.setzbin(it->zbin());
          break;

@@ -238,6 +238,7 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
     else if (fl.find("pthat35")!=std::string::npos) fl = "_pthat35";
     else if (fl.find("pthat45")!=std::string::npos) fl = "_pthat45";
 
+    gSystem->mkdir("TreesForUnfolding");
     string trUnfFileName = Form("TreesForUnfolding/tree_%s%s%s%s%s.root", DSName.c_str(), (isPureSDataset?"_NoBkg":""), (applyWeight_Corr?Form("_%s",corrName.Data()):""), (applyJEC?"_JEC":""), (applyWeight? fl.c_str():""));
 
     TFile * trUnfFile = new TFile (trUnfFileName.c_str(),"RECREATE");

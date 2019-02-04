@@ -33,14 +33,14 @@ using namespace std;
 void plotBkgOrder(const char* workDirName, const char* rapRegion, const char* DSTag, const char* fitType, bool wantPureSMC, const char* applyCorr, bool applyJEC);
 void getUnfoldingInput(const char* workDirName, const char* rapRegion, const char* DSTag, const char* fitType, bool wantPureSMC, const char* applyCorr, bool applyJEC, bool statErr);
 double readSyst(const char* systfile, double zedmin, double zedmax, double rapmin, double rapmax);
-void plotMCPars_easyButQuickVersionForNow_temporary(const char* workDirName,
-						    const char* rapRegion,
-						    const char* DSTag, //="DATA", // Data Set tag can be: "DATA","MCPSI2SP", "MCJPSIP" ...
-						    const char* fitType, // "mass", "ctau"...
-						    bool wantPureSMC, // =false,
-						    const char* applyCorr, // = "",
-						    bool applyJEC // =false
-						    )
+void plotMCMassPars(const char* workDirName,
+		    const char* rapRegion,
+		    const char* DSTag, //="DATA", // Data Set tag can be: "DATA","MCPSI2SP", "MCJPSIP" ...
+		    const char* fitType, // "mass", "ctau"...
+		    bool wantPureSMC, // =false,
+		    const char* applyCorr, // = "",
+		    bool applyJEC // =false
+		    )
 {
   gStyle->SetOptStat(0);
 
